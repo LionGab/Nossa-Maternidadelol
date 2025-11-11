@@ -498,7 +498,7 @@ export class MemStorage implements IStorage {
       hash: insertCache.hash,
       question: insertCache.question,
       answer: insertCache.answer,
-      sources: insertCache.sources || null,
+      sources: insertCache.sources ?? [],
       ttlExpiresAt: insertCache.ttlExpiresAt,
       createdAt: new Date(),
     };
@@ -519,7 +519,7 @@ export class MemStorage implements IStorage {
       userId: insertSavedQa.userId,
       question: insertSavedQa.question,
       answer: insertSavedQa.answer,
-      sources: insertSavedQa.sources || null,
+      sources: insertSavedQa.sources ?? [],
       savedAt: new Date(),
     };
     this.savedQa.set(id, savedQa);
@@ -549,10 +549,11 @@ export class MemStorage implements IStorage {
     const existing = this.habitEntries.get(key);
     
     if (existing) {
+      const isDone = insertEntry.done ?? false;
       const updated: HabitEntry = {
         ...existing,
-        done: insertEntry.done,
-        completedAt: insertEntry.done ? new Date() : null,
+        done: isDone,
+        completedAt: isDone ? new Date() : null,
       };
       this.habitEntries.set(key, updated);
       return updated;

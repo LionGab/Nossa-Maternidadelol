@@ -13,7 +13,7 @@ import supportImage from "@assets/nat1_1762840094067.png";
 interface SearchResult {
   question: string;
   answer: string;
-  sources: { title: string; url: string }[];
+  sources: { title: string; url: string }[] | null;
 }
 
 const SUGGESTED_TOPICS = [
@@ -25,6 +25,33 @@ const SUGGESTED_TOPICS = [
   "Culpa materna: é normal sentir?",
   "Como pedir ajuda sem julgamento",
   "Equilibrar maternidade e identidade",
+];
+
+const WELLNESS_TIPS = [
+  {
+    id: "yoga-trimestre",
+    title: "Yoga para Gestantes - Primeiro Trimestre",
+    description: "Exercícios suaves e seguros para o início da gravidez",
+    category: "Gestação",
+    duration: "15 min",
+    icon: Sparkles,
+  },
+  {
+    id: "receitas-puerperio",
+    title: "Receitas Nutritivas para o Puerpério",
+    description: "Alimentos que ajudam na recuperação pós-parto",
+    category: "Culinária",
+    duration: "Leitura rápida",
+    icon: Heart,
+  },
+  {
+    id: "meditacao-ansiedade",
+    title: "Meditação Guiada para Ansiedade",
+    description: "Acalme sua mente com esta meditação especial",
+    category: "Bem-estar",
+    duration: "10 min",
+    icon: Sparkles,
+  },
 ];
 
 const EMERGENCY_RESOURCES = [
@@ -113,6 +140,54 @@ export default function MaeValente() {
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+            {/* Wellness Tips Section */}
+            {!searchResult && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-pink-accent" />
+                  <h2 className="text-xl font-serif font-bold text-foreground">
+                    Dicas de Bem-Estar
+                  </h2>
+                </div>
+
+                <div className="grid gap-4">
+                  {WELLNESS_TIPS.map((tip) => {
+                    const Icon = tip.icon;
+                    return (
+                      <Card
+                        key={tip.id}
+                        className="p-5 hover-elevate active-elevate-2 cursor-pointer transition-all border-pink-accent/20"
+                        data-testid={`tip-${tip.id}`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-full bg-pink-accent/10 flex items-center justify-center flex-shrink-0">
+                            <Icon className="w-6 h-6 text-pink-accent" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline" className="text-xs">
+                                {tip.category}
+                              </Badge>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="w-3 h-3" />
+                                {tip.duration}
+                              </div>
+                            </div>
+                            <h3 className="font-serif font-semibold text-foreground mb-1">
+                              {tip.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {tip.description}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Emergency Resources */}
             {showEmergency && (
               <Card className="p-5 bg-pink-accent/5 border-pink-accent/30">
