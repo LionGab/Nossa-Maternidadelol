@@ -1358,11 +1358,18 @@ export class MemStorage implements IStorage {
   async getComments(postId: string): Promise<Comment[]> {
     return Array.from(this.comments.values())
       .filter(comment => comment.postId === postId)
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-      .slice(0, 5); // Max 5 comments per post
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
 
   async createComment(insertComment: InsertComment): Promise<Comment> {
+    // Enforce max 5 comments per post
+    const existing = Array.from(this.comments.values())
+      .filter(comment => comment.postId === insertComment.postId);
+    
+    if (existing.length >= 5) {
+      throw new Error("Máximo de 5 comentários atingido para este post");
+    }
+    
     const id = randomUUID();
     const comment: Comment = {
       ...insertComment,
@@ -1374,7 +1381,7 @@ export class MemStorage implements IStorage {
     // Sync commentCount on post
     const post = this.communityPosts.get(insertComment.postId);
     if (post) {
-      post.commentCount = Math.min(post.commentCount + 1, 5); // Max 5
+      post.commentCount = post.commentCount + 1;
       this.communityPosts.set(post.id, post);
     }
     

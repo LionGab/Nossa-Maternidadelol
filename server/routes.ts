@@ -466,9 +466,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/community/posts", async (req, res) => {
     const type = req.query.type as string | undefined;
+    const tag = req.query.tag as string | undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-    const posts = await storage.getCommunityPosts(type, limit);
+    const posts = await storage.getCommunityPosts(type, limit, tag);
     res.json(posts);
+  });
+
+  app.post("/api/community/posts", async (req, res) => {
+    try {
+      const post = await storage.createCommunityPost({
+        userId: TEST_USER_ID,
+        authorName: req.body.authorName,
+        type: req.body.type,
+        content: req.body.content,
+        tag: req.body.tag || null,
+      });
+      res.json(post);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Erro ao criar post" });
+    }
+  });
+
+  // Comments
+  app.get("/api/community/posts/:postId/comments", async (req, res) => {
+    const { postId } = req.params;
+    const comments = await storage.getComments(postId);
+    res.json(comments);
+  });
+
+  app.post("/api/community/posts/:postId/comments", async (req, res) => {
+    try {
+      const { postId } = req.params;
+      const comment = await storage.createComment({
+        postId,
+        userId: TEST_USER_ID,
+        authorName: req.body.authorName,
+        content: req.body.content,
+      });
+      res.json(comment);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Erro ao criar comentário" });
+    }
+  });
+
+  // Reactions
+  app.post("/api/community/posts/:postId/reactions", async (req, res) => {
+    try {
+      const { postId } = req.params;
+      const reaction = await storage.createReaction({
+        postId,
+        userId: TEST_USER_ID,
+        type: req.body.type, // "heart", "hands", "sparkles"
+      });
+      res.json(reaction);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Erro ao adicionar reação" });
+    }
+  });
+
+  app.delete("/api/community/posts/:postId/reactions/:type", async (req, res) => {
+    try {
+      const { postId, type } = req.params;
+      await storage.deleteReaction(postId, TEST_USER_ID, type);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Erro ao remover reação" });
+    }
+  });
+
+  // Reports
+  app.post("/api/community/posts/:postId/reports", async (req, res) => {
+    try {
+      const { postId } = req.params;
+      const report = await storage.createReport({
+        postId,
+        userId: TEST_USER_ID,
+        reason: req.body.reason,
+      });
+      res.json(report);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Erro ao reportar post" });
+    }
   });
 
   const httpServer = createServer(app);
