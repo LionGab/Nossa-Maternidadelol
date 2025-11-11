@@ -918,7 +918,12 @@ export class MemStorage implements IStorage {
   async createCommunityPost(insertPost: InsertCommunityPost): Promise<CommunityPost> {
     const id = randomUUID();
     const post: CommunityPost = {
-      ...insertPost,
+      userId: insertPost.userId,
+      authorName: insertPost.authorName,
+      type: insertPost.type,
+      content: insertPost.content,
+      imageUrl: insertPost.imageUrl || null,
+      tag: insertPost.tag || null,
       id,
       likes: 0,
       moderated: false,

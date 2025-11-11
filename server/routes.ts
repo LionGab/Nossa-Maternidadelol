@@ -457,6 +457,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(completions);
   });
 
+  // Community (RefúgioNath)
+  app.get("/api/community/question", async (req, res) => {
+    const today = new Date().toISOString().split("T")[0];
+    const question = await storage.getDailyQuestion(today);
+    res.json(question || null);
+  });
+
+  app.get("/api/community/posts", async (req, res) => {
+    const type = req.query.type as string | undefined;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    const posts = await storage.getCommunityPosts(type, limit);
+    res.json(posts);
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

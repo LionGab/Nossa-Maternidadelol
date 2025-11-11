@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { MessageCircle, Play, CheckCircle, Sparkles, TrendingUp, Send } from "lucide-react";
+import { MessageCircle, Play, CheckCircle, Sparkles, TrendingUp, Send, Heart, Users } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import type { DailyFeatured, Tip, Post } from "@shared/schema";
+import type { DailyFeatured, Tip, Post, CommunityPost, DailyQuestion } from "@shared/schema";
 import { useState } from "react";
 
 export default function Home() {
@@ -21,6 +21,20 @@ export default function Home() {
 
   const { data: latestPost } = useQuery<Post>({
     queryKey: ["/api/posts/latest"],
+  });
+
+  const { data: dailyQuestion } = useQuery<DailyQuestion | null>({
+    queryKey: ["/api/community/question"],
+  });
+
+  const { data: questionResponses } = useQuery<CommunityPost[]>({
+    queryKey: ["/api/community/posts", "question_response"],
+    queryFn: () => fetch("/api/community/posts?type=question_response&limit=3").then(r => r.json()),
+  });
+
+  const { data: victories } = useQuery<CommunityPost[]>({
+    queryKey: ["/api/community/posts", "victory"],
+    queryFn: () => fetch("/api/community/posts?type=victory&limit=5").then(r => r.json()),
   });
 
   const weekProgress = weekStats ? Math.round((weekStats.completed / weekStats.total) * 100) : 0;
@@ -225,11 +239,11 @@ export default function Home() {
             </Link>
 
             <Link href="/mae-valente">
-              <Card className="p-3 hover-elevate active-elevate-2 transition-all text-center" data-testid="card-quick-search">
+              <Card className="p-3 hover-elevate active-elevate-2 transition-all text-center" data-testid="card-quick-refugionath">
                 <div className="w-10 h-10 rounded-full bg-[hsl(var(--pink-light))] flex items-center justify-center mx-auto mb-2">
-                  <Sparkles className="w-5 h-5 text-pink-accent" />
+                  <Users className="w-5 h-5 text-pink-accent" />
                 </div>
-                <p className="text-xs font-medium text-foreground">Comunidade</p>
+                <p className="text-xs font-medium text-foreground">RefúgioNath</p>
               </Card>
             </Link>
           </div>
@@ -248,6 +262,120 @@ export default function Home() {
               </div>
             </Card>
           )}
+        </div>
+      </div>
+
+      {/* RefúgioNath - Comunidade */}
+      <div className="max-w-5xl mx-auto px-4 pb-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-pink-accent" />
+            <h2 className="text-lg font-semibold text-foreground">RefúgioNath</h2>
+          </div>
+          <Link href="/mae-valente">
+            <Button variant="ghost" size="sm" className="text-xs" data-testid="button-see-all-community">
+              Ver tudo
+            </Button>
+          </Link>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Pergunta do Dia */}
+          {dailyQuestion && (
+            <Card className="p-5" data-testid="card-daily-question">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-accent/20 to-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-pink-accent" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground mb-1">Pergunta do Dia</h3>
+                  <p className="text-sm text-foreground/90" data-testid="text-daily-question">
+                    {dailyQuestion.question}
+                  </p>
+                </div>
+              </div>
+
+              {/* Respostas recentes */}
+              <div className="space-y-3">
+                {questionResponses && questionResponses.length > 0 ? (
+                  questionResponses.map((response) => (
+                    <div key={response.id} className="rounded-xl bg-muted/30 p-3" data-testid={`response-${response.id}`}>
+                      <div className="flex items-start gap-2 mb-1">
+                        <p className="text-xs font-semibold text-primary">{response.authorName}</p>
+                      </div>
+                      <p className="text-xs text-foreground/80 leading-relaxed">{response.content}</p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <Heart className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">{response.likes}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-3">
+                    Seja a primeira a responder!
+                  </p>
+                )}
+              </div>
+
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full mt-4" 
+                data-testid="button-respond-question"
+              >
+                Responder
+              </Button>
+            </Card>
+          )}
+
+          {/* Mural de Vitórias */}
+          <Card className="p-5" data-testid="card-victories">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
+                <Heart className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground mb-1">Mural de Vitórias</h3>
+                <p className="text-xs text-muted-foreground">Celebre suas conquistas</p>
+              </div>
+            </div>
+
+            {/* Lista de vitórias */}
+            <div className="space-y-3">
+              {victories && victories.length > 0 ? (
+                victories.map((victory) => (
+                  <div key={victory.id} className="rounded-xl bg-muted/30 p-3" data-testid={`victory-${victory.id}`}>
+                    <div className="flex items-start gap-2 mb-1">
+                      <p className="text-xs font-semibold text-primary">{victory.authorName}</p>
+                      {victory.featured && (
+                        <span className="text-xs bg-pink-accent/20 text-pink-accent px-2 py-0.5 rounded-full">
+                          Destaque
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-foreground/80 leading-relaxed">{victory.content}</p>
+                    <div className="flex items-center gap-1 mt-2">
+                      <Heart className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">{victory.likes}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-3">
+                  Nenhuma vitória ainda
+                </p>
+              )}
+            </div>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-4" 
+              data-testid="button-share-victory"
+            >
+              Compartilhar Vitória
+            </Button>
+          </Card>
         </div>
       </div>
     </div>
