@@ -1,0 +1,13 @@
+node_modules
+.env
+.env.*
+!.env.example
+.git
+.vscode
+*.md
+!README.md
+.replit
+replit.nix
+Nossa-Maternidade28.git
+.claude
+dist/index.js
