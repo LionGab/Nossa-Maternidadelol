@@ -74,6 +74,7 @@ export interface IStorage {
   
   // Habits
   getHabits(userId: string): Promise<Habit[]>;
+  getHabit(habitId: string): Promise<Habit | undefined>;
   createHabit(habit: InsertHabit): Promise<Habit>;
   deleteHabit(habitId: string): Promise<void>;
   updateHabitOrder(habitId: string, newOrder: number): Promise<void>;
@@ -1168,6 +1169,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.habits.values())
       .filter((h) => h.userId === userId)
       .sort((a, b) => a.order - b.order);
+  }
+
+  async getHabit(habitId: string): Promise<Habit | undefined> {
+    return this.habits.get(habitId);
   }
 
   async createHabit(insertHabit: InsertHabit): Promise<Habit> {

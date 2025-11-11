@@ -84,6 +84,28 @@ export const createReportSchema = z.object({
   reason: z.string().max(200, "Motivo muito longo (máximo 200 caracteres)").optional(),
 });
 
+// Create Favorite
+export const createFavoriteSchema = z.object({
+  postId: z.string().uuid("ID de post inválido"),
+});
+
+// UUID param validation
+export const uuidParamSchema = z.object({
+  id: z.string().uuid("ID inválido"),
+});
+
+export const postIdParamSchema = z.object({
+  postId: z.string().uuid("ID de post inválido"),
+});
+
+export const habitIdParamSchema = z.object({
+  habitId: z.string().uuid("ID de hábito inválido"),
+});
+
+export const sessionIdParamSchema = z.object({
+  sessionId: z.string().uuid("ID de sessão inválido"),
+});
+
 /**
  * Middleware factory for request body validation
  */

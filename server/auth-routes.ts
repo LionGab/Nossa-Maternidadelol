@@ -45,8 +45,9 @@ export function registerAuthRoutes(app: Express) {
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
-        return res.status(409).json({
-          error: "Este email já está cadastrado",
+        // Generic message to prevent user enumeration
+        return res.status(400).json({
+          error: "Não foi possível criar a conta. Verifique os dados e tente novamente.",
         });
       }
 
@@ -77,18 +78,25 @@ export function registerAuthRoutes(app: Express) {
       // Initialize user stats
       await storage.createOrUpdateUserStats(user.id, 0, false);
 
-      // Log user in automatically
+      // Log user in automatically with session regeneration
       req.login(user, (err) => {
         if (err) {
           return next(err);
         }
 
-        return res.status(201).json({
-          message: "Cadastro realizado com sucesso!",
-          user: {
-            id: user.id,
-            email: user.email,
-          },
+        // Regenerate session to prevent session fixation
+        req.session.regenerate((err) => {
+          if (err) {
+            return next(err);
+          }
+
+          return res.status(201).json({
+            message: "Cadastro realizado com sucesso!",
+            user: {
+              id: user.id,
+              email: user.email,
+            },
+          });
         });
       });
     } catch (error) {
@@ -129,12 +137,19 @@ export function registerAuthRoutes(app: Express) {
           return next(err);
         }
 
-        return res.json({
-          message: "Login realizado com sucesso!",
-          user: {
-            id: (user as any).id,
-            email: (user as any).email,
-          },
+        // Regenerate session to prevent session fixation
+        req.session.regenerate((err) => {
+          if (err) {
+            return next(err);
+          }
+
+          return res.json({
+            message: "Login realizado com sucesso!",
+            user: {
+              id: (user as any).id,
+              email: (user as any).email,
+            },
+          });
         });
       });
     })(req, res, next);

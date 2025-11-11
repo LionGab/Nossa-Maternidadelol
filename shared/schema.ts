@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, boolean, timestamp, integer, json } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, boolean, timestamp, integer, json, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -165,7 +165,9 @@ export const aiMessages = pgTable("ai_messages", {
   role: text("role").notNull(), // "user", "assistant"
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  sessionIdIdx: index("ai_messages_session_id_idx").on(table.sessionId),
+}));
 
 export const insertAiMessageSchema = createInsertSchema(aiMessages).omit({
   id: true,
@@ -221,7 +223,9 @@ export const habits = pgTable("habits", {
   color: text("color").notNull(), // gradient class like "from-blue-500 to-purple-500"
   order: integer("order").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("habits_user_id_idx").on(table.userId),
+}));
 
 export const insertHabitSchema = createInsertSchema(habits).omit({
   id: true,
@@ -238,7 +242,10 @@ export const habitCompletions = pgTable("habit_completions", {
   userId: varchar("user_id").notNull(),
   date: text("date").notNull(), // YYYY-MM-DD
   completedAt: timestamp("completed_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  habitDateIdx: index("habit_completions_habit_date_idx").on(table.habitId, table.date),
+  userDateIdx: index("habit_completions_user_date_idx").on(table.userId, table.date),
+}));
 
 export const insertHabitCompletionSchema = createInsertSchema(habitCompletions).omit({
   id: true,
@@ -331,7 +338,10 @@ export const communityPosts = pgTable("community_posts", {
   hidden: boolean("hidden").default(false).notNull(), // Auto-hidden if reportCount >= 3
   featured: boolean("featured").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  typeCreatedAtIdx: index("community_posts_type_created_at_idx").on(table.type, table.createdAt),
+  userIdIdx: index("community_posts_user_id_idx").on(table.userId),
+}));
 
 export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({
   id: true,

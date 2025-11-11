@@ -10,6 +10,7 @@ import { aiChatLimiter, aiSearchLimiter } from "./rate-limit";
 import {
   validateBody,
   validateQuery,
+  validateParams,
   nathiaChatSchema,
   maeValenteSearchSchema,
   saveQaSchema,
@@ -18,6 +19,9 @@ import {
   createCommentSchema,
   createReactionSchema,
   createReportSchema,
+  createFavoriteSchema,
+  postIdParamSchema,
+  habitIdParamSchema,
 } from "./validation";
 import { logger } from "./logger";
 import { paginationSchema, paginateArray } from "./pagination";
@@ -84,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(postIds);
   });
 
-  app.post("/api/favorites", requireAuth, async (req, res) => {
+  app.post("/api/favorites", requireAuth, validateBody(createFavoriteSchema), async (req, res) => {
     const userId = req.user!.id;
     const { postId } = req.body;
     const favorite = await storage.createFavorite({
@@ -94,7 +98,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(favorite);
   });
 
-  app.delete("/api/favorites/:postId", requireAuth, async (req, res) => {
+  app.delete("/api/favorites/:postId", requireAuth, validateParams(postIdParamSchema), async (req, res) => {
     const userId = req.user!.id;
     const { postId } = req.params;
     await storage.deleteFavorite(userId, postId);
@@ -302,25 +306,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/habits/week-stats", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const habits = await storage.getHabits(userId);
-    const today = new Date();
-    let completed = 0;
-    let total = 0;
-    
-    // Count completed habits in the last 7 days
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split("T")[0];
-      
-      for (const habit of habits) {
-        const completion = await storage.getHabitCompletion(habit.id, dateStr);
-        total++;
-        if (completion) {
-          completed++;
-        }
-      }
+
+    if (habits.length === 0) {
+      return res.json({ completed: 0, total: 0 });
     }
-    
+
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - 6); // 7 days including today
+
+    const startDateStr = startDate.toISOString().split("T")[0];
+    const endDateStr = today.toISOString().split("T")[0];
+    const habitIds = habits.map(h => h.id);
+
+    // Batch load all completions for the week (1 query instead of 7*N)
+    const completions = await storage.getHabitCompletionsByHabitIds(
+      habitIds,
+      startDateStr,
+      endDateStr
+    );
+
+    const total = habits.length * 7;
+    const completed = completions.length;
+
     res.json({ completed, total });
   });
 
@@ -357,9 +365,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/habits/:habitId", requireAuth, async (req, res) => {
+  app.delete("/api/habits/:habitId", requireAuth, validateParams(habitIdParamSchema), async (req, res) => {
     try {
+      const userId = req.user!.id;
       const { habitId } = req.params;
+
+      // Verify ownership
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Hábito não encontrado" });
+      }
+
       await storage.deleteHabit(habitId);
       res.json({ success: true });
     } catch (error) {
@@ -368,11 +384,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/habits/:habitId/complete", requireAuth, async (req, res) => {
+  app.post("/api/habits/:habitId/complete", requireAuth, validateParams(habitIdParamSchema), async (req, res) => {
     try {
       const userId = req.user!.id;
       const { habitId } = req.params;
       const today = new Date().toISOString().split("T")[0];
+
+      // Verify ownership
+      const habit = await storage.getHabit(habitId);
+      if (!habit || habit.userId !== userId) {
+        return res.status(404).json({ error: "Hábito não encontrado" });
+      }
 
       // Check if already completed
       const existing = await storage.getHabitCompletion(habitId, today);
