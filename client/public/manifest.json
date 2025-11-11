@@ -1,0 +1,58 @@
+{
+  "name": "Nossa Maternidade - Nathália Valente",
+  "short_name": "Nossa Maternidade",
+  "description": "Acolhimento, orientação e rotina leve para mães e gestantes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e879a6",
+  "orientation": "portrait-primary",
+  "categories": ["health", "lifestyle", "wellness"],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Falar com NathIA",
+      "short_name": "NathIA",
+      "description": "Chat com a assistente virtual",
+      "url": "/nathia",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mãe Valente",
+      "short_name": "Bem-estar",
+      "description": "Buscar informações de saúde mental",
+      "url": "/mae-valente",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Meus Hábitos",
+      "short_name": "Hábitos",
+      "description": "Acompanhar seus hábitos diários",
+      "url": "/habitos",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

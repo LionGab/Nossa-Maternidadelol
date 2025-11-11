@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { TikTokEmbed, InstagramEmbed } from "react-social-media-embed";
+import { VideoEmbedLoader } from "@/components/VideoEmbedLoader";
 import type { Post, ViralPost } from "@shared/schema";
 
 const CATEGORIES = [
@@ -129,11 +130,13 @@ export default function MundoNath() {
 
                     {/* Embed */}
                     <div className="flex justify-center bg-muted/30 p-4">
-                      {vpost.platform === "tiktok" ? (
-                        <TikTokEmbed url={vpost.embedUrl} width={325} />
-                      ) : (
-                        <InstagramEmbed url={vpost.embedUrl} width={328} />
-                      )}
+                      <VideoEmbedLoader platform={vpost.platform as "tiktok" | "instagram"}>
+                        {vpost.platform === "tiktok" ? (
+                          <TikTokEmbed url={vpost.embedUrl} width={325} />
+                        ) : (
+                          <InstagramEmbed url={vpost.embedUrl} width={328} />
+                        )}
+                      </VideoEmbedLoader>
                     </div>
                   </Card>
                 ))}
