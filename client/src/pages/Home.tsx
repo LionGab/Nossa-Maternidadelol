@@ -29,12 +29,12 @@ export default function Home() {
 
   const { data: questionResponses } = useQuery<CommunityPost[]>({
     queryKey: ["/api/community/posts", "question_response"],
-    queryFn: () => fetch("/api/community/posts?type=question_response&limit=3").then(r => r.json()),
+    queryFn: () => fetch("/api/community/posts?type=question_response&limit=3").then(r => r.json()).then(result => result.data || result),
   });
 
   const { data: victories } = useQuery<CommunityPost[]>({
     queryKey: ["/api/community/posts", "victory"],
-    queryFn: () => fetch("/api/community/posts?type=victory&limit=5").then(r => r.json()),
+    queryFn: () => fetch("/api/community/posts?type=victory&limit=5").then(r => r.json()).then(result => result.data || result),
   });
 
   const weekProgress = weekStats ? Math.round((weekStats.completed / weekStats.total) * 100) : 0;

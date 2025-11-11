@@ -68,7 +68,9 @@ export default function RefugioNath() {
       if (typeFilter !== "all") params.set("type", typeFilter);
       const response = await fetch(`/api/community/posts?${params}`);
       if (!response.ok) throw new Error("Erro ao carregar posts");
-      return response.json();
+      const result = await response.json();
+      // API returns paginated response { data: [], meta: {} }
+      return result.data || result;
     },
   });
 

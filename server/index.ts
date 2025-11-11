@@ -8,6 +8,8 @@ import { registerAuthRoutes } from "./auth-routes";
 import { setupAuth } from "./auth";
 import { setupVite, serveStatic } from "./vite";
 import { logger, requestLogger, errorLogger, logStartup } from "./logger";
+import { autoDemoLogin } from "./demo-user";
+import { storage } from "./storage";
 
 const app = express();
 
@@ -17,6 +19,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"], // Required for Tailwind
+      styleSrcElem: ["'self'", "'unsafe-inline'"], // Explicitly allow inline styles for Tailwind/Vite
       scriptSrc: ["'self'", "'unsafe-inline'"], // Required for Vite in dev
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       connectSrc: ["'self'"],
@@ -113,6 +116,9 @@ app.use(
 
 // Initialize Passport
 setupAuth(app);
+
+// Auto-login demo user if not authenticated (enables site to work without login page)
+app.use(autoDemoLogin(storage));
 
 // Request logging middleware
 app.use(requestLogger);

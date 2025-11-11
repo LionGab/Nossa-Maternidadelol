@@ -29,7 +29,8 @@ export default function Dashboard() {
     queryFn: async () => {
       const response = await fetch("/api/community/posts?featured=true&limit=3");
       if (!response.ok) throw new Error("Erro ao carregar posts");
-      return response.json();
+      const result = await response.json();
+      return result.data || result;
     },
   });
 
