@@ -1,313 +1,430 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Droplet, Wind, Move, BookHeart, BookOpen, Award, Flame, Sparkles, Heart, TrendingUp, Calendar } from "lucide-react";
+import { Plus, Flame, Trophy, Star, Trash2, Sparkles, TrendingUp, Award, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Habit, HabitEntry } from "@shared/schema";
+import type { Habit, UserStats } from "@shared/schema";
 
-const HABIT_ICONS = {
-  droplet: Droplet,
-  wind: Wind,
-  stretch: Move,
-  bookHeart: BookHeart,
-  bookOpen: BookOpen,
-};
+interface HabitWithCompletion extends Habit {
+  completedToday: boolean;
+  entry?: { done: boolean; completedAt: Date };
+  streak?: number;
+}
+
+interface AchievementWithStatus {
+  id: string;
+  title: string;
+  description: string;
+  emoji: string;
+  requirement: number;
+  type: string;
+  unlocked: boolean;
+  unlockedAt?: Date;
+}
+
+const GRADIENT_COLORS = [
+  { label: "🔥 Fogo", value: "from-orange-500 to-red-500" },
+  { label: "💜 Roxo", value: "from-purple-500 to-pink-500" },
+  { label: "💙 Azul", value: "from-blue-500 to-cyan-500" },
+  { label: "💚 Verde", value: "from-green-500 to-emerald-500" },
+  { label: "💛 Dourado", value: "from-yellow-500 to-orange-500" },
+  { label: "🌸 Rosa", value: "from-pink-500 to-rose-500" },
+  { label: "⚡ Elétrico", value: "from-cyan-500 to-blue-500" },
+  { label: "🌅 Sunset", value: "from-red-500 to-purple-500" },
+];
 
 export default function Habitos() {
-  const today = new Date().toISOString().split("T")[0];
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
+  const [newHabit, setNewHabit] = useState({ title: "", emoji: "⭐", color: GRADIENT_COLORS[0].value });
+  const [celebratingHabit, setCelebratingHabit] = useState<string | null>(null);
 
-  const { data: habits = [], isLoading } = useQuery<(Habit & { entry?: HabitEntry; streak?: number })[]>({
+  const { data: habits = [] } = useQuery<HabitWithCompletion[]>({
     queryKey: ["/api/habits"],
   });
 
-  const { data: weekStats } = useQuery<{ completed: number; total: number }>({
-    queryKey: ["/api/habits/week-stats"],
+  const { data: stats } = useQuery<UserStats>({
+    queryKey: ["/api/stats"],
+  });
+
+  const { data: achievements = [] } = useQuery<AchievementWithStatus[]>({
+    queryKey: ["/api/achievements"],
+  });
+
+  const createHabitMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/habits", newHabit),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      setShowCreateDialog(false);
+      setNewHabit({ title: "", emoji: "⭐", color: GRADIENT_COLORS[0].value });
+    },
+  });
+
+  const deleteHabitMutation = useMutation({
+    mutationFn: (habitId: string) => apiRequest("DELETE", `/api/habits/${habitId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+    },
   });
 
   const toggleHabitMutation = useMutation({
-    mutationFn: async ({ habitId, done }: { habitId: string; done: boolean }) => {
-      return apiRequest("POST", "/api/habits/toggle", {
-        habitId,
-        date: today,
-        done,
-      });
+    mutationFn: async ({ habitId, complete }: { habitId: string; complete: boolean }) => {
+      if (complete) {
+        return apiRequest("POST", `/api/habits/${habitId}/complete`, {});
+      } else {
+        return apiRequest("DELETE", `/api/habits/${habitId}/complete`, {});
+      }
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/habits/week-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/achievements"] });
+      
+      if (variables.complete) {
+        setCelebratingHabit(variables.habitId);
+        setTimeout(() => setCelebratingHabit(null), 2000);
+      }
     },
   });
 
-  const completedToday = habits.filter((h) => h.entry?.done).length;
-  const totalHabits = habits.length;
-  const progressPercent = totalHabits > 0 ? (completedToday / totalHabits) * 100 : 0;
-  const maxStreak = Math.max(...habits.map((h) => h.streak || 0), 0);
-
-  const getMotivationalMessage = () => {
-    if (completedToday === 0) return "Comece seu dia com um pequeno passo";
-    if (completedToday === totalHabits) return "Incrível! Você completou tudo hoje!";
-    if (completedToday >= totalHabits / 2) return "Você está indo muito bem!";
-    return "Continue assim, você está no caminho certo!";
+  const handleCreateHabit = () => {
+    if (!newHabit.title.trim()) return;
+    createHabitMutation.mutate();
   };
 
+  const handleToggleHabit = (habitId: string, currentState: boolean) => {
+    toggleHabitMutation.mutate({ habitId, complete: !currentState });
+  };
+
+  const completedToday = habits.filter((h) => h.completedToday).length;
+  const completionRate = habits.length > 0 ? Math.round((completedToday / habits.length) * 100) : 0;
+  const currentXP = stats?.xp ?? 0;
+  const currentLevel = stats?.level ?? 1;
+  const xpForNextLevel = currentLevel * 100;
+  const xpInCurrentLevel = currentXP % xpForNextLevel;
+  const xpProgress = (xpInCurrentLevel / xpForNextLevel) * 100;
+  const xpNeededForNext = xpForNextLevel - xpInCurrentLevel;
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
+
   return (
-    <div className="flex flex-col h-screen bg-background pb-16">
-      {/* Header - Fixed */}
-      <header className="bg-gradient-to-br from-pink-accent/5 via-card to-primary/5 border-b border-border px-4 py-4 sm:px-6 sm:py-6 flex-shrink-0">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center gap-3 sm:gap-4 mb-4">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-pink-accent/20 to-primary/20 flex items-center justify-center flex-shrink-0 border-2 border-pink-accent/30 shadow-md">
-              <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-pink-accent" />
+    <div className="flex flex-col h-screen bg-gradient-to-br from-background via-purple-500/5 to-pink-500/5 pb-16">
+      {/* Gamification Header */}
+      <header className="bg-card/80 backdrop-blur-sm border-b border-border px-4 py-4 sm:px-6 flex-shrink-0">
+        <div className="max-w-3xl mx-auto space-y-4">
+          {/* Level & XP */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                <Zap className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground" data-testid="text-level">Nível {currentLevel}</h2>
+                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-700 dark:text-purple-300" data-testid="badge-xp">
+                    {currentXP} XP
+                  </Badge>
+                </div>
+                <div className="mt-1.5">
+                  <Progress value={xpProgress} className="h-2 bg-muted" data-testid="progress-xp" />
+                  <p className="text-xs text-muted-foreground mt-1" data-testid="text-xp-needed">
+                    {xpNeededForNext} XP para o próximo nível
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-0.5 truncate">
-                Meus Hábitos
-              </h1>
-              <p className="text-sm sm:text-base text-muted-foreground truncate">
-                Pequenas vitórias, grandes transformações
-              </p>
-            </div>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowAchievements(true)}
+              className="relative flex-shrink-0"
+              data-testid="button-achievements"
+            >
+              <Trophy className="w-5 h-5 text-yellow-500" />
+              {unlockedCount > 0 && (
+                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-pink-accent text-white text-xs">
+                  {unlockedCount}
+                </Badge>
+              )}
+            </Button>
           </div>
 
-          {/* Quick Stats Grid */}
+          {/* Stats Row */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <Card className="p-3 text-center bg-card/50 backdrop-blur-sm border-pink-accent/20">
+            <Card className="p-3 text-center bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20" data-testid="card-streak">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-                <p className="text-lg sm:text-2xl font-bold text-primary">
-                  {completedToday}
-                </p>
+                <Flame className="w-4 h-4 text-orange-500" />
+                <span className="text-xs text-muted-foreground">Sequência</span>
               </div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">
-                Hoje
+              <p className="text-xl sm:text-2xl font-bold text-foreground" data-testid="text-streak">{stats?.currentStreak ?? 0}</p>
+            </Card>
+
+            <Card className="p-3 text-center bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20" data-testid="card-today">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <TrendingUp className="w-4 h-4 text-purple-500" />
+                <span className="text-xs text-muted-foreground">Hoje</span>
+              </div>
+              <p className="text-xl sm:text-2xl font-bold text-foreground" data-testid="text-today">
+                {completedToday}/{habits.length}
               </p>
             </Card>
-            
-            <Card className="p-3 text-center bg-card/50 backdrop-blur-sm border-pink-accent/20">
+
+            <Card className="p-3 text-center bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20" data-testid="card-total">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-pink-accent" />
-                <p className="text-lg sm:text-2xl font-bold text-pink-accent">
-                  {weekStats?.completed || 0}
-                </p>
+                <Star className="w-4 h-4 text-green-500" />
+                <span className="text-xs text-muted-foreground">Total</span>
               </div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">
-                Semana
-              </p>
-            </Card>
-            
-            <Card className="p-3 text-center bg-card/50 backdrop-blur-sm border-pink-accent/20">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <Flame className="w-3 h-3 sm:w-4 sm:h-4 text-orange-500" />
-                <p className="text-lg sm:text-2xl font-bold text-orange-500">
-                  {maxStreak}
-                </p>
-              </div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">
-                Recorde
-              </p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground" data-testid="text-total">{stats?.totalCompletions ?? 0}</p>
             </Card>
           </div>
+
+          {/* Progress Bar */}
+          {habits.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Progresso de Hoje</span>
+                <span className="font-semibold text-foreground" data-testid="text-completion-rate">{completionRate}%</span>
+              </div>
+              <Progress value={completionRate} className="h-3 bg-muted" data-testid="progress-daily" />
+            </div>
+          )}
         </div>
       </header>
 
+      {/* Habits List */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
-            {/* Progress Overview Card */}
-            <Card className="p-4 sm:p-6 bg-gradient-to-br from-pink-accent/10 via-accent/5 to-primary/5 border-pink-accent/20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-accent/10 to-transparent rounded-full blur-3xl"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-base sm:text-lg font-serif font-semibold text-foreground mb-1">
-                      Progresso de Hoje
-                    </h2>
-                    <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-pink-accent to-primary bg-clip-text text-transparent">
-                      {completedToday}/{totalHabits}
-                    </p>
-                  </div>
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-pink-accent to-primary flex items-center justify-center shadow-lg">
-                    {completedToday === totalHabits && totalHabits > 0 ? (
-                      <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-white animate-pulse" />
-                    ) : (
-                      <Flame className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
-                    )}
-                  </div>
-                </div>
-                
-                <Progress 
-                  value={progressPercent} 
-                  className="h-2 sm:h-3 mb-3" 
-                />
-                
-                <p className="text-center text-xs sm:text-sm text-pink-accent font-medium">
-                  {getMotivationalMessage()}
+          <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6 space-y-3">
+            {habits.length === 0 ? (
+              <Card className="p-8 sm:p-12 text-center">
+                <Sparkles className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-purple-500" />
+                <h3 className="text-lg sm:text-xl font-serif font-bold text-foreground mb-2">
+                  Comece sua Jornada!
+                </h3>
+                <p className="text-sm sm:text-base text-muted-foreground mb-6">
+                  Crie seu primeiro hábito e comece a ganhar XP e conquistas
                 </p>
-              </div>
-            </Card>
-
-            {/* Habits List */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base sm:text-lg font-serif font-semibold text-foreground">
-                  Seus Hábitos
-                </h2>
-                {totalHabits > 0 && (
-                  <Badge variant="outline" className="text-xs">
-                    {totalHabits} {totalHabits === 1 ? "hábito" : "hábitos"}
-                  </Badge>
-                )}
-              </div>
-
-              {isLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Card key={i} className="p-4 animate-pulse">
+                <Button
+                  onClick={() => setShowCreateDialog(true)}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                  data-testid="button-create-first"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Criar Primeiro Hábito
+                </Button>
+              </Card>
+            ) : (
+              <>
+                {habits.map((habit) => {
+                  const isCelebrating = celebratingHabit === habit.id;
+                  return (
+                    <Card
+                      key={habit.id}
+                      className={`p-4 transition-all ${
+                        isCelebrating ? "scale-105 shadow-2xl" : "hover-elevate active-elevate-2"
+                      } ${habit.completedToday ? "bg-gradient-to-r opacity-80" : ""}`}
+                      data-testid={`card-habit-${habit.id}`}
+                    >
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-muted rounded-full"></div>
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-muted rounded w-3/4"></div>
-                          <div className="h-3 bg-muted rounded w-1/2"></div>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : habits.length === 0 ? (
-                <Card className="p-8 text-center bg-accent/5">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-accent/20 flex items-center justify-center">
-                    <Sparkles className="w-8 h-8 text-accent" />
-                  </div>
-                  <h3 className="font-serif font-semibold text-foreground mb-2">
-                    Nenhum hábito ainda
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Comece criando seu primeiro hábito para transformar sua rotina
-                  </p>
-                </Card>
-              ) : (
-                <div className="space-y-2 sm:space-y-3">
-                  {habits.map((habit) => {
-                    const Icon = HABIT_ICONS[habit.icon as keyof typeof HABIT_ICONS] || Droplet;
-                    const isDone = habit.entry?.done || false;
-                    const streak = habit.streak || 0;
+                        {/* Checkbox */}
+                        <button
+                          onClick={() => handleToggleHabit(habit.id, habit.completedToday)}
+                          className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full border-4 transition-all flex items-center justify-center text-2xl sm:text-3xl ${
+                            habit.completedToday
+                              ? `bg-gradient-to-br ${habit.color} border-transparent shadow-lg`
+                              : "border-border bg-background hover:border-purple-500"
+                          }`}
+                          data-testid={`button-toggle-${habit.id}`}
+                        >
+                          {habit.completedToday ? "✓" : habit.emoji}
+                        </button>
 
-                    return (
-                      <Card
-                        key={habit.id}
-                        className={`p-3 sm:p-4 transition-all ${
-                          isDone 
-                            ? "bg-gradient-to-r from-pink-accent/10 to-primary/10 border-pink-accent/30 shadow-sm" 
-                            : "hover-elevate border-border"
-                        }`}
-                        data-testid={`card-habit-${habit.id}`}
-                      >
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <div
-                            className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                              isDone
-                                ? "bg-gradient-to-br from-pink-accent to-primary text-white shadow-md scale-105"
-                                : "bg-accent/50 text-primary"
+                        {/* Title */}
+                        <div className="flex-1 min-w-0">
+                          <h3
+                            className={`font-semibold text-base sm:text-lg ${
+                              habit.completedToday ? "line-through text-muted-foreground" : "text-foreground"
                             }`}
+                            data-testid={`text-habit-title-${habit.id}`}
                           >
-                            <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <h3 className={`font-serif font-semibold mb-0.5 sm:mb-1 text-sm sm:text-base truncate ${
-                              isDone ? "text-foreground" : "text-foreground"
-                            }`}>
-                              {habit.title}
-                            </h3>
-                            {streak > 0 && (
+                            {habit.title}
+                          </h3>
+                          {habit.completedToday ? (
+                            <p className="text-xs sm:text-sm text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+                              <Sparkles className="w-3 h-3" />
+                              +10 XP ganhos!
+                            </p>
+                          ) : (
+                            habit.streak && habit.streak > 0 && (
                               <div className="flex items-center gap-1.5">
                                 <Flame className={`w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 ${
-                                  streak >= 7 ? "text-orange-500 animate-pulse" : "text-orange-400"
+                                  habit.streak >= 7 ? "text-orange-500" : "text-orange-400"
                                 }`} />
                                 <span className="text-xs sm:text-sm text-muted-foreground">
-                                  {streak} dia{streak > 1 ? "s" : ""} seguidos
+                                  {habit.streak} dia{habit.streak > 1 ? "s" : ""} seguidos
                                 </span>
-                                {streak >= 7 && (
-                                  <Badge variant="outline" className="text-[10px] sm:text-xs ml-1 border-orange-500/30 text-orange-500">
-                                    Em chamas!
-                                  </Badge>
-                                )}
                               </div>
-                            )}
-                          </div>
-
-                          <Checkbox
-                            checked={isDone}
-                            onCheckedChange={(checked) => {
-                              toggleHabitMutation.mutate({
-                                habitId: habit.id,
-                                done: checked as boolean,
-                              });
-                            }}
-                            className="w-6 h-6 data-[state=checked]:bg-gradient-to-br data-[state=checked]:from-pink-accent data-[state=checked]:to-primary data-[state=checked]:border-pink-accent flex-shrink-0"
-                            data-testid={`checkbox-habit-${habit.id}`}
-                          />
+                            )
+                          )}
                         </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
 
-            {/* Achievement Card */}
-            {completedToday === totalHabits && totalHabits > 0 && (
-              <Card className="p-6 sm:p-8 bg-gradient-to-br from-pink-accent/20 via-accent/10 to-primary/10 text-center border-2 border-pink-accent/30 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-full">
-                  <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-pink-accent/10 rounded-full blur-3xl animate-pulse"></div>
-                  <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-pulse delay-75"></div>
-                </div>
-                <div className="relative z-10">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-pink-accent to-primary flex items-center justify-center shadow-lg">
-                    <Award className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-serif font-bold text-foreground mb-2">
-                    Que conquista!
-                  </h3>
-                  <p className="text-sm sm:text-base text-muted-foreground mb-4">
-                    Você completou todos os hábitos de hoje!
-                  </p>
-                  <div className="flex items-center justify-center gap-2">
-                    <Heart className="w-4 h-4 text-pink-accent flex-shrink-0" />
-                    <span className="text-xs sm:text-sm text-pink-accent font-medium">
-                      Você está cuidando de si mesma com carinho
-                    </span>
-                    <Heart className="w-4 h-4 text-pink-accent flex-shrink-0" />
-                  </div>
-                </div>
-              </Card>
-            )}
+                        {/* Delete Button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteHabitMutation.mutate(habit.id)}
+                          className="flex-shrink-0 text-muted-foreground hover:text-destructive"
+                          data-testid={`button-delete-${habit.id}`}
+                        >
+                          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
 
-            {/* Motivational Tips */}
-            {completedToday < totalHabits && totalHabits > 0 && (
-              <Card className="p-4 sm:p-5 bg-accent/5 border-accent/30">
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-pink-accent/10 flex items-center justify-center flex-shrink-0">
-                    <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-pink-accent" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-serif font-semibold text-foreground mb-1 text-sm sm:text-base">
-                      Dica do dia
-                    </h4>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                      Não se cobre tanto! Cada hábito completado é uma vitória. 
-                      O importante é manter a consistência, não a perfeição.
-                    </p>
-                  </div>
-                </div>
-              </Card>
+                {/* Add New Button */}
+                <Button
+                  onClick={() => setShowCreateDialog(true)}
+                  variant="outline"
+                  className="w-full h-14 border-2 border-dashed border-purple-500/30 hover:border-purple-500 hover:bg-purple-500/5 text-purple-600 dark:text-purple-400"
+                  data-testid="button-create-habit"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Adicionar Novo Hábito
+                </Button>
+              </>
             )}
           </div>
         </ScrollArea>
       </div>
+
+      {/* Create Habit Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Criar Novo Hábito</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Nome do Hábito</label>
+              <Input
+                value={newHabit.title}
+                onChange={(e) => setNewHabit({ ...newHabit, title: e.target.value })}
+                placeholder="Ex: Meditar 10 minutos"
+                className="text-base"
+                data-testid="input-habit-title"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Emoji</label>
+              <div className="grid grid-cols-6 gap-2">
+                {["⭐", "💪", "🧘‍♀️", "📚", "💧", "🌸", "🎯", "✨", "🔥", "💝", "🌿", "☀️"].map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => setNewHabit({ ...newHabit, emoji })}
+                    className={`text-3xl p-2 rounded-lg transition-all hover-elevate ${
+                      newHabit.emoji === emoji ? "bg-purple-500/20 ring-2 ring-purple-500" : "hover:bg-muted"
+                    }`}
+                    data-testid={`emoji-${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Cor</label>
+              <div className="grid grid-cols-2 gap-2">
+                {GRADIENT_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => setNewHabit({ ...newHabit, color: color.value })}
+                    className={`p-3 rounded-lg flex items-center gap-2 transition-all hover-elevate ${
+                      newHabit.color === color.value ? "ring-2 ring-purple-500" : ""
+                    }`}
+                    data-testid={`color-${color.value}`}
+                  >
+                    <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${color.value}`}></div>
+                    <span className="text-sm text-foreground">{color.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowCreateDialog(false)}
+                className="flex-1"
+                data-testid="button-cancel"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreateHabit}
+                disabled={!newHabit.title.trim() || createHabitMutation.isPending}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                data-testid="button-save-habit"
+              >
+                {createHabitMutation.isPending ? "Criando..." : "Criar Hábito"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Achievements Dialog */}
+      <Dialog open={showAchievements} onOpenChange={setShowAchievements}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="w-6 h-6 text-yellow-500" />
+              Conquistas
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="space-y-3 py-4">
+              {achievements.map((achievement) => (
+                <Card
+                  key={achievement.id}
+                  className={`p-4 ${
+                    achievement.unlocked
+                      ? "bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30"
+                      : "opacity-50"
+                  }`}
+                  data-testid={`achievement-${achievement.id}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl flex-shrink-0">{achievement.emoji}</div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-foreground flex items-center gap-2">
+                        {achievement.title}
+                        {achievement.unlocked && <Award className="w-4 h-4 text-yellow-500" />}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                      {achievement.unlocked && achievement.unlockedAt && (
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          Desbloqueada!
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

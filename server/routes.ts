@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { chatWithNathIA } from "./gemini";
 import { searchWithPerplexity } from "./perplexity";
+import type { UserStats } from "@shared/schema";
 import crypto from "crypto";
 
 const TEST_USER_ID = "test-user";
@@ -205,26 +206,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Habits
+  // Habits (Gamified)
   app.get("/api/habits", async (req, res) => {
     const habits = await storage.getHabits(TEST_USER_ID);
     const today = new Date().toISOString().split("T")[0];
     
-    const habitsWithData = await Promise.all(
+    const habitsWithCompletion = await Promise.all(
       habits.map(async (habit) => {
-        const entry = await storage.getHabitEntry(habit.id, today);
-        const streak = await storage.getHabitStreak(habit.id, today);
+        const completion = await storage.getHabitCompletion(habit.id, today);
+        
+        // Calculate streak for this habit
+        let streak = 0;
+        let checkDate = new Date(today);
+        while (streak < 365) {
+          const dateStr = checkDate.toISOString().split("T")[0];
+          const dayCompletion = await storage.getHabitCompletion(habit.id, dateStr);
+          if (!dayCompletion) break;
+          streak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        }
+        
         return {
           ...habit,
-          entry,
+          completedToday: !!completion,
+          // Legacy support for old frontend
+          entry: completion ? { done: true, completedAt: completion.completedAt } : undefined,
           streak,
         };
       })
     );
     
-    res.json(habitsWithData);
+    res.json(habitsWithCompletion);
   });
 
+  // Week stats (legacy endpoint for backwards compatibility)
   app.get("/api/habits/week-stats", async (req, res) => {
     const habits = await storage.getHabits(TEST_USER_ID);
     const today = new Date();
@@ -238,9 +253,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateStr = date.toISOString().split("T")[0];
       
       for (const habit of habits) {
-        const entry = await storage.getHabitEntry(habit.id, dateStr);
+        const completion = await storage.getHabitCompletion(habit.id, dateStr);
         total++;
-        if (entry?.done) {
+        if (completion) {
           completed++;
         }
       }
@@ -249,21 +264,197 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ completed, total });
   });
 
-  app.post("/api/habits/toggle", async (req, res) => {
+  app.post("/api/habits", async (req, res) => {
     try {
-      const { habitId, date, done } = req.body;
+      const { title, emoji, color } = req.body;
       
-      const entry = await storage.createOrUpdateHabitEntry({
-        habitId,
-        date,
-        done,
+      const existingHabits = await storage.getHabits(TEST_USER_ID);
+      const maxOrder = existingHabits.length > 0 
+        ? Math.max(...existingHabits.map((h) => h.order)) 
+        : 0;
+      
+      const habit = await storage.createHabit({
+        userId: TEST_USER_ID,
+        title,
+        emoji,
+        color,
+        order: maxOrder + 1,
       });
       
-      res.json(entry);
+      // Check for achievements
+      const habits = await storage.getHabits(TEST_USER_ID);
+      if (habits.length === 1) {
+        await storage.unlockAchievement(TEST_USER_ID, "first_habit");
+      } else if (habits.length === 5) {
+        await storage.unlockAchievement(TEST_USER_ID, "habit_master");
+      }
+      
+      res.json(habit);
     } catch (error) {
-      console.error("Toggle habit error:", error);
-      res.status(500).json({ error: "Failed to toggle habit" });
+      console.error("Create habit error:", error);
+      res.status(500).json({ error: "Failed to create habit" });
     }
+  });
+
+  app.delete("/api/habits/:habitId", async (req, res) => {
+    try {
+      const { habitId } = req.params;
+      await storage.deleteHabit(habitId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete habit error:", error);
+      res.status(500).json({ error: "Failed to delete habit" });
+    }
+  });
+
+  app.post("/api/habits/:habitId/complete", async (req, res) => {
+    try {
+      const { habitId } = req.params;
+      const today = new Date().toISOString().split("T")[0];
+      
+      // Check if already completed
+      const existing = await storage.getHabitCompletion(habitId, today);
+      if (existing) {
+        return res.json({ alreadyCompleted: true });
+      }
+      
+      // Create completion
+      await storage.createHabitCompletion({
+        habitId,
+        userId: TEST_USER_ID,
+        date: today,
+      });
+      
+      // Update user stats (+10 XP per completion)
+      const stats = await storage.createOrUpdateUserStats(TEST_USER_ID, 10);
+      
+      // Update streak
+      await storage.updateStreak(TEST_USER_ID, today);
+      
+      // Check achievements
+      const updatedStats = await storage.getUserStats(TEST_USER_ID);
+      if (updatedStats) {
+        // Check streak achievements
+        if (updatedStats.currentStreak === 3) {
+          await storage.unlockAchievement(TEST_USER_ID, "streak_3");
+        } else if (updatedStats.currentStreak === 7) {
+          await storage.unlockAchievement(TEST_USER_ID, "streak_7");
+        } else if (updatedStats.currentStreak === 30) {
+          await storage.unlockAchievement(TEST_USER_ID, "streak_30");
+        }
+        
+        // Check completion achievements
+        if (updatedStats.totalCompletions === 10) {
+          await storage.unlockAchievement(TEST_USER_ID, "completions_10");
+        } else if (updatedStats.totalCompletions === 50) {
+          await storage.unlockAchievement(TEST_USER_ID, "completions_50");
+        } else if (updatedStats.totalCompletions === 100) {
+          await storage.unlockAchievement(TEST_USER_ID, "completions_100");
+        }
+        
+        // Check level achievements
+        if (updatedStats.level === 5) {
+          await storage.unlockAchievement(TEST_USER_ID, "level_5");
+        } else if (updatedStats.level === 10) {
+          await storage.unlockAchievement(TEST_USER_ID, "level_10");
+        }
+      }
+      
+      res.json({ success: true, stats });
+    } catch (error) {
+      console.error("Complete habit error:", error);
+      res.status(500).json({ error: "Failed to complete habit" });
+    }
+  });
+
+  app.delete("/api/habits/:habitId/complete", async (req, res) => {
+    try {
+      const { habitId } = req.params;
+      const today = new Date().toISOString().split("T")[0];
+      
+      await storage.deleteHabitCompletion(habitId, today);
+      
+      // Subtract XP and decrement total completions
+      await storage.createOrUpdateUserStats(TEST_USER_ID, -10, false);
+      
+      // Recalculate streak
+      const stats = await storage.getUserStats(TEST_USER_ID);
+      if (stats) {
+        let newStreak = 0;
+        let checkDate = new Date(today);
+        checkDate.setDate(checkDate.getDate() - 1); // Start from yesterday
+        
+        while (newStreak < 365) {
+          const dateStr = checkDate.toISOString().split("T")[0];
+          const dayCompletions = await storage.getHabitCompletions(TEST_USER_ID, dateStr, dateStr);
+          if (dayCompletions.length === 0) break;
+          newStreak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        }
+        
+        // Update streak directly
+        const updatedStats = { ...stats, currentStreak: newStreak, updatedAt: new Date() };
+        // Access internal map to update
+        const statsArray = Array.from((storage as any).userStats.values());
+        const userStat = statsArray.find((s: UserStats) => s.userId === TEST_USER_ID);
+        if (userStat) {
+          Object.assign(userStat, updatedStats);
+        }
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Uncomplete habit error:", error);
+      res.status(500).json({ error: "Failed to uncomplete habit" });
+    }
+  });
+
+  // User Stats
+  app.get("/api/stats", async (req, res) => {
+    const stats = await storage.getUserStats(TEST_USER_ID);
+    if (!stats) {
+      // Return default stats
+      return res.json({
+        xp: 0,
+        level: 1,
+        currentStreak: 0,
+        longestStreak: 0,
+        totalCompletions: 0,
+      });
+    }
+    res.json(stats);
+  });
+
+  // Achievements
+  app.get("/api/achievements", async (req, res) => {
+    const allAchievements = await storage.getAchievements();
+    const userAchievements = await storage.getUserAchievements(TEST_USER_ID);
+    const unlockedIds = new Set(userAchievements.map((ua) => ua.achievementId));
+    
+    const achievementsWithStatus = allAchievements.map((achievement) => ({
+      ...achievement,
+      unlocked: unlockedIds.has(achievement.id),
+      unlockedAt: userAchievements.find((ua) => ua.achievementId === achievement.id)?.unlockedAt,
+    }));
+    
+    res.json(achievementsWithStatus);
+  });
+
+  // Habit History (for calendar view)
+  app.get("/api/habits/history", async (req, res) => {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "startDate and endDate required" });
+    }
+    
+    const completions = await storage.getHabitCompletions(
+      TEST_USER_ID,
+      startDate as string,
+      endDate as string
+    );
+    
+    res.json(completions);
   });
 
   const httpServer = createServer(app);

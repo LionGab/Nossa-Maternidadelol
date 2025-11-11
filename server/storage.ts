@@ -72,7 +72,7 @@ export interface IStorage {
   
   // User Stats (Gamification)
   getUserStats(userId: string): Promise<UserStats | undefined>;
-  createOrUpdateUserStats(userId: string, xpGain: number): Promise<UserStats>;
+  createOrUpdateUserStats(userId: string, xpGain: number, incrementCompletions?: boolean): Promise<UserStats>;
   updateStreak(userId: string, date: string): Promise<UserStats>;
   
   // Achievements
@@ -621,18 +621,20 @@ export class MemStorage implements IStorage {
     return Array.from(this.userStats.values()).find((stats) => stats.userId === userId);
   }
 
-  async createOrUpdateUserStats(userId: string, xpGain: number): Promise<UserStats> {
+  async createOrUpdateUserStats(userId: string, xpGain: number, incrementCompletions: boolean = true): Promise<UserStats> {
     const existing = await this.getUserStats(userId);
     
     if (existing) {
-      const newXp = existing.xp + xpGain;
+      const newXp = Math.max(0, existing.xp + xpGain);
       const newLevel = Math.floor(newXp / 100) + 1; // 100 XP per level
       
       const updated: UserStats = {
         ...existing,
         xp: newXp,
         level: newLevel,
-        totalCompletions: existing.totalCompletions + 1,
+        totalCompletions: incrementCompletions 
+          ? existing.totalCompletions + 1 
+          : Math.max(0, existing.totalCompletions + (xpGain < 0 ? -1 : 1)),
         updatedAt: new Date(),
       };
       this.userStats.set(existing.id, updated);
@@ -644,11 +646,11 @@ export class MemStorage implements IStorage {
     const stats: UserStats = {
       id,
       userId,
-      xp: xpGain,
-      level: Math.floor(xpGain / 100) + 1,
+      xp: Math.max(0, xpGain),
+      level: Math.floor(Math.max(0, xpGain) / 100) + 1,
       currentStreak: 0,
       longestStreak: 0,
-      totalCompletions: 1,
+      totalCompletions: incrementCompletions ? 1 : 0,
       lastActivityDate: null,
       updatedAt: new Date(),
     };
