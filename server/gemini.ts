@@ -66,15 +66,43 @@ ESTILO DE CONVERSA:
     parts: [{ text: msg.content }],
   }));
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    config: {
-      systemInstruction: systemPrompt,
-      temperature: 0.8,
-      maxOutputTokens: 600,
-    },
-    contents,
-  });
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      config: {
+        systemInstruction: systemPrompt,
+        temperature: 0.8,
+        maxOutputTokens: 600,
+      },
+      contents,
+    });
 
-  return response.text || "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?";
+    if (!response.candidates || response.candidates.length === 0) {
+      console.warn("⚠️ NathIA: No candidates in response");
+      return "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?";
+    }
+
+    const candidate = response.candidates[0];
+    
+    if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+      console.warn("⚠️ NathIA: No content parts in response");
+      return "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?";
+    }
+
+    const textParts = candidate.content.parts
+      .filter((part: any) => part.text)
+      .map((part: any) => part.text);
+
+    const responseText = textParts.join("\n\n");
+
+    if (!responseText) {
+      console.warn("⚠️ NathIA: Empty response text");
+      return "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?";
+    }
+
+    return responseText;
+  } catch (error) {
+    console.error("❌ Gemini Error:", error);
+    return "Desculpe, ocorreu um erro. Por favor, tente novamente.";
+  }
 }
