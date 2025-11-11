@@ -127,6 +127,8 @@ export const aiSessions = pgTable("ai_sessions", {
 
 export const insertAiSessionSchema = createInsertSchema(aiSessions).pick({
   userId: true,
+}).extend({
+  id: z.string().optional(),
 });
 
 export type InsertAiSession = z.infer<typeof insertAiSessionSchema>;
