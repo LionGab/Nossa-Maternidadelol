@@ -12,10 +12,6 @@ export const aiChatLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  // Use user ID as key if authenticated, otherwise use IP
-  keyGenerator: (req) => {
-    return req.user?.id || req.ip || "anonymous";
-  },
   // Skip rate limiting for authenticated users in development
   skip: (req) => {
     return process.env.NODE_ENV === "development" && !!req.user;
@@ -34,9 +30,6 @@ export const aiSearchLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.user?.id || req.ip || "anonymous";
-  },
   skip: (req) => {
     return process.env.NODE_ENV === "development" && !!req.user;
   },
@@ -54,7 +47,6 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip || "anonymous",
   skipSuccessfulRequests: true, // Don't count successful logins
 });
 
@@ -70,9 +62,6 @@ export const generalApiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.user?.id || req.ip || "anonymous";
-  },
   skip: (req) => {
     return process.env.NODE_ENV === "development";
   },
