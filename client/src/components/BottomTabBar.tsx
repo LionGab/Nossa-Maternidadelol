@@ -2,7 +2,7 @@ import { Home, MessageCircle, Play, Heart, CheckCircle } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 const tabs = [
-  { name: "Home", path: "/", icon: Home, testId: "tab-home" },
+  { name: "Home", path: "/dashboard", icon: Home, testId: "tab-home" },
   { name: "NathIA", path: "/nathia", icon: MessageCircle, testId: "tab-nathia" },
   { name: "MundoNath", path: "/mundo-nath", icon: Play, testId: "tab-mundo-nath" },
   { name: "MãeValente", path: "/mae-valente", icon: Heart, testId: "tab-mae-valente" },
