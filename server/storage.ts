@@ -17,6 +17,9 @@ import {
   type Favorite, type InsertFavorite,
   type CommunityPost, type InsertCommunityPost,
   type DailyQuestion, type InsertDailyQuestion,
+  type Comment, type InsertComment,
+  type Reaction, type InsertReaction,
+  type Report, type InsertReport,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -88,10 +91,22 @@ export interface IStorage {
   deleteFavorite(userId: string, postId: string): Promise<void>;
   
   // Community
-  getCommunityPosts(type?: string, limit?: number): Promise<CommunityPost[]>;
+  getCommunityPosts(type?: string, limit?: number, tag?: string): Promise<CommunityPost[]>;
   createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost>;
   getDailyQuestion(date: string): Promise<DailyQuestion | undefined>;
   createDailyQuestion(question: InsertDailyQuestion): Promise<DailyQuestion>;
+  
+  // Comments
+  getComments(postId: string): Promise<Comment[]>;
+  createComment(comment: InsertComment): Promise<Comment>;
+  
+  // Reactions
+  getReactions(postId: string): Promise<Reaction[]>;
+  createReaction(reaction: InsertReaction): Promise<Reaction>;
+  deleteReaction(postId: string, userId: string, type: string): Promise<void>;
+  
+  // Reports
+  createReport(report: InsertReport): Promise<Report>;
 }
 
 export class MemStorage implements IStorage {
@@ -113,6 +128,9 @@ export class MemStorage implements IStorage {
   private favorites: Map<string, Favorite>;
   private communityPosts: Map<string, CommunityPost>;
   private dailyQuestions: Map<string, DailyQuestion>;
+  private comments: Map<string, Comment>;
+  private reactions: Map<string, Reaction>;
+  private reports: Map<string, Report>;
 
   constructor() {
     this.profiles = new Map();
@@ -133,6 +151,9 @@ export class MemStorage implements IStorage {
     this.favorites = new Map();
     this.communityPosts = new Map();
     this.dailyQuestions = new Map();
+    this.comments = new Map();
+    this.reactions = new Map();
+    this.reports = new Map();
 
     this.seedData();
   }
@@ -367,126 +388,502 @@ export class MemStorage implements IStorage {
     ];
     defaultAchievements.forEach((achievement) => this.achievements.set(achievement.id, achievement));
 
-    // Seed daily question
-    const dailyQuestion: DailyQuestion = {
-      id: "question-1",
-      date: today,
-      question: "Qual foi sua maior vitória como mãe hoje?",
-      active: true,
-      createdAt: new Date(),
-    };
-    this.dailyQuestions.set(dailyQuestion.id, dailyQuestion);
-
-    // Seed community posts (RefúgioNath)
+    // Seed community posts (RefúgioNath - 4 tipos: desabafo, vitoria, apoio, reflexao)
+    // Posts vulneráveis e autênticos baseados em experiências reais de mães
     const communityPosts: CommunityPost[] = [
-      // Vitórias (Mural de Vitórias)
+      // 💬 DESABAFOS (#Exaustão, #Culpa, #Sobrecarrega)
       {
-        id: "comm-1",
+        id: "post-1",
         userId: "user-1",
-        authorName: "Carolina M.",
-        type: "victory",
-        content: "Hoje consegui tomar banho sem pressa! Parece bobagem mas pra mim foi uma vitória enorme 💙",
-        imageUrl: null,
-        tag: null,
-        likes: 12,
-        moderated: true,
-        featured: false,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        authorName: "Ana",
+        type: "desabafo",
+        content: "Gritei com meu filho hoje. Me senti a pior mãe do mundo. A culpa não passa.",
+        tag: "#Culpa",
+        reactionCount: 34,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: true,
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2h atrás
       },
       {
-        id: "comm-2",
+        id: "post-2",
         userId: "user-2",
-        authorName: "Julia S.",
-        type: "victory",
-        content: "Meu bebê dormiu 4 horas seguidas pela primeira vez! Eu consegui descansar um pouco ❤️",
-        imageUrl: null,
-        tag: null,
-        likes: 18,
-        moderated: true,
-        featured: true,
-        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
+        authorName: "Carla",
+        type: "desabafo",
+        content: "Tô exausta e ninguém me pergunta como eu tô. Só querem saber do bebê.",
+        tag: "#Exaustão",
+        reactionCount: 56,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5h atrás
       },
       {
-        id: "comm-3",
+        id: "post-3",
         userId: "user-3",
-        authorName: "Mariana P.",
-        type: "victory",
-        content: "Saí de casa sozinha hoje, mesmo com medo. Fui na padaria e voltei. Pequenos passos!",
-        imageUrl: null,
-        tag: null,
-        likes: 25,
-        moderated: true,
+        authorName: "Juliana",
+        type: "desabafo",
+        content: "Sinto que não sou boa o suficiente. Vejo outras mães e parecem ter tudo sob controle.",
+        tag: "#Culpa",
+        reactionCount: 42,
+        commentCount: 4,
+        reportCount: 0,
+        hidden: false,
         featured: false,
-        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
+        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8h atrás
       },
       {
-        id: "comm-4",
+        id: "post-4",
         userId: "user-4",
-        authorName: "Ana Clara",
-        type: "victory",
-        content: "Consegui fazer uma refeição completa sentada à mesa. Não foi só biscoito em pé na cozinha!",
-        imageUrl: null,
-        tag: null,
-        likes: 14,
-        moderated: true,
-        featured: false,
-        createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
-      },
-      {
-        id: "comm-5",
-        userId: "user-5",
-        authorName: "Beatriz L.",
-        type: "victory",
-        content: "Disse não pra visita inesperada hoje. Estou orgulhosa de colocar limites!",
-        imageUrl: null,
-        tag: null,
-        likes: 31,
-        moderated: true,
+        authorName: "Beatriz",
+        type: "desabafo",
+        content: "Acordo e já tô cansada. Durmo e acordo no mesmo cansaço. Não aguento mais.",
+        tag: "#Exaustão",
+        reactionCount: 67,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
         featured: true,
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12h atrás
       },
-      // Respostas à Pergunta do Dia
       {
-        id: "comm-6",
+        id: "post-5",
+        userId: "user-5",
+        authorName: "Patricia",
+        type: "desabafo",
+        content: "Minha casa é uma bagunça. Meu marido reclama. Eu quero gritar que TÔ FAZENDO O MELHOR QUE POSSO.",
+        tag: "#Sobrecarrega",
+        reactionCount: 89,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000), // 18h atrás
+      },
+      {
+        id: "post-6",
         userId: "user-6",
-        authorName: "Fernanda T.",
-        type: "question_response",
-        content: "Vi minha filha dar os primeiros passinhos! Chorei de emoção 😭❤️",
-        imageUrl: null,
-        tag: null,
-        likes: 8,
-        moderated: true,
+        authorName: "Fernanda",
+        type: "desabafo",
+        content: "Chorei escondida no banheiro hoje. De novo.",
+        tag: "#Exaustão",
+        reactionCount: 78,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
         featured: false,
-        createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
+        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 dia atrás
       },
+
+      // 🎉 PEQUENAS VITÓRIAS (#Vitória, #Autocuidado, #Orgulho)
       {
-        id: "comm-7",
+        id: "post-7",
         userId: "user-7",
-        authorName: "Patrícia R.",
-        type: "question_response",
-        content: "Consegui não gritar hoje, mesmo exausta. Respirei fundo e funcionou.",
-        imageUrl: null,
-        tag: null,
-        likes: 15,
-        moderated: true,
-        featured: false,
-        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
+        authorName: "Maria",
+        type: "vitoria",
+        content: "Tomei banho antes das 15h. Parece pouco mas foi MUITO.",
+        tag: "#Autocuidado",
+        reactionCount: 89,
+        commentCount: 3,
+        reportCount: 0,
+        hidden: false,
+        featured: true,
+        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4h atrás
       },
       {
-        id: "comm-8",
+        id: "post-8",
         userId: "user-8",
-        authorName: "Renata K.",
-        type: "question_response",
-        content: "Aceitei ajuda da minha mãe sem sentir culpa. Isso é ENORME pra mim!",
-        imageUrl: null,
-        tag: null,
-        likes: 22,
-        moderated: true,
+        authorName: "Carolina",
+        type: "vitoria",
+        content: "Consegui comer sentada sem ninguém me interromper.",
+        tag: "#Vitória",
+        reactionCount: 54,
+        commentCount: 2,
+        reportCount: 0,
+        hidden: false,
         featured: false,
-        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
+        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6h atrás
+      },
+      {
+        id: "post-9",
+        userId: "user-9",
+        authorName: "Renata",
+        type: "vitoria",
+        content: "Disse não sem me sentir culpada.",
+        tag: "#Orgulho",
+        reactionCount: 92,
+        commentCount: 4,
+        reportCount: 0,
+        hidden: false,
+        featured: true,
+        createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000), // 10h atrás
+      },
+      {
+        id: "post-10",
+        userId: "user-10",
+        authorName: "Luciana",
+        type: "vitoria",
+        content: "Pedi ajuda e não morri de vergonha.",
+        tag: "#Vitória",
+        reactionCount: 71,
+        commentCount: 3,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000), // 14h atrás
+      },
+      {
+        id: "post-11",
+        userId: "user-11",
+        authorName: "Daniela",
+        type: "vitoria",
+        content: "Rir com meu filho mesmo cansada.",
+        tag: "#Vitória",
+        reactionCount: 65,
+        commentCount: 2,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 20 * 60 * 60 * 1000), // 20h atrás
+      },
+      {
+        id: "post-12",
+        userId: "user-12",
+        authorName: "Amanda",
+        type: "vitoria",
+        content: "Fiz uma refeição de verdade. Não foi biscoito em pé na cozinha.",
+        tag: "#Autocuidado",
+        reactionCount: 48,
+        commentCount: 2,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 26 * 60 * 60 * 1000), // 26h atrás
+      },
+
+      // 🆘 PRECISO DE APOIO (#Exaustão, #NãoAguento, #Socorro)
+      {
+        id: "post-13",
+        userId: "user-13",
+        authorName: "Roberta",
+        type: "apoio",
+        content: "Não durmo há dias e tô no limite. Meu corpo não aguenta mais.",
+        tag: "#NãoAguento",
+        reactionCount: 95,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: true,
+        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3h atrás
+      },
+      {
+        id: "post-14",
+        userId: "user-14",
+        authorName: "Camila",
+        type: "apoio",
+        content: "Meu filho não para de chorar e não sei mais o que fazer. Cansei de tentar.",
+        tag: "#Socorro",
+        reactionCount: 82,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 7 * 60 * 60 * 1000), // 7h atrás
+      },
+      {
+        id: "post-15",
+        userId: "user-15",
+        authorName: "Mariana",
+        type: "apoio",
+        content: "Tô sozinha nisso e cansei. Ninguém me ajuda de verdade.",
+        tag: "#Exaustão",
+        reactionCount: 103,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: true,
+        createdAt: new Date(Date.now() - 11 * 60 * 60 * 1000), // 11h atrás
+      },
+      {
+        id: "post-16",
+        userId: "user-16",
+        authorName: "Gabriela",
+        type: "apoio",
+        content: "Sinto que vou surtar. Não consigo fazer nada direito.",
+        tag: "#NãoAguento",
+        reactionCount: 76,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 16 * 60 * 60 * 1000), // 16h atrás
+      },
+      {
+        id: "post-17",
+        userId: "user-17",
+        authorName: "Tatiana",
+        type: "apoio",
+        content: "Tenho medo de não conseguir. De falhar. De desistir.",
+        tag: "#Socorro",
+        reactionCount: 88,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 22 * 60 * 60 * 1000), // 22h atrás
+      },
+
+      // 💭 REFLEXÕES (#Pensamento, #Identidade, #Maternidade)
+      {
+        id: "post-18",
+        userId: "user-18",
+        authorName: "Vanessa",
+        type: "reflexao",
+        content: "Tenho mais medo de falhar como mãe do que qualquer outra coisa.",
+        tag: "#Pensamento",
+        reactionCount: 94,
+        commentCount: 4,
+        reportCount: 0,
+        hidden: false,
+        featured: true,
+        createdAt: new Date(Date.now() - 9 * 60 * 60 * 1000), // 9h atrás
+      },
+      {
+        id: "post-19",
+        userId: "user-19",
+        authorName: "Bruna",
+        type: "reflexao",
+        content: "Perdi minha identidade e não sei quem eu sou além de mãe.",
+        tag: "#Identidade",
+        reactionCount: 107,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: true,
+        createdAt: new Date(Date.now() - 13 * 60 * 60 * 1000), // 13h atrás
+      },
+      {
+        id: "post-20",
+        userId: "user-20",
+        authorName: "Aline",
+        type: "reflexao",
+        content: "Amo meu filho mas sinto falta de quem eu era.",
+        tag: "#Identidade",
+        reactionCount: 119,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: true,
+        createdAt: new Date(Date.now() - 17 * 60 * 60 * 1000), // 17h atrás
+      },
+      {
+        id: "post-21",
+        userId: "user-21",
+        authorName: "Priscila",
+        type: "reflexao",
+        content: "Ninguém me preparou pra isso. Pra solidão. Pro cansaço que não passa.",
+        tag: "#Maternidade",
+        reactionCount: 86,
+        commentCount: 4,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 21 * 60 * 60 * 1000), // 21h atrás
+      },
+      {
+        id: "post-22",
+        userId: "user-22",
+        authorName: "Letícia",
+        type: "reflexao",
+        content: "Percebi que tá tudo bem não estar bem o tempo todo.",
+        tag: "#Pensamento",
+        reactionCount: 72,
+        commentCount: 3,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000), // 25h atrás
+      },
+      {
+        id: "post-23",
+        userId: "user-23",
+        authorName: "Simone",
+        type: "reflexao",
+        content: "A maternidade me desconstruiu. E eu tô tentando me reconstruir diferente.",
+        tag: "#Identidade",
+        reactionCount: 98,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 30 * 60 * 60 * 1000), // 30h atrás
+      },
+
+      // Mais DESABAFOS e VITÓRIAS para completar 30 posts
+      {
+        id: "post-24",
+        userId: "user-24",
+        authorName: "Adriana",
+        type: "desabafo",
+        content: "Meu marido não entende. Ele acha que eu só fico em casa.",
+        tag: "#Sobrecarrega",
+        reactionCount: 102,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 15 * 60 * 60 * 1000), // 15h atrás
+      },
+      {
+        id: "post-25",
+        userId: "user-25",
+        authorName: "Mônica",
+        type: "vitoria",
+        content: "Saí de casa sozinha. Só 20 minutos. Mas respirei.",
+        tag: "#Autocuidado",
+        reactionCount: 63,
+        commentCount: 3,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 19 * 60 * 60 * 1000), // 19h atrás
+      },
+      {
+        id: "post-26",
+        userId: "user-26",
+        authorName: "Sandra",
+        type: "desabafo",
+        content: "Tenho vontade de sumir. Só por algumas horas. Descansar.",
+        tag: "#Exaustão",
+        reactionCount: 91,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 23 * 60 * 60 * 1000), // 23h atrás
+      },
+      {
+        id: "post-27",
+        userId: "user-27",
+        authorName: "Elaine",
+        type: "vitoria",
+        content: "Arrumei a casa. Não tudo. Mas arrumei.",
+        tag: "#Vitória",
+        reactionCount: 44,
+        commentCount: 2,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 27 * 60 * 60 * 1000), // 27h atrás
+      },
+      {
+        id: "post-28",
+        userId: "user-28",
+        authorName: "Raquel",
+        type: "apoio",
+        content: "Esqueci como é dormir a noite toda. Alguém mais?",
+        tag: "#Exaustão",
+        reactionCount: 115,
+        commentCount: 5,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 29 * 60 * 60 * 1000), // 29h atrás
+      },
+      {
+        id: "post-29",
+        userId: "user-29",
+        authorName: "Claudia",
+        type: "reflexao",
+        content: "Ser mãe é amar tanto que dói. Literalmente dói.",
+        tag: "#Maternidade",
+        reactionCount: 81,
+        commentCount: 4,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 31 * 60 * 60 * 1000), // 31h atrás
+      },
+      {
+        id: "post-30",
+        userId: "user-30",
+        authorName: "Isabel",
+        type: "vitoria",
+        content: "Fui no mercado com ele. Sobrevivi. Vitória.",
+        tag: "#Vitória",
+        reactionCount: 58,
+        commentCount: 2,
+        reportCount: 0,
+        hidden: false,
+        featured: false,
+        createdAt: new Date(Date.now() - 33 * 60 * 60 * 1000), // 33h atrás
       },
     ];
     communityPosts.forEach((post) => this.communityPosts.set(post.id, post));
+
+    // Seed comments (acolhimento curto, máx 150 chars, máx 5 por post)
+    const comments: Comment[] = [
+      // Comentários no post-1 (desabafo sobre gritar) - 5 comments
+      { id: "comment-1", postId: "post-1", userId: "user-50", authorName: "Carla", content: "Eu também. Você não é má.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-2", postId: "post-1", userId: "user-51", authorName: "Ju", content: "Respira. Amanhã é outro dia.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-3", postId: "post-1", userId: "user-52", authorName: "Bia", content: "Tô contigo. A gente erra. Você tá fazendo o que pode.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-4", postId: "post-1", userId: "user-53", authorName: "Lu", content: "Acontece. Não se destrua por isso.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-5", postId: "post-1", userId: "user-54", authorName: "Dani", content: "Você pediu desculpas? Então tá tudo bem. A gente é humana.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 25 * 60 * 1000) },
+      
+      // Comentários no post-2 (exaustão, ninguém pergunta) - 5 comments
+      { id: "comment-6", postId: "post-2", userId: "user-55", authorName: "Rê", content: "Tô passando pela mesma coisa. Te vejo.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-7", postId: "post-2", userId: "user-56", authorName: "Gabi", content: "Como você tá? De verdade?", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-8", postId: "post-2", userId: "user-57", authorName: "Cris", content: "Eu te entendo tanto. Você não tá sozinha nisso.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-9", postId: "post-2", userId: "user-58", authorName: "Lê", content: "Tô aqui. De coração. Você importa.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-10", postId: "post-2", userId: "user-59", authorName: "Fabi", content: "Eu pergunto: como você tá? Fala comigo.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 25 * 60 * 1000) },
+      
+      // Comentários no post-3 (não sou boa o suficiente) - 4 comments
+      { id: "comment-11", postId: "post-3", userId: "user-60", authorName: "Mari", content: "Instagram é fake. Elas também estão se segurando.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-12", postId: "post-3", userId: "user-61", authorName: "Pati", content: "Você É boa o suficiente. Acredita.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-13", postId: "post-3", userId: "user-62", authorName: "Nath", content: "Ninguém tem tudo sob controle. É mentira.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-14", postId: "post-3", userId: "user-63", authorName: "Vivi", content: "Você tá fazendo demais. Sério.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      
+      // Comentários no post-4 (cansaço permanente) - 5 comments
+      { id: "comment-15", postId: "post-4", userId: "user-64", authorName: "Sofia", content: "Eu também acordo cansada. Todo dia. Te entendo.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-16", postId: "post-4", userId: "user-65", authorName: "Lara", content: "Isso vai passar. Eu juro que vai.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-17", postId: "post-4", userId: "user-66", authorName: "Alice", content: "Você precisa de ajuda. De verdade. Pede.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-18", postId: "post-4", userId: "user-67", authorName: "Nina", content: "Tô contigo. A gente aguenta junto.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-19", postId: "post-4", userId: "user-68", authorName: "Clara", content: "Força. Você tá fazendo o que pode.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 25 * 60 * 1000) },
+      
+      // Comentários no post-5 (marido reclama da bagunça) - 5 comments
+      { id: "comment-20", postId: "post-5", userId: "user-69", authorName: "Tati", content: "Ele reclama? Então ele pode limpar.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-21", postId: "post-5", userId: "user-70", authorName: "Cami", content: "Você TÁ fazendo o melhor. Ele que não vê.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-22", postId: "post-5", userId: "user-71", authorName: "Rafa", content: "Grita sim. Ele precisa ouvir.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-23", postId: "post-5", userId: "user-72", authorName: "Jéssica", content: "Bagunça é sinal de vida. De amor. De cansaço também.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-24", postId: "post-5", userId: "user-73", authorName: "Paula", content: "Tô com você. Ele não entende nada.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 25 * 60 * 1000) },
+      
+      // Comentários no post-6 (chorei no banheiro) - 5 comments
+      { id: "comment-25", postId: "post-6", userId: "user-74", authorName: "Roberta", content: "Eu também. Ontem.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-26", postId: "post-6", userId: "user-75", authorName: "Sabrina", content: "O banheiro é nosso refúgio. Te entendo.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-27", postId: "post-6", userId: "user-76", authorName: "Helena", content: "Chora. Solta. Você merece desabafar.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-28", postId: "post-6", userId: "user-77", authorName: "Melissa", content: "Tô aqui. Se precisar, fala.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-29", postId: "post-6", userId: "user-78", authorName: "Lívia", content: "Você não tá sozinha. A gente segura junto.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 25 * 60 * 1000) },
+      
+      // Comentários no post-7 (banho antes das 15h) - 3 comments
+      { id: "comment-30", postId: "post-7", userId: "user-79", authorName: "Bea", content: "Isso é gigante! Parabéns!", createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-31", postId: "post-7", userId: "user-80", authorName: "Lorena", content: "Eu sei o quanto isso é difícil. Celebra!", createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-32", postId: "post-7", userId: "user-81", authorName: "Amanda", content: "Tô orgulhosa de você!", createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      
+      // Comentários no post-9 (disse não sem culpa) - 4 comments
+      { id: "comment-33", postId: "post-9", userId: "user-82", authorName: "Fernanda", content: "Isso é ENORME. Sério. Parabéns!", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-34", postId: "post-9", userId: "user-83", authorName: "Carol", content: "Limites são amor próprio. Você conseguiu!", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-35", postId: "post-9", userId: "user-84", authorName: "Andreia", content: "Orgulho de você. Continua!", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-36", postId: "post-9", userId: "user-85", authorName: "Thais", content: "Você merece esse orgulho todo.", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      
+      // Continue para outros posts com comments...
+      // post-10 (pedi ajuda) - 3 comments
+      { id: "comment-37", postId: "post-10", userId: "user-86", authorName: "Val", content: "Pedir ajuda é força, não fraqueza.", createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-38", postId: "post-10", userId: "user-87", authorName: "Rita", content: "Você fez certo. Continua pedindo.", createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-39", postId: "post-10", userId: "user-88", authorName: "Sônia", content: "Orgulho de você!", createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+    ];
+    comments.forEach((comment) => this.comments.set(comment.id, comment));
   }
 
   async getProfile(id: string): Promise<Profile | undefined> {
@@ -898,12 +1295,16 @@ export class MemStorage implements IStorage {
   }
 
   // Community
-  async getCommunityPosts(type?: string, limit?: number): Promise<CommunityPost[]> {
+  async getCommunityPosts(type?: string, limit?: number, tag?: string): Promise<CommunityPost[]> {
     let posts = Array.from(this.communityPosts.values())
-      .filter(post => post.moderated); // Only moderated posts
+      .filter(post => !post.hidden); // Only non-hidden posts
     
     if (type) {
       posts = posts.filter(post => post.type === type);
+    }
+    
+    if (tag) {
+      posts = posts.filter(post => post.tag === tag);
     }
     
     posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -922,11 +1323,12 @@ export class MemStorage implements IStorage {
       authorName: insertPost.authorName,
       type: insertPost.type,
       content: insertPost.content,
-      imageUrl: insertPost.imageUrl || null,
       tag: insertPost.tag || null,
       id,
-      likes: 0,
-      moderated: false,
+      reactionCount: 0,
+      commentCount: 0,
+      reportCount: 0,
+      hidden: false,
       featured: false,
       createdAt: new Date(),
     };
@@ -950,6 +1352,120 @@ export class MemStorage implements IStorage {
     };
     this.dailyQuestions.set(id, question);
     return question;
+  }
+
+  // Comments (with counter sync)
+  async getComments(postId: string): Promise<Comment[]> {
+    return Array.from(this.comments.values())
+      .filter(comment => comment.postId === postId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .slice(0, 5); // Max 5 comments per post
+  }
+
+  async createComment(insertComment: InsertComment): Promise<Comment> {
+    const id = randomUUID();
+    const comment: Comment = {
+      ...insertComment,
+      id,
+      createdAt: new Date(),
+    };
+    this.comments.set(id, comment);
+    
+    // Sync commentCount on post
+    const post = this.communityPosts.get(insertComment.postId);
+    if (post) {
+      post.commentCount = Math.min(post.commentCount + 1, 5); // Max 5
+      this.communityPosts.set(post.id, post);
+    }
+    
+    return comment;
+  }
+
+  // Reactions (with counter sync)
+  async getReactions(postId: string): Promise<Reaction[]> {
+    return Array.from(this.reactions.values())
+      .filter(reaction => reaction.postId === postId);
+  }
+
+  async createReaction(insertReaction: InsertReaction): Promise<Reaction> {
+    // Check if reaction already exists (prevent duplicates)
+    const existing = Array.from(this.reactions.values()).find(
+      r => r.postId === insertReaction.postId && 
+           r.userId === insertReaction.userId && 
+           r.type === insertReaction.type
+    );
+    
+    if (existing) {
+      return existing;
+    }
+    
+    const id = randomUUID();
+    const reaction: Reaction = {
+      ...insertReaction,
+      id,
+      createdAt: new Date(),
+    };
+    this.reactions.set(id, reaction);
+    
+    // Sync reactionCount on post
+    const post = this.communityPosts.get(insertReaction.postId);
+    if (post) {
+      post.reactionCount += 1;
+      this.communityPosts.set(post.id, post);
+    }
+    
+    return reaction;
+  }
+
+  async deleteReaction(postId: string, userId: string, type: string): Promise<void> {
+    const reaction = Array.from(this.reactions.values()).find(
+      r => r.postId === postId && r.userId === userId && r.type === type
+    );
+    
+    if (reaction) {
+      this.reactions.delete(reaction.id);
+      
+      // Sync reactionCount on post
+      const post = this.communityPosts.get(postId);
+      if (post && post.reactionCount > 0) {
+        post.reactionCount -= 1;
+        this.communityPosts.set(post.id, post);
+      }
+    }
+  }
+
+  // Reports (with auto-hide)
+  async createReport(insertReport: InsertReport): Promise<Report> {
+    // Check if report already exists (prevent duplicates)
+    const existing = Array.from(this.reports.values()).find(
+      r => r.postId === insertReport.postId && r.userId === insertReport.userId
+    );
+    
+    if (existing) {
+      return existing;
+    }
+    
+    const id = randomUUID();
+    const report: Report = {
+      ...insertReport,
+      id,
+      createdAt: new Date(),
+    };
+    this.reports.set(id, report);
+    
+    // Sync reportCount on post and auto-hide if >= 3
+    const post = this.communityPosts.get(insertReport.postId);
+    if (post) {
+      post.reportCount += 1;
+      
+      if (post.reportCount >= 3) {
+        post.hidden = true; // Auto-hide after 3 reports
+      }
+      
+      this.communityPosts.set(post.id, post);
+    }
+    
+    return report;
   }
 }
 

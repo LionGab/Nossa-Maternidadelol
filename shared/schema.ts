@@ -292,31 +292,90 @@ export const insertFavoriteSchema = createInsertSchema(favorites).omit({
 export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
 export type Favorite = typeof favorites.$inferSelect;
 
-// Community Posts (UGC Guiado)
+// Community Posts (RefúgioNath - 4 tipos)
 export const communityPosts = pgTable("community_posts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
   authorName: text("author_name").notNull(),
-  type: text("type").notNull(), // "question_response", "victory", "support_request", "testimonial"
+  type: text("type").notNull(), // "desabafo", "vitoria", "apoio", "reflexao"
   content: text("content").notNull(),
-  imageUrl: text("image_url"), // Optional for victories
-  tag: text("tag"), // For support requests: "puerpério", "sono", "amamentação", etc.
-  likes: integer("likes").default(0).notNull(),
-  moderated: boolean("moderated").default(false).notNull(),
+  tag: text("tag"), // Optional: "#Exaustão", "#Culpa", "#Vitória", etc.
+  reactionCount: integer("reaction_count").default(0).notNull(),
+  commentCount: integer("comment_count").default(0).notNull(),
+  reportCount: integer("report_count").default(0).notNull(),
+  hidden: boolean("hidden").default(false).notNull(), // Auto-hidden if reportCount >= 3
   featured: boolean("featured").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({
   id: true,
-  likes: true,
-  moderated: true,
+  reactionCount: true,
+  commentCount: true,
+  reportCount: true,
+  hidden: true,
   featured: true,
   createdAt: true,
 });
 
 export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
 export type CommunityPost = typeof communityPosts.$inferSelect;
+
+// Comments (máx 5 por post, 150 caracteres)
+export const comments = pgTable("comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: varchar("post_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  authorName: text("author_name").notNull(),
+  content: text("content").notNull(), // max 150 chars enforced in validation
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  content: z.string().max(150, "Comentário deve ter no máximo 150 caracteres"),
+});
+
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type Comment = typeof comments.$inferSelect;
+
+// Reactions (❤️ Apoio, 🤝 Empatia, ✨ Força)
+// Note: In production, add unique constraint on (postId, userId, type) to prevent duplicates
+export const reactions = pgTable("reactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: varchar("post_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  type: text("type").notNull(), // "heart", "hands", "sparkles"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertReactionSchema = createInsertSchema(reactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertReaction = z.infer<typeof insertReactionSchema>;
+export type Reaction = typeof reactions.$inferSelect;
+
+// Reports (moderação automática)
+// Note: In production, add unique constraint on (postId, userId) to prevent duplicate reports
+export const reports = pgTable("reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: varchar("post_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  reason: text("reason"), // Optional
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertReportSchema = createInsertSchema(reports).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertReport = z.infer<typeof insertReportSchema>;
+export type Report = typeof reports.$inferSelect;
 
 // Daily Question (Pergunta do Dia dinâmica)
 export const dailyQuestions = pgTable("daily_questions", {
