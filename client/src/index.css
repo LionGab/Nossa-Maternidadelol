@@ -2,51 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE */
+/* LIGHT MODE - Nossa Maternidade Acolhedora Theme */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
   --opaque-button-border-intensity: -8;
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
-  --background: 0 0% 100%;
-  --foreground: 210 25% 7.8431%;
-  --border: 201.4286 30.4348% 90.9804%;
-  --card: 180 6.6667% 97.0588%;
-  --card-foreground: 210 25% 7.8431%;
-  --card-border: 200 15% 94%;
-  --sidebar: 180 6.6667% 97.0588%;
-  --sidebar-foreground: 210 25% 7.8431%;
-  --sidebar-border: 205 25% 90.5882%;
-  --sidebar-primary: 203.8863 88.2845% 53.1373%;
+  
+  /* Maternal warm cream background #FFF8F3 */
+  --background: 25 100% 97%;
+  /* Warm brown/mauve text #6A5450 */
+  --foreground: 12 10% 40%;
+  
+  /* Light blue borders */
+  --border: 205 73% 90%;
+  
+  /* White cards with subtle warmth */
+  --card: 0 0% 100%;
+  --card-foreground: 12 10% 40%;
+  --card-border: 205 73% 95%;
+  
+  /* Tab bar background */
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 12 10% 40%;
+  --sidebar-border: 205 73% 90%;
+  
+  /* Primary: Calm blue #6DA9E4 */
+  --sidebar-primary: 205 73% 66%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 211.5789 51.3514% 92.7451%;
-  --sidebar-accent-foreground: 203.8863 88.2845% 53.1373%;
-  --sidebar-ring: 202.8169 89.1213% 53.1373%;
+  --sidebar-accent: 205 73% 93%;
+  --sidebar-accent-foreground: 205 73% 66%;
+  --sidebar-ring: 205 73% 66%;
+  
   --popover: 0 0% 100%;
-  --popover-foreground: 210 25% 7.8431%;
-  --popover-border: 200 20% 96%;
-  --primary: 203.8863 88.2845% 53.1373%;
+  --popover-foreground: 12 10% 40%;
+  --popover-border: 205 73% 95%;
+  
+  /* Primary blue - calm sky #6DA9E4 */
+  --primary: 205 73% 66%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 25% 7.8431%;
+  
+  /* Secondary warm brown */
+  --secondary: 12 10% 40%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 240 1.9608% 90%;
-  --muted-foreground: 210 25% 7.8431%;
-  --accent: 211.5789 51.3514% 92.7451%;
-  --accent-foreground: 203.8863 88.2845% 53.1373%;
-  --destructive: 356.3033 90.5579% 54.3137%;
+  
+  /* Muted soft powder blue #DCEBFA */
+  --muted: 205 73% 93%;
+  --muted-foreground: 12 10% 50%;
+  
+  /* Accent soft powder blue */
+  --accent: 205 73% 93%;
+  --accent-foreground: 205 73% 66%;
+  
+  /* Pink accent for CTAs #FF8BA3 */
+  --pink-accent: 349 100% 77%;
+  
+  --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --input: 200 23.0769% 97.4510%;
-  --ring: 202.8169 89.1213% 53.1373%;
-  --chart-1: 203.8863 88.2845% 53.1373%;
-  --chart-2: 159.7826 100% 36.0784%;
-  --chart-3: 42.0290 92.8251% 56.2745%;
-  --chart-4: 147.1429 78.5047% 41.9608%;
-  --chart-5: 341.4894 75.2000% 50.9804%;
-  --font-sans: Open Sans, sans-serif;
-  --font-serif: Georgia, serif;
+  
+  --input: 205 73% 95%;
+  --ring: 205 73% 66%;
+  
+  --chart-1: 205 73% 66%;
+  --chart-2: 349 100% 77%;
+  --chart-3: 25 100% 97%;
+  --chart-4: 12 10% 40%;
+  --chart-5: 205 73% 93%;
+  
+  /* Maternal typography */
+  --font-sans: 'Inter', sans-serif;
+  --font-heading: 'Quicksand', sans-serif;
   --font-mono: Menlo, monospace;
-  --radius: 1.3rem;
+  --radius: 1rem;
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
   --shadow-sm: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
@@ -112,7 +140,7 @@
   --popover-border: 210 8% 3%;
   --primary: 203.7736 87.6033% 52.5490%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 195 15.3846% 94.9020%;
+  --secondary: 195.0000 15.3846% 94.9020%;
   --secondary-foreground: 210 25% 7.8431%;
   --muted: 0 0% 9.4118%;
   --muted-foreground: 210 3.3898% 46.2745%;
@@ -163,11 +191,17 @@
   /* Fallback for older browsers */
   --destructive-border: hsl(var(--destructive));
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --radius: 1.3rem;
+  --spacing: 0.25rem;
+  --font-mono: Menlo, monospace;
+  --font-sans: Open Sans, sans-serif;
+  --font-serif: Georgia, serif;
+  --tracking-normal: 0em;
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
 
   body {

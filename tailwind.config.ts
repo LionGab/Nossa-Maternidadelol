@@ -65,6 +65,7 @@ export default {
           foreground: "hsl(var(--sidebar-foreground) / <alpha-value>)",
           border: "hsl(var(--sidebar-border) / <alpha-value>)",
         },
+        "pink-accent": "hsl(var(--pink-accent) / <alpha-value>)",
         "sidebar-primary": {
           DEFAULT: "hsl(var(--sidebar-primary) / <alpha-value>)",
           foreground: "hsl(var(--sidebar-primary-foreground) / <alpha-value>)",
@@ -84,6 +85,7 @@ export default {
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
+        heading: ["var(--font-heading)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
       },
