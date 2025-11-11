@@ -67,6 +67,7 @@ export default function RefugioNath() {
       const params = new URLSearchParams();
       if (typeFilter !== "all") params.set("type", typeFilter);
       const response = await fetch(`/api/community/posts?${params}`);
+      if (!response.ok) throw new Error("Erro ao carregar posts");
       return response.json();
     },
   });
@@ -400,19 +401,26 @@ function PostCard({
     queryKey: ["/api/community/posts", post.id, "comments"],
     queryFn: async () => {
       const response = await fetch(`/api/community/posts/${post.id}/comments`);
+      if (!response.ok) throw new Error("Erro ao carregar comentários");
       return response.json();
     },
     enabled: isExpanded,
   });
 
+  const [isReporting, setIsReporting] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+
   const handleReport = () => {
-    const reason = prompt("Por que você está reportando este post?");
-    if (!reason) return;
+    setIsReporting(true);
+  };
+
+  const submitReport = () => {
+    if (!reportReason.trim()) return;
 
     fetch(`/api/community/posts/${post.id}/reports`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason }),
+      body: JSON.stringify({ reason: reportReason }),
     })
       .then(async (response) => {
         if (!response.ok) {
@@ -423,6 +431,8 @@ function PostCard({
       })
       .then(() => {
         toast({ description: "Post reportado. Obrigada por ajudar a manter a comunidade segura." });
+        setIsReporting(false);
+        setReportReason("");
       })
       .catch((error: Error) => {
         toast({ description: error.message, variant: "destructive" });
@@ -432,27 +442,68 @@ function PostCard({
   const charsRemaining = 150 - commentContent.length;
 
   return (
-    <Card data-testid={`card-post-${post.id}`} className="hover-elevate">
-      <CardHeader className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-sm" data-testid={`text-author-${post.id}`}>
-              {post.authorName}
-            </span>
-            <Badge variant="secondary" className={postType.color} data-testid={`badge-type-${post.id}`}>
-              {postType.label}
-            </Badge>
+    <>
+      <Dialog open={isReporting} onOpenChange={setIsReporting}>
+        <DialogContent data-testid={`dialog-report-${post.id}`}>
+          <DialogHeader>
+            <DialogTitle>Reportar Post</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Por que você está reportando este post?</Label>
+              <Textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="Descreva o motivo do reporte..."
+                rows={3}
+                maxLength={200}
+                data-testid={`textarea-report-reason-${post.id}`}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsReporting(false);
+                  setReportReason("");
+                }}
+                data-testid={`button-cancel-report-${post.id}`}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={submitReport}
+                disabled={!reportReason.trim()}
+                data-testid={`button-submit-report-${post.id}`}
+              >
+                Reportar
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground"
-            onClick={handleReport}
-            data-testid={`button-report-${post.id}`}
-          >
-            <Flag className="h-3 w-3" />
-          </Button>
-        </div>
+        </DialogContent>
+      </Dialog>
+
+      <Card data-testid={`card-post-${post.id}`} className="hover-elevate">
+        <CardHeader className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-sm" data-testid={`text-author-${post.id}`}>
+                {post.authorName}
+              </span>
+              <Badge variant="secondary" className={postType.color} data-testid={`badge-type-${post.id}`}>
+                {postType.label}
+              </Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground"
+              onClick={handleReport}
+              data-testid={`button-report-${post.id}`}
+            >
+              <Flag className="h-3 w-3" />
+            </Button>
+          </div>
         {post.tag && (
           <Badge variant="outline" className="w-fit text-xs" data-testid={`badge-tag-${post.id}`}>
             {post.tag}
@@ -571,5 +622,6 @@ function PostCard({
         )}
       </CardContent>
     </Card>
+    </>
   );
 }

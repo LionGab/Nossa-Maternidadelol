@@ -27,9 +27,9 @@ export default function Dashboard() {
   const { data: featuredPosts = [] } = useQuery<CommunityPost[]>({
     queryKey: ["/api/community/posts", "featured"],
     queryFn: async () => {
-      const response = await fetch("/api/community/posts?limit=10");
-      const posts = await response.json();
-      return posts.filter((p: CommunityPost) => p.featured).slice(0, 3);
+      const response = await fetch("/api/community/posts?featured=true&limit=3");
+      if (!response.ok) throw new Error("Erro ao carregar posts");
+      return response.json();
     },
   });
 
