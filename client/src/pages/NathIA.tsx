@@ -23,6 +23,7 @@ export default function NathIA() {
   const [sessionId, setSessionId] = useState<string>("");
   const [optimisticMessage, setOptimisticMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const processedPendingQuestion = useRef(false);
 
   const { data: messages = [], isLoading } = useQuery<AiMessage[]>({
     queryKey: [`/api/nathia/messages/${sessionId}`],
@@ -50,6 +51,18 @@ export default function NathIA() {
     if (!sessionId) {
       const newSessionId = `session_${Date.now()}`;
       setSessionId(newSessionId);
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (processedPendingQuestion.current || !sessionId) return;
+    
+    const pendingQuestion = localStorage.getItem("pendingQuestion");
+    if (pendingQuestion) {
+      processedPendingQuestion.current = true;
+      localStorage.removeItem("pendingQuestion");
+      setOptimisticMessage(pendingQuestion);
+      sendMessageMutation.mutate(pendingQuestion);
     }
   }, [sessionId]);
 
