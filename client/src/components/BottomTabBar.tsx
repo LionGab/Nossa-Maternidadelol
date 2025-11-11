@@ -1,11 +1,11 @@
-import { Home, MessageCircle, Play, Search, CheckCircle } from "lucide-react";
+import { Home, MessageCircle, Play, Heart, CheckCircle } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 const tabs = [
   { name: "Home", path: "/", icon: Home, testId: "tab-home" },
   { name: "NathIA", path: "/nathia", icon: MessageCircle, testId: "tab-nathia" },
   { name: "MundoNath", path: "/mundo-nath", icon: Play, testId: "tab-mundo-nath" },
-  { name: "MãeValente", path: "/mae-valente", icon: Search, testId: "tab-mae-valente" },
+  { name: "MãeValente", path: "/mae-valente", icon: Heart, testId: "tab-mae-valente" },
   { name: "Hábitos", path: "/habitos", icon: CheckCircle, testId: "tab-habitos" },
 ];
 

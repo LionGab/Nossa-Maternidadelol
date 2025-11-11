@@ -1,0 +1,61 @@
+O teste da influenciadora precisa mostrar valor imediato (perguntar algo → resposta boa; ver 1 vídeo; marcar 1 hábito). A Home atual é bonita, mas dispersa: redundância de citação, paywall muito cedo e CTA principal (chat) escondido. Ajustando hierarquia/copys/feedback você reduz abandono na 1ª tela.
+
+3) Ação — trechos prontos (Tailwind/React)
+
+Hero com chat direto + chips
+
+<div className="mx-auto max-w-3xl px-4 py-6">
+  <h1 className="text-2xl font-semibold text-white">Olá, mamãe!</h1>
+  <p className="text-sm text-white/70">Seu refúgio sem julgamento</p>
+
+  {/* Frase do dia */}
+  <div className="mt-4 rounded-2xl bg-white/5 p-4">
+    <p className="text-white/80 italic">“Você está fazendo um trabalho incrível.”</p>
+    <p className="mt-1 text-xs text-white/60">Dica do dia: confie nos seus instintos.</p>
+  </div>
+
+  {/* Chat CTA */}
+  <div className="mt-4 rounded-2xl bg-white/5 p-4">
+    <label className="text-sm text-white/70">Pergunte à NathIA</label>
+    <div className="mt-2 flex gap-2">
+      <input className="flex-1 rounded-xl bg-black/40 px-3 py-3 text-white placeholder-white/40 outline-none"
+             placeholder="Ex.: Insônia no puerpério, o que fazer?"/>
+      <button className="rounded-xl bg-[#6DA9E4] px-4 py-3 font-semibold text-white">Perguntar</button>
+    </div>
+    <div className="mt-3 flex flex-wrap gap-2">
+      {["Sono","Ansiedade","Amamentação","Exercícios","Alimentação","Relacionamento"].map(t=>(
+        <button key={t} className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/80">{t}</button>
+      ))}
+    </div>
+  </div>
+</div>
+
+
+Paywall com modo tester
+
+<PaywallCard isWhitelisted={isWhitelisted} />
+
+// ...
+function PaywallCard({ isWhitelisted }: { isWhitelisted:boolean }) {
+  return (
+    <div className="mt-6 rounded-2xl bg-gradient-to-b from-[#39272F] to-[#2A2024] p-5">
+      <h3 className="text-lg font-semibold text-white">Acesso Completo</h3>
+      <p className="mt-1 text-sm text-white/70">
+        {isWhitelisted ? "Acesso de teste liberado para você — sem cobrança."
+                       : "Conteúdos exclusivos e NathIA ilimitada."}
+      </p>
+      <button className={`mt-4 w-full rounded-full px-5 py-3 font-bold text-white
+        ${isWhitelisted ? "bg-emerald-500" : "bg-[#FF8BA3]"}`}>
+        {isWhitelisted ? "Abrir Conteúdo — Teste" : "Assinar — R$ 19,90/mês"}
+      </button>
+    </div>
+  );
+}
+
+
+Grid desktop (2 colunas)
+
+<div className="mx-auto max-w-5xl grid gap-6 px-4 py-6 md:grid-cols-2">
+  {/* Coluna esquerda: Frase + Chat */}
+  {/* Coluna direita: Ações + Paywall */}
+</div>

@@ -71,73 +71,53 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Progresso Pessoal */}
-        <Card className="p-6 animate-in fade-in slide-in-from-bottom duration-700" data-testid="card-progress">
-          <div className="flex items-start gap-3 mb-4">
-            <TrendingUp className="w-6 h-6 text-pink-accent flex-shrink-0" />
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+        {/* CTA PRINCIPAL: NathIA em Destaque - TOPO */}
+        <Card className="p-6 bg-gradient-to-br from-[hsl(var(--pink-light))] to-card border-pink-accent/20 animate-in fade-in slide-in-from-bottom duration-500" data-testid="card-nathia-hero">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="w-12 h-12 rounded-full bg-pink-accent flex items-center justify-center flex-shrink-0 shadow-sm">
+              <MessageCircle className="w-6 h-6 text-white" />
+            </div>
             <div className="flex-1">
-              <h2 className="text-lg font-serif font-semibold text-foreground mb-1">
-                Seu Progresso
+              <h2 className="text-xl font-serif font-bold text-foreground mb-1">
+                Pergunte à NathIA
               </h2>
               <p className="text-sm text-muted-foreground">
-                Continue assim, você está arrasando!
+                Assistência empática, sem julgamento, 24/7
               </p>
             </div>
           </div>
 
-          <div className="space-y-4">
-            {/* Hábitos da Semana */}
-            {loadingStats ? (
-              <div className="animate-pulse">
-                <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
-                <div className="h-2 bg-muted rounded w-full"></div>
-              </div>
-            ) : weekStats && weekStats.total > 0 ? (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-foreground">
-                    Hábitos esta semana
-                  </span>
-                  <span className="text-sm font-bold text-pink-accent" data-testid="text-week-progress">
-                    {weekStats.completed} de {weekStats.total}
-                  </span>
-                </div>
-                <Progress value={weekProgress} className="h-2" data-testid="progress-habits" />
-                {weekProgress >= 70 && (
-                  <p className="text-xs text-pink-accent mt-2 font-medium">
-                    🎉 Incrível! Você está muito consistente!
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-2">
-                <p className="text-sm text-muted-foreground">
-                  Comece a registrar seus hábitos!
-                </p>
-                <Link href="/habitos">
-                  <Button variant="outline" size="sm" className="mt-2" data-testid="button-start-habits">
-                    Criar Hábitos
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {suggestedQuestions.map((question, idx) => (
+                <Link key={idx} href="/nathia">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs hover-elevate"
+                    data-testid={`chip-question-${idx}`}
+                  >
+                    {question}
                   </Button>
                 </Link>
-              </div>
-            )}
-
-            {/* Dias de Uso */}
-            <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground" data-testid="text-days-using">{daysUsingApp}</span> {daysUsingApp === 1 ? 'dia' : 'dias'} com a gente
-              </span>
+              ))}
             </div>
+            <Link href="/nathia">
+              <Button className="w-full" size="lg" data-testid="button-chat-now">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Conversar Agora
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
           </div>
         </Card>
 
         {/* Último Vídeo da Nath */}
         {loadingPost ? (
-          <Card className="p-6 animate-pulse">
+          <Card className="p-5 animate-pulse">
             <div className="flex gap-4">
-              <div className="w-32 h-20 bg-muted rounded-lg"></div>
+              <div className="w-28 h-20 bg-muted rounded-lg"></div>
               <div className="flex-1 space-y-2">
                 <div className="h-4 bg-muted rounded w-3/4"></div>
                 <div className="h-3 bg-muted rounded w-1/2"></div>
@@ -145,10 +125,10 @@ export default function Home() {
             </div>
           </Card>
         ) : latestPost ? (
-          <Link href={`/mundo-nath`}>
-            <Card className="p-5 hover-elevate active-elevate-2 cursor-pointer transition-all animate-in fade-in slide-in-from-bottom duration-700 delay-100" data-testid="card-latest-video">
+          <Link href="/mundo-nath">
+            <Card className="p-5 hover-elevate active-elevate-2 cursor-pointer transition-all animate-in fade-in slide-in-from-bottom duration-500 delay-100" data-testid="card-latest-video">
               <div className="flex items-start gap-4">
-                <div className="relative flex-shrink-0 w-32 h-20 rounded-lg overflow-hidden bg-muted">
+                <div className="relative flex-shrink-0 w-28 h-20 rounded-lg overflow-hidden bg-muted">
                   {latestPost.thumbnailUrl ? (
                     <img 
                       src={latestPost.thumbnailUrl} 
@@ -157,27 +137,20 @@ export default function Home() {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-[hsl(var(--primary-light))] to-[hsl(var(--pink-light))] flex items-center justify-center">
-                      <Play className="w-8 h-8 text-primary" />
+                      <Play className="w-7 h-7 text-primary" />
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-                    <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-                      <Play className="w-5 h-5 text-primary ml-0.5" />
+                    <div className="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center">
+                      <Play className="w-4 h-4 text-primary ml-0.5" />
                     </div>
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="secondary" className="text-xs" data-testid="badge-video-new">
-                      Novo
-                    </Badge>
-                    {latestPost.premium && (
-                      <Badge variant="default" className="text-xs">
-                        Premium
-                      </Badge>
-                    )}
-                  </div>
-                  <h3 className="font-serif font-semibold text-foreground mb-1 line-clamp-2" data-testid="text-video-title">
+                  <p className="text-xs text-pink-accent font-semibold mb-1">
+                    NOVO VÍDEO
+                  </p>
+                  <h3 className="font-serif font-semibold text-foreground mb-1 line-clamp-2 leading-tight" data-testid="text-video-title">
                     {latestPost.title}
                   </h3>
                   <p className="text-xs text-muted-foreground">
@@ -189,114 +162,78 @@ export default function Home() {
           </Link>
         ) : null}
 
-        {/* NathIA em Destaque */}
-        <Card className="p-6 bg-gradient-to-br from-[hsl(var(--pink-light))] to-card animate-in fade-in slide-in-from-bottom duration-700 delay-200" data-testid="card-nathia-featured">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-pink-accent/20 flex items-center justify-center flex-shrink-0">
-              <Brain className="w-5 h-5 text-pink-accent" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-lg font-serif font-semibold text-foreground mb-1">
-                NathIA - Sua Assistente 24/7
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Assistência empática sempre que precisar
-              </p>
-            </div>
-          </div>
-
-          {recentAiMessages && recentAiMessages.length > 0 ? (
-            <div className="space-y-3">
-              <div className="bg-background/60 rounded-lg p-3 border border-border/50">
-                <p className="text-xs text-muted-foreground mb-1">Última conversa:</p>
-                <p className="text-sm text-foreground line-clamp-2" data-testid="text-last-message">
-                  {recentAiMessages[recentAiMessages.length - 1]?.content}
-                </p>
+        {/* Progresso da Semana (compacto) */}
+        {loadingStats ? (
+          <Card className="p-4 animate-pulse">
+            <div className="h-3 bg-muted rounded w-full"></div>
+          </Card>
+        ) : weekStats && weekStats.total > 0 ? (
+          <Card className="p-4 animate-in fade-in slide-in-from-bottom duration-500 delay-200" data-testid="card-progress">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-pink-accent" />
+                  <span className="text-sm font-medium text-foreground">
+                    Progresso esta semana
+                  </span>
+                </div>
+                <span className="text-sm font-bold text-pink-accent" data-testid="text-week-progress">
+                  {weekStats.completed}/{weekStats.total}
+                </span>
               </div>
-              <Link href="/nathia">
-                <Button variant="outline" className="w-full" data-testid="button-continue-chat">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Continuar Conversa
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="bg-background/60 rounded-lg p-3 border border-border/50">
-                <p className="text-xs text-muted-foreground mb-2">Pergunta sugerida:</p>
-                <p className="text-sm text-foreground italic" data-testid="text-suggested-question">
-                  "{randomQuestion}"
+              <Progress value={weekProgress} className="h-2" data-testid="progress-habits" />
+              {weekProgress >= 70 && (
+                <p className="text-xs text-pink-accent font-medium">
+                  Continue assim! Você está arrasando
                 </p>
-              </div>
-              <Link href="/nathia">
-                <Button className="w-full" data-testid="button-start-chat">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Conversar com NathIA
-                </Button>
-              </Link>
+              )}
             </div>
-          )}
-        </Card>
+          </Card>
+        ) : null}
 
-        {/* Ações Rápidas */}
-        <div className="space-y-3 animate-in fade-in slide-in-from-bottom duration-700 delay-300">
-          <h2 className="text-lg font-serif font-semibold text-foreground">
-            Ações Rápidas
-          </h2>
-
+        {/* Ações Rápidas (compactas) */}
+        <div className="grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom duration-500 delay-300">
           <Link href="/mundo-nath">
-            <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer transition-all" data-testid="card-quick-video">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[hsl(var(--primary-light))] flex items-center justify-center flex-shrink-0">
-                  <Play className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-foreground">
-                    Explorar Conteúdos
-                  </h3>
-                </div>
+            <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer transition-all text-center" data-testid="card-quick-video">
+              <div className="w-10 h-10 rounded-full bg-[hsl(var(--primary-light))] flex items-center justify-center mx-auto mb-2">
+                <Play className="w-5 h-5 text-primary" />
               </div>
-            </Card>
-          </Link>
-
-          <Link href="/mae-valente">
-            <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer transition-all" data-testid="card-quick-search">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-foreground">
-                    MãeValente (Pesquisar)
-                  </h3>
-                </div>
-              </div>
+              <p className="text-xs font-medium text-foreground">
+                Vídeos
+              </p>
             </Card>
           </Link>
 
           <Link href="/habitos">
-            <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer transition-all" data-testid="card-quick-habit">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[hsl(var(--pink-light))] flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="w-5 h-5 text-pink-accent" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-foreground">
-                    Registrar Hábitos
-                  </h3>
-                </div>
+            <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer transition-all text-center" data-testid="card-quick-habit">
+              <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center mx-auto mb-2">
+                <CheckCircle className="w-5 h-5 text-primary" />
               </div>
+              <p className="text-xs font-medium text-foreground">
+                Hábitos
+              </p>
+            </Card>
+          </Link>
+
+          <Link href="/mae-valente">
+            <Card className="p-4 hover-elevate active-elevate-2 cursor-pointer transition-all text-center" data-testid="card-quick-search">
+              <div className="w-10 h-10 rounded-full bg-[hsl(var(--pink-light))] flex items-center justify-center mx-auto mb-2">
+                <Sparkles className="w-5 h-5 text-pink-accent" />
+              </div>
+              <p className="text-xs font-medium text-foreground">
+                Pesquisar
+              </p>
             </Card>
           </Link>
         </div>
 
-        {/* Dica do Dia (menor) */}
+        {/* Dica do Dia (menor, no final) */}
         {dailyFeatured?.tip && (
-          <Card className="p-4 bg-gradient-to-br from-[hsl(var(--primary-light))] to-card animate-in fade-in slide-in-from-bottom duration-700 delay-400" data-testid="card-daily-tip">
+          <Card className="p-4 bg-gradient-to-br from-[hsl(var(--primary-light))] to-card animate-in fade-in slide-in-from-bottom duration-500 delay-400" data-testid="card-daily-tip">
             <div className="flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-pink-accent flex-shrink-0 mt-0.5" />
+              <Sparkles className="w-4 h-4 text-pink-accent flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <h3 className="text-sm font-serif font-semibold text-primary mb-1">
+                <h3 className="text-xs font-semibold text-primary mb-1">
                   Dica do Dia
                 </h3>
                 <p className="text-sm text-foreground" data-testid="text-daily-tip">
