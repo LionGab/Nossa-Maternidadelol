@@ -1,16 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { MessageCircle, Play, CheckCircle, Sparkles, TrendingUp, ArrowRight } from "lucide-react";
+import { Heart, MessageCircle, Play, CheckCircle, Sparkles, TrendingUp, Calendar, Brain } from "lucide-react";
 import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import type { DailyFeatured, Tip, Post } from "@shared/schema";
+import { Badge } from "@/components/ui/badge";
+import type { DailyFeatured, Tip, Post, AiMessage } from "@shared/schema";
 import logoImage from "@assets/ChatGPT Image 11 de nov. de 2025, 02_51_10_1762840279465.png";
 import { useEffect, useState } from "react";
 
 export default function Home() {
   const [daysUsingApp, setDaysUsingApp] = useState(0);
 
+  // Calculate days using app from localStorage
   useEffect(() => {
     const firstUseDate = localStorage.getItem("firstUseDate");
     if (!firstUseDate) {
@@ -36,12 +38,17 @@ export default function Home() {
     queryKey: ["/api/posts/latest"],
   });
 
+  const { data: recentAiMessages } = useQuery<AiMessage[]>({
+    queryKey: ["/api/nathia/recent"],
+  });
+
   const weekProgress = weekStats ? Math.round((weekStats.completed / weekStats.total) * 100) : 0;
   const suggestedQuestions = [
     "Como lidar com a ansiedade na gravidez?",
-    "Dicas para amamentação no começo?",
+    "Dicas para amamentação",
     "Exercícios seguros no pós-parto",
   ];
+  const randomQuestion = suggestedQuestions[Math.floor(Math.random() * suggestedQuestions.length)];
 
   return (
     <div className="min-h-screen bg-background pb-20">

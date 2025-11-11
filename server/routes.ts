@@ -38,11 +38,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(posts.slice(0, 3));
   });
 
-  app.get("/api/posts/latest", async (req, res) => {
-    const posts = await storage.getPosts();
-    res.json(posts[0] || null);
-  });
-
   app.get("/api/posts", async (req, res) => {
     const category = req.query.category as string;
     const posts = await storage.getPosts(category);
@@ -80,10 +75,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // NathIA Chat
-  app.get("/api/nathia/recent", async (req, res) => {
-    res.json([]);
-  });
-
   app.get("/api/nathia/messages/:sessionId", async (req, res) => {
     const { sessionId } = req.params;
     
