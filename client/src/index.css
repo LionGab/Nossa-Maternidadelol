@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -74,9 +76,9 @@
   --chart-4: 0 0% 15%;
   --chart-5: 209 60% 96%;
   
-  /* Claude-style typography: Serif for elegance, Open Sans for clarity */
-  --font-sans: 'Open Sans', system-ui, -apple-system, sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
+  /* Modern feminine app typography: Poppins throughout (like Pinterest, Canva) */
+  --font-sans: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Poppins', system-ui, -apple-system, sans-serif;
   --font-mono: Menlo, monospace;
   --radius: 0.5rem;
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
