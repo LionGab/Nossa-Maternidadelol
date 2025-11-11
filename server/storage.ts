@@ -1,4 +1,5 @@
 import {
+  type User, type InsertUser,
   type Profile, type InsertProfile,
   type Subscription, type InsertSubscription,
   type Post, type InsertPost,
@@ -22,11 +23,19 @@ import {
   type Report, type InsertReport,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { generateAvatar } from "./avatar";
 
 export interface IStorage {
+  // Users (Authentication)
+  getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUserLastLogin(id: string): Promise<void>;
+
   // Profiles
   getProfile(id: string): Promise<Profile | undefined>;
-  createProfile(profile: InsertProfile): Promise<Profile>;
+  getProfileByUserId(userId: string): Promise<Profile | undefined>;
+  createProfile(profile: InsertProfile & { userId: string }): Promise<Profile>;
   
   // Subscriptions
   getSubscription(userId: string): Promise<Subscription | undefined>;
@@ -72,6 +81,7 @@ export interface IStorage {
   // Habit Completions
   getHabitCompletion(habitId: string, date: string): Promise<HabitCompletion | undefined>;
   getHabitCompletions(userId: string, startDate: string, endDate: string): Promise<HabitCompletion[]>;
+  getHabitCompletionsByHabitIds(habitIds: string[], startDate: string, endDate: string): Promise<HabitCompletion[]>;
   createHabitCompletion(completion: InsertHabitCompletion): Promise<HabitCompletion>;
   deleteHabitCompletion(habitId: string, date: string): Promise<void>;
   
@@ -110,6 +120,7 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private users: Map<string, User>;
   private profiles: Map<string, Profile>;
   private subscriptions: Map<string, Subscription>;
   private posts: Map<string, Post>;
@@ -133,6 +144,7 @@ export class MemStorage implements IStorage {
   private reports: Map<string, Report>;
 
   constructor() {
+    this.users = new Map();
     this.profiles = new Map();
     this.subscriptions = new Map();
     this.posts = new Map();
@@ -396,6 +408,7 @@ export class MemStorage implements IStorage {
         id: "post-1",
         userId: "user-1",
         authorName: "Ana",
+        avatarUrl: generateAvatar("user-1", "lorelei"),
         type: "desabafo",
         content: "Gritei com meu filho hoje. Me senti a pior mãe do mundo. A culpa não passa.",
         tag: "#Culpa",
@@ -410,6 +423,7 @@ export class MemStorage implements IStorage {
         id: "post-2",
         userId: "user-2",
         authorName: "Carla",
+        avatarUrl: generateAvatar("user-2", "lorelei"),
         type: "desabafo",
         content: "Tô exausta e ninguém me pergunta como eu tô. Só querem saber do bebê.",
         tag: "#Exaustão",
@@ -424,6 +438,7 @@ export class MemStorage implements IStorage {
         id: "post-3",
         userId: "user-3",
         authorName: "Juliana",
+        avatarUrl: generateAvatar("user-3", "lorelei"),
         type: "desabafo",
         content: "Sinto que não sou boa o suficiente. Vejo outras mães e parecem ter tudo sob controle.",
         tag: "#Culpa",
@@ -438,6 +453,7 @@ export class MemStorage implements IStorage {
         id: "post-4",
         userId: "user-4",
         authorName: "Beatriz",
+        avatarUrl: generateAvatar("user-4", "lorelei"),
         type: "desabafo",
         content: "Acordo e já tô cansada. Durmo e acordo no mesmo cansaço. Não aguento mais.",
         tag: "#Exaustão",
@@ -452,6 +468,7 @@ export class MemStorage implements IStorage {
         id: "post-5",
         userId: "user-5",
         authorName: "Patricia",
+        avatarUrl: generateAvatar("user-5", "lorelei"),
         type: "desabafo",
         content: "Minha casa é uma bagunça. Meu marido reclama. Eu quero gritar que TÔ FAZENDO O MELHOR QUE POSSO.",
         tag: "#Sobrecarrega",
@@ -466,6 +483,7 @@ export class MemStorage implements IStorage {
         id: "post-6",
         userId: "user-6",
         authorName: "Fernanda",
+        avatarUrl: generateAvatar("user-6", "lorelei"),
         type: "desabafo",
         content: "Chorei escondida no banheiro hoje. De novo.",
         tag: "#Exaustão",
@@ -482,6 +500,7 @@ export class MemStorage implements IStorage {
         id: "post-7",
         userId: "user-7",
         authorName: "Maria",
+        avatarUrl: generateAvatar("user-7", "lorelei"),
         type: "vitoria",
         content: "Tomei banho antes das 15h. Parece pouco mas foi MUITO.",
         tag: "#Autocuidado",
@@ -496,6 +515,7 @@ export class MemStorage implements IStorage {
         id: "post-8",
         userId: "user-8",
         authorName: "Carolina",
+        avatarUrl: generateAvatar("user-8", "lorelei"),
         type: "vitoria",
         content: "Consegui comer sentada sem ninguém me interromper.",
         tag: "#Vitória",
@@ -510,6 +530,7 @@ export class MemStorage implements IStorage {
         id: "post-9",
         userId: "user-9",
         authorName: "Renata",
+        avatarUrl: generateAvatar("user-9", "lorelei"),
         type: "vitoria",
         content: "Disse não sem me sentir culpada.",
         tag: "#Orgulho",
@@ -524,6 +545,7 @@ export class MemStorage implements IStorage {
         id: "post-10",
         userId: "user-10",
         authorName: "Luciana",
+        avatarUrl: generateAvatar("user-10", "lorelei"),
         type: "vitoria",
         content: "Pedi ajuda e não morri de vergonha.",
         tag: "#Vitória",
@@ -538,6 +560,7 @@ export class MemStorage implements IStorage {
         id: "post-11",
         userId: "user-11",
         authorName: "Daniela",
+        avatarUrl: generateAvatar("user-11", "lorelei"),
         type: "vitoria",
         content: "Rir com meu filho mesmo cansada.",
         tag: "#Vitória",
@@ -552,6 +575,7 @@ export class MemStorage implements IStorage {
         id: "post-12",
         userId: "user-12",
         authorName: "Amanda",
+        avatarUrl: generateAvatar("user-12", "lorelei"),
         type: "vitoria",
         content: "Fiz uma refeição de verdade. Não foi biscoito em pé na cozinha.",
         tag: "#Autocuidado",
@@ -568,6 +592,7 @@ export class MemStorage implements IStorage {
         id: "post-13",
         userId: "user-13",
         authorName: "Roberta",
+        avatarUrl: generateAvatar("user-13", "lorelei"),
         type: "apoio",
         content: "Não durmo há dias e tô no limite. Meu corpo não aguenta mais.",
         tag: "#NãoAguento",
@@ -582,6 +607,7 @@ export class MemStorage implements IStorage {
         id: "post-14",
         userId: "user-14",
         authorName: "Camila",
+        avatarUrl: generateAvatar("user-14", "lorelei"),
         type: "apoio",
         content: "Meu filho não para de chorar e não sei mais o que fazer. Cansei de tentar.",
         tag: "#Socorro",
@@ -596,6 +622,7 @@ export class MemStorage implements IStorage {
         id: "post-15",
         userId: "user-15",
         authorName: "Mariana",
+        avatarUrl: generateAvatar("user-15", "lorelei"),
         type: "apoio",
         content: "Tô sozinha nisso e cansei. Ninguém me ajuda de verdade.",
         tag: "#Exaustão",
@@ -610,6 +637,7 @@ export class MemStorage implements IStorage {
         id: "post-16",
         userId: "user-16",
         authorName: "Gabriela",
+        avatarUrl: generateAvatar("user-16", "lorelei"),
         type: "apoio",
         content: "Sinto que vou surtar. Não consigo fazer nada direito.",
         tag: "#NãoAguento",
@@ -624,6 +652,7 @@ export class MemStorage implements IStorage {
         id: "post-17",
         userId: "user-17",
         authorName: "Tatiana",
+        avatarUrl: generateAvatar("user-17", "lorelei"),
         type: "apoio",
         content: "Tenho medo de não conseguir. De falhar. De desistir.",
         tag: "#Socorro",
@@ -640,6 +669,7 @@ export class MemStorage implements IStorage {
         id: "post-18",
         userId: "user-18",
         authorName: "Vanessa",
+        avatarUrl: generateAvatar("user-18", "lorelei"),
         type: "reflexao",
         content: "Tenho mais medo de falhar como mãe do que qualquer outra coisa.",
         tag: "#Pensamento",
@@ -654,6 +684,7 @@ export class MemStorage implements IStorage {
         id: "post-19",
         userId: "user-19",
         authorName: "Bruna",
+        avatarUrl: generateAvatar("user-19", "lorelei"),
         type: "reflexao",
         content: "Perdi minha identidade e não sei quem eu sou além de mãe.",
         tag: "#Identidade",
@@ -668,6 +699,7 @@ export class MemStorage implements IStorage {
         id: "post-20",
         userId: "user-20",
         authorName: "Aline",
+        avatarUrl: generateAvatar("user-20", "lorelei"),
         type: "reflexao",
         content: "Amo meu filho mas sinto falta de quem eu era.",
         tag: "#Identidade",
@@ -682,6 +714,7 @@ export class MemStorage implements IStorage {
         id: "post-21",
         userId: "user-21",
         authorName: "Priscila",
+        avatarUrl: generateAvatar("user-21", "lorelei"),
         type: "reflexao",
         content: "Ninguém me preparou pra isso. Pra solidão. Pro cansaço que não passa.",
         tag: "#Maternidade",
@@ -696,6 +729,7 @@ export class MemStorage implements IStorage {
         id: "post-22",
         userId: "user-22",
         authorName: "Letícia",
+        avatarUrl: generateAvatar("user-22", "lorelei"),
         type: "reflexao",
         content: "Percebi que tá tudo bem não estar bem o tempo todo.",
         tag: "#Pensamento",
@@ -710,6 +744,7 @@ export class MemStorage implements IStorage {
         id: "post-23",
         userId: "user-23",
         authorName: "Simone",
+        avatarUrl: generateAvatar("user-23", "lorelei"),
         type: "reflexao",
         content: "A maternidade me desconstruiu. E eu tô tentando me reconstruir diferente.",
         tag: "#Identidade",
@@ -726,6 +761,7 @@ export class MemStorage implements IStorage {
         id: "post-24",
         userId: "user-24",
         authorName: "Adriana",
+        avatarUrl: generateAvatar("user-24", "lorelei"),
         type: "desabafo",
         content: "Meu marido não entende. Ele acha que eu só fico em casa.",
         tag: "#Sobrecarrega",
@@ -740,6 +776,7 @@ export class MemStorage implements IStorage {
         id: "post-25",
         userId: "user-25",
         authorName: "Mônica",
+        avatarUrl: generateAvatar("user-25", "lorelei"),
         type: "vitoria",
         content: "Saí de casa sozinha. Só 20 minutos. Mas respirei.",
         tag: "#Autocuidado",
@@ -754,6 +791,7 @@ export class MemStorage implements IStorage {
         id: "post-26",
         userId: "user-26",
         authorName: "Sandra",
+        avatarUrl: generateAvatar("user-26", "lorelei"),
         type: "desabafo",
         content: "Tenho vontade de sumir. Só por algumas horas. Descansar.",
         tag: "#Exaustão",
@@ -768,6 +806,7 @@ export class MemStorage implements IStorage {
         id: "post-27",
         userId: "user-27",
         authorName: "Elaine",
+        avatarUrl: generateAvatar("user-27", "lorelei"),
         type: "vitoria",
         content: "Arrumei a casa. Não tudo. Mas arrumei.",
         tag: "#Vitória",
@@ -782,6 +821,7 @@ export class MemStorage implements IStorage {
         id: "post-28",
         userId: "user-28",
         authorName: "Raquel",
+        avatarUrl: generateAvatar("user-28", "lorelei"),
         type: "apoio",
         content: "Esqueci como é dormir a noite toda. Alguém mais?",
         tag: "#Exaustão",
@@ -796,6 +836,7 @@ export class MemStorage implements IStorage {
         id: "post-29",
         userId: "user-29",
         authorName: "Claudia",
+        avatarUrl: generateAvatar("user-29", "lorelei"),
         type: "reflexao",
         content: "Ser mãe é amar tanto que dói. Literalmente dói.",
         tag: "#Maternidade",
@@ -810,6 +851,7 @@ export class MemStorage implements IStorage {
         id: "post-30",
         userId: "user-30",
         authorName: "Isabel",
+        avatarUrl: generateAvatar("user-30", "lorelei"),
         type: "vitoria",
         content: "Fui no mercado com ele. Sobrevivi. Vitória.",
         tag: "#Vitória",
@@ -826,74 +868,110 @@ export class MemStorage implements IStorage {
     // Seed comments (acolhimento curto, máx 150 chars, máx 5 por post)
     const comments: Comment[] = [
       // Comentários no post-1 (desabafo sobre gritar) - 5 comments
-      { id: "comment-1", postId: "post-1", userId: "user-50", authorName: "Carla", content: "Eu também. Você não é má.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000) },
-      { id: "comment-2", postId: "post-1", userId: "user-51", authorName: "Ju", content: "Respira. Amanhã é outro dia.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000) },
-      { id: "comment-3", postId: "post-1", userId: "user-52", authorName: "Bia", content: "Tô contigo. A gente erra. Você tá fazendo o que pode.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 15 * 60 * 1000) },
-      { id: "comment-4", postId: "post-1", userId: "user-53", authorName: "Lu", content: "Acontece. Não se destrua por isso.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 20 * 60 * 1000) },
-      { id: "comment-5", postId: "post-1", userId: "user-54", authorName: "Dani", content: "Você pediu desculpas? Então tá tudo bem. A gente é humana.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 25 * 60 * 1000) },
+      { id: "comment-1", postId: "post-1", userId: "user-50", authorName: "Carla", avatarUrl: generateAvatar("user-50", "lorelei"), content: "Eu também. Você não é má.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-2", postId: "post-1", userId: "user-51", authorName: "Ju", avatarUrl: generateAvatar("user-51", "lorelei"), content: "Respira. Amanhã é outro dia.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-3", postId: "post-1", userId: "user-52", authorName: "Bia", avatarUrl: generateAvatar("user-52", "lorelei"), content: "Tô contigo. A gente erra. Você tá fazendo o que pode.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-4", postId: "post-1", userId: "user-53", authorName: "Lu", avatarUrl: generateAvatar("user-53", "lorelei"), content: "Acontece. Não se destrua por isso.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-5", postId: "post-1", userId: "user-54", authorName: "Dani", avatarUrl: generateAvatar("user-54", "lorelei"), content: "Você pediu desculpas? Então tá tudo bem. A gente é humana.", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000 + 25 * 60 * 1000) },
       
       // Comentários no post-2 (exaustão, ninguém pergunta) - 5 comments
-      { id: "comment-6", postId: "post-2", userId: "user-55", authorName: "Rê", content: "Tô passando pela mesma coisa. Te vejo.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 5 * 60 * 1000) },
-      { id: "comment-7", postId: "post-2", userId: "user-56", authorName: "Gabi", content: "Como você tá? De verdade?", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 10 * 60 * 1000) },
-      { id: "comment-8", postId: "post-2", userId: "user-57", authorName: "Cris", content: "Eu te entendo tanto. Você não tá sozinha nisso.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 15 * 60 * 1000) },
-      { id: "comment-9", postId: "post-2", userId: "user-58", authorName: "Lê", content: "Tô aqui. De coração. Você importa.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 20 * 60 * 1000) },
-      { id: "comment-10", postId: "post-2", userId: "user-59", authorName: "Fabi", content: "Eu pergunto: como você tá? Fala comigo.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 25 * 60 * 1000) },
+      { id: "comment-6", postId: "post-2", userId: "user-55", authorName: "Rê", avatarUrl: generateAvatar("user-55", "lorelei"), content: "Tô passando pela mesma coisa. Te vejo.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-7", postId: "post-2", userId: "user-56", authorName: "Gabi", avatarUrl: generateAvatar("user-56", "lorelei"), content: "Como você tá? De verdade?", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-8", postId: "post-2", userId: "user-57", authorName: "Cris", avatarUrl: generateAvatar("user-57", "lorelei"), content: "Eu te entendo tanto. Você não tá sozinha nisso.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-9", postId: "post-2", userId: "user-58", authorName: "Lê", avatarUrl: generateAvatar("user-58", "lorelei"), content: "Tô aqui. De coração. Você importa.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-10", postId: "post-2", userId: "user-59", authorName: "Fabi", avatarUrl: generateAvatar("user-59", "lorelei"), content: "Eu pergunto: como você tá? Fala comigo.", createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000 + 25 * 60 * 1000) },
       
       // Comentários no post-3 (não sou boa o suficiente) - 4 comments
-      { id: "comment-11", postId: "post-3", userId: "user-60", authorName: "Mari", content: "Instagram é fake. Elas também estão se segurando.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 5 * 60 * 1000) },
-      { id: "comment-12", postId: "post-3", userId: "user-61", authorName: "Pati", content: "Você É boa o suficiente. Acredita.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 10 * 60 * 1000) },
-      { id: "comment-13", postId: "post-3", userId: "user-62", authorName: "Nath", content: "Ninguém tem tudo sob controle. É mentira.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 15 * 60 * 1000) },
-      { id: "comment-14", postId: "post-3", userId: "user-63", authorName: "Vivi", content: "Você tá fazendo demais. Sério.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-11", postId: "post-3", userId: "user-60", authorName: "Mari", avatarUrl: generateAvatar("user-60", "lorelei"), content: "Instagram é fake. Elas também estão se segurando.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-12", postId: "post-3", userId: "user-61", authorName: "Pati", avatarUrl: generateAvatar("user-61", "lorelei"), content: "Você É boa o suficiente. Acredita.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-13", postId: "post-3", userId: "user-62", authorName: "Nath", avatarUrl: generateAvatar("user-62", "lorelei"), content: "Ninguém tem tudo sob controle. É mentira.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-14", postId: "post-3", userId: "user-63", authorName: "Vivi", avatarUrl: generateAvatar("user-63", "lorelei"), content: "Você tá fazendo demais. Sério.", createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000 + 20 * 60 * 1000) },
       
       // Comentários no post-4 (cansaço permanente) - 5 comments
-      { id: "comment-15", postId: "post-4", userId: "user-64", authorName: "Sofia", content: "Eu também acordo cansada. Todo dia. Te entendo.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 5 * 60 * 1000) },
-      { id: "comment-16", postId: "post-4", userId: "user-65", authorName: "Lara", content: "Isso vai passar. Eu juro que vai.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 10 * 60 * 1000) },
-      { id: "comment-17", postId: "post-4", userId: "user-66", authorName: "Alice", content: "Você precisa de ajuda. De verdade. Pede.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 15 * 60 * 1000) },
-      { id: "comment-18", postId: "post-4", userId: "user-67", authorName: "Nina", content: "Tô contigo. A gente aguenta junto.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 20 * 60 * 1000) },
-      { id: "comment-19", postId: "post-4", userId: "user-68", authorName: "Clara", content: "Força. Você tá fazendo o que pode.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 25 * 60 * 1000) },
+      { id: "comment-15", postId: "post-4", userId: "user-64", authorName: "Sofia", avatarUrl: generateAvatar("user-64", "lorelei"), content: "Eu também acordo cansada. Todo dia. Te entendo.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-16", postId: "post-4", userId: "user-65", authorName: "Lara", avatarUrl: generateAvatar("user-65", "lorelei"), content: "Isso vai passar. Eu juro que vai.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-17", postId: "post-4", userId: "user-66", authorName: "Alice", avatarUrl: generateAvatar("user-66", "lorelei"), content: "Você precisa de ajuda. De verdade. Pede.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-18", postId: "post-4", userId: "user-67", authorName: "Nina", avatarUrl: generateAvatar("user-67", "lorelei"), content: "Tô contigo. A gente aguenta junto.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-19", postId: "post-4", userId: "user-68", authorName: "Clara", avatarUrl: generateAvatar("user-68", "lorelei"), content: "Força. Você tá fazendo o que pode.", createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 25 * 60 * 1000) },
       
       // Comentários no post-5 (marido reclama da bagunça) - 5 comments
-      { id: "comment-20", postId: "post-5", userId: "user-69", authorName: "Tati", content: "Ele reclama? Então ele pode limpar.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 5 * 60 * 1000) },
-      { id: "comment-21", postId: "post-5", userId: "user-70", authorName: "Cami", content: "Você TÁ fazendo o melhor. Ele que não vê.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 10 * 60 * 1000) },
-      { id: "comment-22", postId: "post-5", userId: "user-71", authorName: "Rafa", content: "Grita sim. Ele precisa ouvir.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 15 * 60 * 1000) },
-      { id: "comment-23", postId: "post-5", userId: "user-72", authorName: "Jéssica", content: "Bagunça é sinal de vida. De amor. De cansaço também.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 20 * 60 * 1000) },
-      { id: "comment-24", postId: "post-5", userId: "user-73", authorName: "Paula", content: "Tô com você. Ele não entende nada.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 25 * 60 * 1000) },
+      { id: "comment-20", postId: "post-5", userId: "user-69", authorName: "Tati", avatarUrl: generateAvatar("user-69", "lorelei"), content: "Ele reclama? Então ele pode limpar.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-21", postId: "post-5", userId: "user-70", authorName: "Cami", avatarUrl: generateAvatar("user-70", "lorelei"), content: "Você TÁ fazendo o melhor. Ele que não vê.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-22", postId: "post-5", userId: "user-71", authorName: "Rafa", avatarUrl: generateAvatar("user-71", "lorelei"), content: "Grita sim. Ele precisa ouvir.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-23", postId: "post-5", userId: "user-72", authorName: "Jéssica", avatarUrl: generateAvatar("user-72", "lorelei"), content: "Bagunça é sinal de vida. De amor. De cansaço também.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-24", postId: "post-5", userId: "user-73", authorName: "Paula", avatarUrl: generateAvatar("user-73", "lorelei"), content: "Tô com você. Ele não entende nada.", createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000 + 25 * 60 * 1000) },
       
       // Comentários no post-6 (chorei no banheiro) - 5 comments
-      { id: "comment-25", postId: "post-6", userId: "user-74", authorName: "Roberta", content: "Eu também. Ontem.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 5 * 60 * 1000) },
-      { id: "comment-26", postId: "post-6", userId: "user-75", authorName: "Sabrina", content: "O banheiro é nosso refúgio. Te entendo.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 10 * 60 * 1000) },
-      { id: "comment-27", postId: "post-6", userId: "user-76", authorName: "Helena", content: "Chora. Solta. Você merece desabafar.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 15 * 60 * 1000) },
-      { id: "comment-28", postId: "post-6", userId: "user-77", authorName: "Melissa", content: "Tô aqui. Se precisar, fala.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 20 * 60 * 1000) },
-      { id: "comment-29", postId: "post-6", userId: "user-78", authorName: "Lívia", content: "Você não tá sozinha. A gente segura junto.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 25 * 60 * 1000) },
+      { id: "comment-25", postId: "post-6", userId: "user-74", authorName: "Roberta", avatarUrl: generateAvatar("user-74", "lorelei"), content: "Eu também. Ontem.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-26", postId: "post-6", userId: "user-75", authorName: "Sabrina", avatarUrl: generateAvatar("user-75", "lorelei"), content: "O banheiro é nosso refúgio. Te entendo.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-27", postId: "post-6", userId: "user-76", authorName: "Helena", avatarUrl: generateAvatar("user-76", "lorelei"), content: "Chora. Solta. Você merece desabafar.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-28", postId: "post-6", userId: "user-77", authorName: "Melissa", avatarUrl: generateAvatar("user-77", "lorelei"), content: "Tô aqui. Se precisar, fala.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-29", postId: "post-6", userId: "user-78", authorName: "Lívia", avatarUrl: generateAvatar("user-78", "lorelei"), content: "Você não tá sozinha. A gente segura junto.", createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000 + 25 * 60 * 1000) },
       
       // Comentários no post-7 (banho antes das 15h) - 3 comments
-      { id: "comment-30", postId: "post-7", userId: "user-79", authorName: "Bea", content: "Isso é gigante! Parabéns!", createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000 + 5 * 60 * 1000) },
-      { id: "comment-31", postId: "post-7", userId: "user-80", authorName: "Lorena", content: "Eu sei o quanto isso é difícil. Celebra!", createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000 + 10 * 60 * 1000) },
-      { id: "comment-32", postId: "post-7", userId: "user-81", authorName: "Amanda", content: "Tô orgulhosa de você!", createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-30", postId: "post-7", userId: "user-79", authorName: "Bea", avatarUrl: generateAvatar("user-79", "lorelei"), content: "Isso é gigante! Parabéns!", createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-31", postId: "post-7", userId: "user-80", authorName: "Lorena", avatarUrl: generateAvatar("user-80", "lorelei"), content: "Eu sei o quanto isso é difícil. Celebra!", createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-32", postId: "post-7", userId: "user-81", authorName: "Amanda", avatarUrl: generateAvatar("user-81", "lorelei"), content: "Tô orgulhosa de você!", createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000 + 15 * 60 * 1000) },
       
       // Comentários no post-9 (disse não sem culpa) - 4 comments
-      { id: "comment-33", postId: "post-9", userId: "user-82", authorName: "Fernanda", content: "Isso é ENORME. Sério. Parabéns!", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 5 * 60 * 1000) },
-      { id: "comment-34", postId: "post-9", userId: "user-83", authorName: "Carol", content: "Limites são amor próprio. Você conseguiu!", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 10 * 60 * 1000) },
-      { id: "comment-35", postId: "post-9", userId: "user-84", authorName: "Andreia", content: "Orgulho de você. Continua!", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 15 * 60 * 1000) },
-      { id: "comment-36", postId: "post-9", userId: "user-85", authorName: "Thais", content: "Você merece esse orgulho todo.", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 20 * 60 * 1000) },
+      { id: "comment-33", postId: "post-9", userId: "user-82", authorName: "Fernanda", avatarUrl: generateAvatar("user-82", "lorelei"), content: "Isso é ENORME. Sério. Parabéns!", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-34", postId: "post-9", userId: "user-83", authorName: "Carol", avatarUrl: generateAvatar("user-83", "lorelei"), content: "Limites são amor próprio. Você conseguiu!", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-35", postId: "post-9", userId: "user-84", authorName: "Andreia", avatarUrl: generateAvatar("user-84", "lorelei"), content: "Orgulho de você. Continua!", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-36", postId: "post-9", userId: "user-85", authorName: "Thais", avatarUrl: generateAvatar("user-85", "lorelei"), content: "Você merece esse orgulho todo.", createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000 + 20 * 60 * 1000) },
       
       // Continue para outros posts com comments...
       // post-10 (pedi ajuda) - 3 comments
-      { id: "comment-37", postId: "post-10", userId: "user-86", authorName: "Val", content: "Pedir ajuda é força, não fraqueza.", createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000 + 5 * 60 * 1000) },
-      { id: "comment-38", postId: "post-10", userId: "user-87", authorName: "Rita", content: "Você fez certo. Continua pedindo.", createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000 + 10 * 60 * 1000) },
-      { id: "comment-39", postId: "post-10", userId: "user-88", authorName: "Sônia", content: "Orgulho de você!", createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000 + 15 * 60 * 1000) },
+      { id: "comment-37", postId: "post-10", userId: "user-86", authorName: "Val", avatarUrl: generateAvatar("user-86", "lorelei"), content: "Pedir ajuda é força, não fraqueza.", createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000 + 5 * 60 * 1000) },
+      { id: "comment-38", postId: "post-10", userId: "user-87", authorName: "Rita", avatarUrl: generateAvatar("user-87", "lorelei"), content: "Você fez certo. Continua pedindo.", createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000 + 10 * 60 * 1000) },
+      { id: "comment-39", postId: "post-10", userId: "user-88", authorName: "Sônia", avatarUrl: generateAvatar("user-88", "lorelei"), content: "Orgulho de você!", createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000 + 15 * 60 * 1000) },
     ];
     comments.forEach((comment) => this.comments.set(comment.id, comment));
+  }
+
+  // User methods (Authentication)
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find((u) => u.email === email);
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const user: User = {
+      id,
+      email: insertUser.email,
+      passwordHash: insertUser.passwordHash,
+      emailVerified: false,
+      createdAt: new Date(),
+      lastLoginAt: null,
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async updateUserLastLogin(id: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.lastLoginAt = new Date();
+      this.users.set(id, user);
+    }
   }
 
   async getProfile(id: string): Promise<Profile | undefined> {
     return this.profiles.get(id);
   }
 
-  async createProfile(insertProfile: InsertProfile): Promise<Profile> {
+  async getProfileByUserId(userId: string): Promise<Profile | undefined> {
+    return Array.from(this.profiles.values()).find((p) => p.userId === userId);
+  }
+
+  async createProfile(insertProfile: InsertProfile & { userId: string }): Promise<Profile> {
     const id = randomUUID();
     const profile: Profile = {
       id,
+      userId: insertProfile.userId,
       name: insertProfile.name,
       stage: insertProfile.stage,
       goals: insertProfile.goals || null,
@@ -1127,6 +1205,13 @@ export class MemStorage implements IStorage {
     });
   }
 
+  async getHabitCompletionsByHabitIds(habitIds: string[], startDate: string, endDate: string): Promise<HabitCompletion[]> {
+    const habitIdSet = new Set(habitIds);
+    return Array.from(this.habitCompletions.values()).filter((completion) => {
+      return habitIdSet.has(completion.habitId) && completion.date >= startDate && completion.date <= endDate;
+    });
+  }
+
   async createHabitCompletion(insertCompletion: InsertHabitCompletion): Promise<HabitCompletion> {
     const id = randomUUID();
     const key = `${insertCompletion.habitId}-${insertCompletion.date}`;
@@ -1325,6 +1410,7 @@ export class MemStorage implements IStorage {
     const post: CommunityPost = {
       userId: insertPost.userId,
       authorName: insertPost.authorName,
+      avatarUrl: insertPost.avatarUrl,
       type: insertPost.type,
       content: insertPost.content,
       tag: insertPost.tag || null,
@@ -1458,8 +1544,10 @@ export class MemStorage implements IStorage {
     
     const id = randomUUID();
     const report: Report = {
-      ...insertReport,
       id,
+      postId: insertReport.postId,
+      userId: insertReport.userId,
+      reason: insertReport.reason || null,
       createdAt: new Date(),
     };
     this.reports.set(id, report);

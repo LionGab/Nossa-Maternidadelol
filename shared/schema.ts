@@ -3,9 +3,33 @@ import { pgTable, text, varchar, boolean, timestamp, integer, json } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Users (Authentication)
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastLoginAt: timestamp("last_login_at"),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  emailVerified: true,
+  createdAt: true,
+  lastLoginAt: true,
+}).extend({
+  email: z.string().email("Email inválido"),
+  passwordHash: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
+});
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+
 // User Profile
 export const profiles = pgTable("profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(), // Link to users table
   name: text("name").notNull(),
   stage: text("stage").notNull(), // "pregnant", "postpartum", "planning"
   goals: text("goals").array().default(sql`ARRAY[]::text[]`),
@@ -297,6 +321,7 @@ export const communityPosts = pgTable("community_posts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
   authorName: text("author_name").notNull(),
+  avatarUrl: text("avatar_url").notNull(),
   type: text("type").notNull(), // "desabafo", "vitoria", "apoio", "reflexao"
   content: text("content").notNull(),
   tag: text("tag"), // Optional: "#Exaustão", "#Culpa", "#Vitória", etc.
@@ -327,6 +352,7 @@ export const comments = pgTable("comments", {
   postId: varchar("post_id").notNull(),
   userId: varchar("user_id").notNull(),
   authorName: text("author_name").notNull(),
+  avatarUrl: text("avatar_url").notNull(),
   content: text("content").notNull(), // max 150 chars enforced in validation
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

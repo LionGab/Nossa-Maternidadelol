@@ -1,14 +1,30 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { registerAuthRoutes } from "./auth-routes";
+import { setupAuth } from "./auth";
+import { setupVite, serveStatic } from "./vite";
+import { logger, requestLogger, errorLogger, logStartup } from "./logger";
 
 const app = express();
+
+// Extend Express User type
+declare global {
+  namespace Express {
+    interface User {
+      id: string;
+      email: string;
+      emailVerified: boolean;
+    }
+  }
+}
 
 declare module 'http' {
   interface IncomingMessage {
     rawBody: unknown
   }
 }
+
 app.use(express.json({
   verify: (req, _res, buf) => {
     req.rawBody = buf;
@@ -16,45 +32,57 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+// Validate critical environment variables in production
+if (process.env.NODE_ENV === "production") {
+  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
+    throw new Error(
+      "SESSION_SECRET é obrigatório em produção e deve ter no mínimo 32 caracteres. " +
+      "Gere um com: openssl rand -base64 32"
+    );
+  }
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL é obrigatório em produção");
+  }
+}
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+// Session configuration
+const sessionSecret = process.env.SESSION_SECRET || "nossa-maternidade-dev-secret-change-in-production";
+app.use(
+  session({
+    secret: sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // HTTPS only in production
+      httpOnly: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      sameSite: "lax",
+    },
+  })
+);
 
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
+// Initialize Passport
+setupAuth(app);
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
-});
+// Request logging middleware
+app.use(requestLogger);
 
 (async () => {
+  // Register authentication routes
+  registerAuthRoutes(app);
+
+  // Register application routes
   const server = await registerRoutes(app);
 
+  // Error logging middleware
+  app.use(errorLogger);
+
+  // Error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
   });
 
   // importantly only setup vite in development and after
@@ -71,11 +99,20 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
+
+  // Use localhost on Windows to avoid ENOTSUP errors
+  const isWindows = process.platform === 'win32';
+  const listenOptions: any = {
     port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+    host: isWindows ? 'localhost' : '0.0.0.0',
+  };
+
+  // reusePort is not supported on Windows
+  if (!isWindows) {
+    listenOptions.reusePort = true;
+  }
+
+  server.listen(listenOptions, () => {
+    logStartup(port, process.env.NODE_ENV || "development");
   });
 })();

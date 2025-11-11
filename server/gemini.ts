@@ -1,5 +1,6 @@
 // Using Replit AI Integrations for Gemini (no personal API key needed)
 import { GoogleGenAI } from "@google/genai";
+import { logger, logAICall } from "./logger";
 
 // This uses Replit's AI Integrations service - charges are billed to your Replit credits
 const ai = new GoogleGenAI({
@@ -61,7 +62,14 @@ ESTILO DE CONVERSA:
     parts: [{ text: msg.content }],
   }));
 
+  const startTime = Date.now();
+
   try {
+    logAICall("gemini", "generateContent", {
+      messageCount: messages.length,
+      userStage: context?.userStage,
+    });
+
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       config: {
@@ -72,29 +80,40 @@ ESTILO DE CONVERSA:
       contents,
     });
 
+    const duration = Date.now() - startTime;
+
     // Enhanced error handling with detailed logging
     if (!response.candidates || response.candidates.length === 0) {
-      console.error("❌ NathIA: No candidates in response", {
+      logger.error({
+        service: "gemini",
         finishReason: response.promptFeedback?.blockReason,
         safetyRatings: response.promptFeedback?.safetyRatings,
+        duration,
+        msg: "NathIA: No candidates in response",
       });
       return "Desculpe, não consegui processar sua mensagem. Pode tentar reformular?";
     }
 
     const candidate = response.candidates[0];
-    
+
     // Log finish reason if content is blocked
     if (candidate.finishReason && candidate.finishReason !== "STOP") {
-      console.warn("⚠️ NathIA: Response blocked or incomplete", {
+      logger.warn({
+        service: "gemini",
         finishReason: candidate.finishReason,
         safetyRatings: candidate.safetyRatings,
+        duration,
+        msg: "NathIA: Response blocked or incomplete",
       });
     }
-    
+
     if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
-      console.error("❌ NathIA: No content parts in response", {
+      logger.error({
+        service: "gemini",
         finishReason: candidate.finishReason,
         safetyRatings: candidate.safetyRatings,
+        duration,
+        msg: "NathIA: No content parts in response",
       });
       return "Desculpe, não consegui processar sua mensagem. Pode tentar novamente com outras palavras?";
     }
@@ -106,17 +125,30 @@ ESTILO DE CONVERSA:
     const responseText = textParts.join("\n\n");
 
     if (!responseText) {
-      console.warn("⚠️ NathIA: Empty response text after filtering");
+      logger.warn({
+        service: "gemini",
+        duration,
+        msg: "NathIA: Empty response text after filtering",
+      });
       return "Desculpe, não consegui gerar uma resposta. Pode tentar novamente?";
     }
 
+    logger.info({
+      service: "gemini",
+      duration,
+      responseLength: responseText.length,
+      msg: "NathIA: Successfully generated response",
+    });
+
     return responseText;
   } catch (error: any) {
-    console.error("❌ Gemini API Error:", {
-      message: error.message,
-      status: error.status,
-      statusText: error.statusText,
-      details: error.errorDetails,
+    const duration = Date.now() - startTime;
+
+    logger.error({
+      service: "gemini",
+      err: error,
+      duration,
+      msg: "Gemini API Error",
     });
     
     // Better error messages based on error type

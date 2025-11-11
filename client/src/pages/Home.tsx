@@ -301,7 +301,7 @@ export default function Home() {
                       <p className="text-xs text-foreground/80 leading-relaxed">{response.content}</p>
                       <div className="flex items-center gap-1 mt-2">
                         <Heart className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">{response.likes}</span>
+                        <span className="text-xs text-muted-foreground">{response.reactionCount}</span>
                       </div>
                     </div>
                   ))
@@ -351,7 +351,7 @@ export default function Home() {
                     <p className="text-xs text-foreground/80 leading-relaxed">{victory.content}</p>
                     <div className="flex items-center gap-1 mt-2">
                       <Heart className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">{victory.likes}</span>
+                      <span className="text-xs text-muted-foreground">{victory.reactionCount}</span>
                     </div>
                   </div>
                 ))
