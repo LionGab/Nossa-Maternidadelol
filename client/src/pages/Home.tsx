@@ -19,12 +19,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="bg-gradient-to-br from-primary/10 via-accent/20 to-background p-6 animate-in fade-in duration-500">
+      <header className="bg-gradient-to-br from-[hsl(var(--primary-light))] to-background p-6 animate-in fade-in duration-500">
         <div className="max-w-2xl mx-auto flex items-center gap-4">
           <img 
             src={logoImage} 
             alt="Nossa Maternidade" 
-            className="w-16 h-16 rounded-full object-cover flex-shrink-0 border-2 border-accent/50 shadow-sm animate-in zoom-in duration-700"
+            className="w-16 h-16 rounded-full object-cover flex-shrink-0 border-2 border-primary shadow-sm animate-in zoom-in duration-700"
           />
           <div className="flex-1 animate-in slide-in-from-right duration-500">
             <h1 className="text-3xl font-serif font-bold text-foreground mb-1">
@@ -51,7 +51,7 @@ export default function Home() {
             </div>
           </Card>
         ) : dailyFeatured ? (
-          <Card className="bg-gradient-to-br from-accent/30 via-accent/15 to-card p-6 border-none shadow-md animate-in fade-in slide-in-from-bottom duration-700" data-testid="card-daily-featured">
+          <Card className="bg-gradient-to-br from-[hsl(var(--primary-light))] to-card p-6 border-none shadow-md animate-in fade-in slide-in-from-bottom duration-700" data-testid="card-daily-featured">
             <div className="flex items-start gap-3 mb-4">
               <Sparkles className="w-6 h-6 text-pink-accent flex-shrink-0 mt-1" />
               <div className="flex-1">
@@ -80,7 +80,7 @@ export default function Home() {
         ) : null}
 
         {/* Quote Section with Image */}
-        <Card className="p-6 bg-gradient-to-br from-pink-accent/10 via-accent/10 to-card border-pink-accent/20 hover-elevate transition-all animate-in fade-in slide-in-from-bottom duration-700 delay-100" data-testid="card-welcome-quote">
+        <Card className="p-6 bg-gradient-to-br from-[hsl(var(--pink-light))] to-card border-pink-accent hover-elevate transition-all animate-in fade-in slide-in-from-bottom duration-700 delay-100" data-testid="card-welcome-quote">
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="relative flex-shrink-0">
               <img 
@@ -115,7 +115,7 @@ export default function Home() {
           <Link href="/mundo-nath">
             <Card className="p-5 hover-elevate active-elevate-2 cursor-pointer transition-all animate-in fade-in slide-in-from-left duration-500 delay-300" data-testid="card-quick-video">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-[hsl(var(--primary-light))] flex items-center justify-center flex-shrink-0">
                   <Play className="w-6 h-6 text-primary" />
                 </div>
                 <div className="flex-1">
@@ -133,7 +133,7 @@ export default function Home() {
           <Link href="/nathia">
             <Card className="p-5 hover-elevate active-elevate-2 cursor-pointer transition-all animate-in fade-in slide-in-from-left duration-500 delay-400" data-testid="card-quick-nathia">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-pink-accent/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-[hsl(var(--pink-light))] flex items-center justify-center flex-shrink-0">
                   <MessageCircle className="w-6 h-6 text-pink-accent" />
                 </div>
                 <div className="flex-1">
@@ -168,7 +168,7 @@ export default function Home() {
         </div>
 
         {/* CTA for non-subscribers */}
-        <Card className="bg-gradient-to-br from-pink-accent/10 to-primary/5 p-6 border-pink-accent/20 animate-in fade-in zoom-in duration-700 delay-600" data-testid="card-subscribe-cta">
+        <Card className="bg-gradient-to-br from-[hsl(var(--pink-light))] to-[hsl(var(--primary-light))] p-6 border-pink-accent animate-in fade-in zoom-in duration-700 delay-600" data-testid="card-subscribe-cta">
           <div className="text-center">
             <Heart className="w-12 h-12 text-pink-accent mx-auto mb-3" />
             <h3 className="text-xl font-serif font-bold text-foreground mb-2">

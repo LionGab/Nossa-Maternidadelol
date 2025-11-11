@@ -58,6 +58,10 @@
   /* Pink accent for maternal warmth #FF8BA3 */
   --pink-accent: 349 100% 77%;
   
+  /* Vibrant intermediate tones for gradients (not too pale) */
+  --primary-light: 209 60% 85%;  /* Light blue but still visible */
+  --pink-light: 349 100% 90%;    /* Light pink but still visible */
+  
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   
