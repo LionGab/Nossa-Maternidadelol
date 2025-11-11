@@ -11,14 +11,12 @@ import NathIA from "@/pages/NathIA";
 import MundoNath from "@/pages/MundoNath";
 import MaeValente from "@/pages/MaeValente";
 import Habitos from "@/pages/Habitos";
-import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <>
       <Switch>
-        <Route path="/login" component={Login} />
         <Route path="/" component={Home} />
         <Route path="/nathia" component={NathIA} />
         <Route path="/mundo-nath" component={MundoNath} />

@@ -5,12 +5,12 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Verify API key is loaded
-const apiKey = process.env.GEMINI_API_KEY;
-console.log("🔑 Checking GEMINI_API_KEY:", apiKey ? `Present (${apiKey.substring(0, 10)}...)` : "MISSING");
+// Verify API key is loaded (try both GOOGLE_API_KEY and GEMINI_API_KEY)
+const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
+console.log("🔑 Checking API KEY:", apiKey ? `Present (${apiKey.substring(0, 10)}...)` : "MISSING");
 if (!apiKey) {
-  console.error("⚠️ GEMINI_API_KEY not found in environment variables");
-  console.error("Available env vars:", Object.keys(process.env).filter(k => k.includes('GEMINI')));
+  console.error("⚠️ API KEY not found in environment variables");
+  console.error("Available env vars:", Object.keys(process.env).filter(k => k.includes('API') || k.includes('GEMINI') || k.includes('GOOGLE')));
 }
 
 const ai = new GoogleGenAI({ apiKey: apiKey || "" });
