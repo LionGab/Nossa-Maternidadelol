@@ -127,9 +127,78 @@ nossa-maternidade/
 - Sem coleta de dados pessoais sensíveis
 - Recursos de emergência sempre acessíveis
 
+## 🤖 Automação e CI/CD
+
+### GitHub Actions Workflows
+
+Este projeto possui automação completa via GitHub Actions:
+
+#### 1. **CI Workflow** - Integração Contínua
+- ✅ TypeScript type checking
+- ✅ Build verification
+- ✅ Security audit
+- ✅ Schema validation
+- **Trigger:** Push/PR para `main` ou `develop`
+
+#### 2. **Deploy Workflow** - Deploy Automático
+- 🚀 Deploy para Vercel
+- 🗄️ Database migrations
+- 🔍 Health check validation
+- **Trigger:** Push para `main`
+
+#### 3. **Neon Branch Workflow** - Database Branching
+- 🌿 Cria database branch para cada PR
+- 📊 Roda migrations automaticamente
+- 📝 Posta schema diff como comentário
+- 🗑️ Deleta branch ao fechar PR (expira em 2 semanas)
+- **Trigger:** PR opened/reopened/synchronize/closed
+
+#### 4. **Dependabot** - Atualizações Automáticas
+- 📦 Updates semanais de npm (segundas, 9h)
+- 🔧 Updates mensais de GitHub Actions
+
+### Setup dos Secrets
+
+Para habilitar os workflows, configure em **Settings → Secrets and variables → Actions**:
+
+**Secrets:**
+```bash
+NEON_API_KEY          # Neon Dashboard → Account Settings → API Keys
+VERCEL_TOKEN          # Vercel → Account Settings → Tokens
+GEMINI_API_KEY        # Google AI Studio
+PERPLEXITY_API_KEY    # Perplexity API
+SESSION_SECRET        # openssl rand -base64 32
+DATABASE_URL          # Neon connection string
+```
+
+**Variables:**
+```bash
+NEON_PROJECT_ID       # Neon Dashboard → Project Settings → General
+VERCEL_ORG_ID         # Vercel Dashboard → Settings → General
+VERCEL_PROJECT_ID     # Vercel Project Settings → General
+```
+
+Veja o guia completo em [`DEPLOYMENT.md`](./DEPLOYMENT.md)
+
 ## 🤝 Contribuindo
 
 Contribuições são bem-vindas! Este projeto está em fase de desenvolvimento e teste fechado.
+
+### Como contribuir com PRs
+
+1. Fork o repositório
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+**Automações no PR:**
+- ✅ CI roda automaticamente (typecheck, build, security)
+- 🗄️ Database branch de preview é criado
+- 📊 Schema diff é postado como comentário
+- 🔍 PR template guia a descrição
+
+Veja templates em `.github/ISSUE_TEMPLATE/` e `.github/pull_request_template.md`
 
 ## 📄 Licença
 
@@ -142,8 +211,3 @@ Criado com carinho para mães e gestantes que merecem apoio, acolhimento e compr
 ---
 
 **Desenvolvido com** ❤️ **pela equipe Nathália Valente**
-# Nossa-Maternidade28
-# Nossa-Maternidade28
-# Nossa-Maternidade28
-# Nossa-Maternidadelol
-# Nossa-Maternidadelol

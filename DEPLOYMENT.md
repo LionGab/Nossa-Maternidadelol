@@ -96,6 +96,22 @@ RENDER_API_KEY       # Account Settings → API Keys
 RENDER_SERVICE_ID    # Service Settings → Service ID
 ```
 
+#### Para Neon Database Branching (PR Previews):
+```bash
+NEON_API_KEY         # Neon Dashboard → Account Settings → API Keys
+```
+
+**GitHub Variables** (Settings → Secrets and variables → Actions → Variables):
+```bash
+NEON_PROJECT_ID      # Neon Dashboard → Project Settings → General
+```
+
+**Como funciona:**
+- Cada Pull Request cria automaticamente um branch de database isolado
+- Migrations rodam automaticamente no branch de preview
+- Schema diff é postado como comentário no PR
+- Branch é deletado automaticamente quando PR é fechado (expiração: 2 semanas)
+
 ---
 
 ## 🗄️ Database Setup (Neon PostgreSQL)
@@ -135,13 +151,36 @@ npm start
 
 **Trigger de Deploy:**
 - Push para `main` → deploy automático
-- Pull Request → preview deployment
+- Pull Request → preview deployment + database branch
 
-**Workflow:**
-1. CI roda (typecheck, build, security)
-2. Se CI passar → Deploy para produção
-3. Migrations rodam automaticamente
-4. Health check valida deploy
+**Workflows configurados:**
+
+1. **CI Workflow** (`.github/workflows/ci.yml`)
+   - TypeScript check
+   - Build verification
+   - Security audit
+   - Schema validation
+   - Triggers: Push/PR para `main` ou `develop`
+
+2. **Deploy Workflow** (`.github/workflows/deploy.yml`)
+   - Deploy para Vercel (produção)
+   - Run migrations
+   - Health check validation
+   - Triggers: Push para `main`
+
+3. **Neon Branch Workflow** (`.github/workflows/neon-branch.yml`)
+   - Cria database branch para cada PR
+   - Roda migrations no branch de preview
+   - Posta schema diff como comentário
+   - Deleta branch automaticamente ao fechar PR
+   - Triggers: PR opened/reopened/synchronize/closed
+
+**Fluxo completo:**
+1. Abrir PR → Neon cria database branch + CI roda
+2. Push no PR → Sync database branch + CI roda novamente
+3. CI passa → Aprovação de merge liberada
+4. Merge para `main` → Deploy automático para produção
+5. Fechar PR → Neon deleta database branch
 
 ---
 
