@@ -91,8 +91,8 @@ export default function Habitos() {
           {completedToday > 0 && (
             <p className="text-center text-sm text-pink-accent mt-3 font-medium">
               {completedToday === totalHabits
-                ? "🎉 Incrível! Você completou tudo hoje!"
-                : `Você está indo muito bem! Continue assim! 💪`}
+                ? "Incrível! Você completou tudo hoje!"
+                : "Você está indo muito bem! Continue assim!"}
             </p>
           )}
         </Card>
@@ -177,7 +177,6 @@ export default function Habitos() {
                               <Flame className={`w-3 h-3 ${streak >= 7 ? "text-pink-accent animate-pulse" : "text-pink-accent"}`} />
                               <span className="text-muted-foreground">
                                 {streak} dia{streak > 1 ? "s" : ""} seguidos
-                                {streak >= 7 && " 🔥"}
                               </span>
                             </div>
                           </div>
@@ -212,7 +211,7 @@ export default function Habitos() {
                 <Award className="w-12 h-12 text-white" />
               </div>
               <h3 className="text-2xl font-serif font-bold text-foreground mb-2">
-                Que conquista! 🎉
+                Que conquista!
               </h3>
               <p className="text-muted-foreground mb-4">
                 Você completou todos os hábitos de hoje!
