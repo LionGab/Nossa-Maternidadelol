@@ -291,3 +291,47 @@ export const insertFavoriteSchema = createInsertSchema(favorites).omit({
 
 export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
 export type Favorite = typeof favorites.$inferSelect;
+
+// Community Posts (UGC Guiado)
+export const communityPosts = pgTable("community_posts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  authorName: text("author_name").notNull(),
+  type: text("type").notNull(), // "question_response", "victory", "support_request", "testimonial"
+  content: text("content").notNull(),
+  imageUrl: text("image_url"), // Optional for victories
+  tag: text("tag"), // For support requests: "puerpério", "sono", "amamentação", etc.
+  likes: integer("likes").default(0).notNull(),
+  moderated: boolean("moderated").default(false).notNull(),
+  featured: boolean("featured").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({
+  id: true,
+  likes: true,
+  moderated: true,
+  featured: true,
+  createdAt: true,
+});
+
+export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
+export type CommunityPost = typeof communityPosts.$inferSelect;
+
+// Daily Question (Pergunta do Dia dinâmica)
+export const dailyQuestions = pgTable("daily_questions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: text("date").notNull().unique(), // YYYY-MM-DD
+  question: text("question").notNull(),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertDailyQuestionSchema = createInsertSchema(dailyQuestions).omit({
+  id: true,
+  active: true,
+  createdAt: true,
+});
+
+export type InsertDailyQuestion = z.infer<typeof insertDailyQuestionSchema>;
+export type DailyQuestion = typeof dailyQuestions.$inferSelect;

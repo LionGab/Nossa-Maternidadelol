@@ -15,6 +15,8 @@ import {
   type Achievement, type InsertAchievement,
   type UserAchievement, type InsertUserAchievement,
   type Favorite, type InsertFavorite,
+  type CommunityPost, type InsertCommunityPost,
+  type DailyQuestion, type InsertDailyQuestion,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -84,6 +86,12 @@ export interface IStorage {
   getFavorites(userId: string): Promise<Favorite[]>;
   createFavorite(favorite: InsertFavorite): Promise<Favorite>;
   deleteFavorite(userId: string, postId: string): Promise<void>;
+  
+  // Community
+  getCommunityPosts(type?: string, limit?: number): Promise<CommunityPost[]>;
+  createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost>;
+  getDailyQuestion(date: string): Promise<DailyQuestion | undefined>;
+  createDailyQuestion(question: InsertDailyQuestion): Promise<DailyQuestion>;
 }
 
 export class MemStorage implements IStorage {

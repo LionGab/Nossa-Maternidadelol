@@ -1,0 +1,260 @@
+# 1) Resposta direta
+
+Implemente a **“Comunidade MãeValente”** como um módulo guiado (UGC controlado) na Home, com 4 blocos fixos e dinâmicos via Supabase:
+
+1. **Pergunta do Dia** (respostas curtas, sob moderação)
+2. **Mural de Vitórias** (relatos positivos, fotos opcionais, curadoria)
+3. **Pedidos de Apoio** (template guiado, tags: puerpério, sono, amamentação etc.)
+4. **Depoimentos em Destaque** (carrossel curado para prova social)
+
+**Guardrails**: whitelist de postagem (novas contas só respondem à Pergunta do Dia), fila de moderação com regras claras (RLS + função Edge), filtro de termos sensíveis, bloqueio de links externos, limite de frequência e botão “Denunciar”.
+
+**Dinâmico**: toda a Home é orquestrada por um **HomeConfig** (JSON em Supabase), permitindo mudar textos, perguntas, destaques e ordem dos blocos sem publicar novo app.
+
+**Preview p/ Nathália**: rota/flag `?preview=1` que lê **tabelas_“preview”** (ou `is_preview=true`) com conteúdo semente — “tudo funcionando” (postar, reagir, denunciar) sem impactar o banco real. Acesso por magic link.
+
+**Depoimentos**: selecione 6–9 curtos, com foco em autocuidado, culpa materna, puerpério e “pequenas vitórias”. Evite promessas de saúde/terapêuticas; linguagem simples e real.
+
+---
+
+# 2) Raciocínio
+
+* **UGC guiado > feed aberto** no início reduz hate e ruído, mantém o tom seguro/positivo que a Nath quer ver.
+* **Blocos fixos** dão previsibilidade e reforçam hábito diário (pergunta↔resposta, vitória↔reforço).
+* **HomeConfig JSON** resolve a exigência de “dinâmico” (pauta muda conforme a Nath grava stories).
+* **Preview isolado** elimina risco: a influenciadora experiencia o fluxo completo sem moderar público real.
+* **Guardrails** combinam RLS (quem pode o quê), função Edge (classificação/bloqueio) e UI (templates e limites).
+
+---
+
+# 3) Ação — Implementação objetiva
+
+## 3.1 Estrutura de dados (Supabase – SQL enxuto)
+
+```sql
+-- perfis (assuma já existente)
+-- alter table profiles add column role text check (role in ('user','moderator','admin')) default 'user';
+
+create table community_posts (
+  id uuid primary key default gen_random_uuid(),
+  author_id uuid references profiles(id) not null,
+  type text check (type in ('question_of_day','victory','support_request')) not null,
+  content text not null,
+  tags text[] default '{}',
+  image_url text,
+  is_preview boolean default false,
+  is_blocked boolean default false,
+  requires_moderation boolean default true,
+  published_at timestamptz,
+  created_at timestamptz default now()
+);
+
+create table community_comments (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid references community_posts(id) on delete cascade,
+  author_id uuid references profiles(id) not null,
+  content text not null,
+  is_preview boolean default false,
+  is_blocked boolean default false,
+  requires_moderation boolean default true,
+  published_at timestamptz,
+  created_at timestamptz default now()
+);
+
+create table community_reactions (
+  post_id uuid references community_posts(id) on delete cascade,
+  user_id uuid references profiles(id),
+  created_at timestamptz default now(),
+  primary key (post_id, user_id)
+);
+
+create table community_reports (
+  id uuid primary key default gen_random_uuid(),
+  target_type text check (target_type in ('post','comment')) not null,
+  target_id uuid not null,
+  reporter_id uuid references profiles(id),
+  reason text not null,
+  created_at timestamptz default now(),
+  handled_by uuid references profiles(id),
+  handled_at timestamptz,
+  status text check (status in ('open','dismissed','actioned')) default 'open'
+);
+
+create table testimonials (
+  id uuid primary key default gen_random_uuid(),
+  author_display text not null,
+  content text not null,
+  avatar_url text,
+  is_preview boolean default false,
+  is_featured boolean default true,
+  created_at timestamptz default now()
+);
+
+-- HomeConfig: uma linha ativa com JSON de layout
+create table home_config (
+  id uuid primary key default gen_random_uuid(),
+  is_active boolean default false,
+  config jsonb not null, -- ver exemplo abaixo
+  is_preview boolean default false,
+  created_at timestamptz default now()
+);
+```
+
+### RLS (exemplos essenciais)
+
+```sql
+-- habilitar RLS
+alter table community_posts enable row level security;
+alter table community_comments enable row level security;
+alter table community_reactions enable row level security;
+alter table community_reports enable row level security;
+alter table testimonials enable row level security;
+alter table home_config enable row level security;
+
+-- SELECT público: somente publicados e não bloqueados (ou preview quando flagado)
+create policy "read_published_posts" on community_posts
+for select using (
+  published_at is not null AND is_blocked = false
+  OR (is_preview = true AND current_setting('request.jwt.claims', true)::jsonb ? 'preview')
+);
+
+-- INSERT: autor só cria se for 'victory' ou 'support_request'; 'question_of_day' é só moderador/admin
+create policy "insert_user_posts" on community_posts
+for insert with check (
+  auth.uid() = author_id
+  AND (type in ('victory','support_request'))
+);
+
+create policy "insert_mod_qod" on community_posts
+for insert with check (
+  exists(select 1 from profiles p where p.id = auth.uid() and p.role in ('moderator','admin'))
+  AND type = 'question_of_day'
+);
+
+-- UPDATE (publicar, bloquear): só moderador/admin
+create policy "moderate_posts" on community_posts
+for update using (
+  exists(select 1 from profiles p where p.id = auth.uid() and p.role in ('moderator','admin'))
+);
+
+-- Comments: regras análogas
+create policy "read_published_comments" on community_comments
+for select using (
+  published_at is not null AND is_blocked = false
+  OR (is_preview = true AND current_setting('request.jwt.claims', true)::jsonb ? 'preview')
+);
+
+create policy "insert_user_comments" on community_comments
+for insert with check (auth.uid() = author_id);
+
+create policy "moderate_comments" on community_comments
+for update using (
+  exists(select 1 from profiles p where p.id = auth.uid() and p.role in ('moderator','admin'))
+);
+```
+
+> **Nota preview**: no token do magic link, inclua claim `preview=true` para permitir leitura das linhas `is_preview=true`.
+
+## 3.2 Função Edge “moderate-content” (fluxo simples)
+
+* Entrada: `{ type: 'post'|'comment', text, tags?: string[] }`
+* Saída: `{ allow: boolean, requires_moderation: boolean, reasons: string[] }`
+* Regras:
+
+  * Bloqueia: ofensas, ataques, doxing, links externos, spam, afirmações médicas perigosas.
+  * Sinaliza: temas sensíveis (depressão severa, automutilação → mostrar CTA “Procure ajuda profissional”).
+  * Impõe limites: 500 caracteres p/ posts, 280 p/ respostas; 1 mídia por post.
+
+Pseudocódigo:
+
+```ts
+if (containsBanned(text) || hasLink(text)) return { allow:false, requires_moderation:true, reasons:[...] };
+if (triggersSensitive(text)) return { allow:true, requires_moderation:true, reasons:['sensitive'] };
+return { allow:true, requires_moderation:true, reasons:[] }; // tudo passa por fila no MVP
+```
+
+> Publicação: um moderador clica “Aprovar” → seta `published_at=now(), requires_moderation=false`.
+
+## 3.3 HomeConfig (dinâmica sem rebuild)
+
+```json
+{
+  "order": ["qod","victories","support","testimonials"],
+  "qod": {
+    "title": "Pergunta do Dia",
+    "question": "Qual pequena atitude de autocuidado você conseguiu hoje?",
+    "cta": "Responder",
+    "maxChars": 280
+  },
+  "victories": { "title": "Mural de Vitórias", "limit": 6 },
+  "support": { "title": "Pedidos de Apoio", "tags": ["puerpério","sono","amamentação","ansiedade"] },
+  "testimonials": { "title": "Elas estão se sentindo melhor", "limit": 5 }
+}
+```
+
+* Use `home_config.is_active=true` para produção e outra linha com `is_preview=true` para o ambiente de demonstração.
+
+## 3.4 UI (Home – Expo/React Native)
+
+* **Card “Pergunta do Dia”**: pergunta + input curto + contador de caracteres + aviso “passa por aprovação”.
+* **Mural de Vitórias**: grid 2 col., cards curtos, botão “Aplaudir” (reaction).
+* **Pedidos de Apoio**: formulário com **template** (pergunta orientadora + tags pré-definidas).
+* **Depoimentos**: carrossel auto-play (pause on touch).
+* Botão “Regras da Comunidade” (sheet curto, linguagem positiva).
+
+## 3.5 Telemetria (mínimo)
+
+* `community.qod.submit`, `community.victory.submit`, `community.support.submit`, `community.reaction`, `community.report`, `community.preview.open`.
+* Atributos: `is_preview`, `has_image`, `tag`.
+
+## 3.6 Conteúdo de **Preview** (semente pronta)
+
+**Pergunta do Dia**
+
+* “Qual pequena atitude de autocuidado você conseguiu hoje?”
+
+**Vitórias (3 exemplos curtos)**
+
+* “Consegui tomar banho tranquila enquanto o bebê dormia 20 min.”
+* “Saí 15 min para caminhar no quarteirão. Voltei outra pessoa.”
+* “Pedi ajuda pra minha mãe com a janta. Culpa zero.”
+
+**Pedidos de Apoio (3 templates prontos)**
+
+* “[Sono] Meu bebê acorda de hora em hora. Alguém tem rotina que funcionou no puerpério?”
+* “[Amamentação] Dor no peito na pega. O que ajudou vocês nas primeiras semanas?”
+* “[Ansiedade] Sinto culpa quando paro 10 min pra mim. Como vocês lidam?”
+
+**Depoimentos (6–9 curtos, tom realista, sem promessas)**
+
+* “Voltei a sorrir de manhã. As perguntas diárias me lembram que eu existo.” — Ana, 27
+* “Achei mães com os mesmos medos. Só de ler, já alivia.” — Júlia, 31
+* “O Mural de Vitórias me dá coragem de celebrar o mínimo.” — Camila, 29
+* “Pedi apoio pra amamentação e recebi dicas sem julgamento.” — Roberta, 33
+* “Entendi que autocuidado não é egoísmo. É combustível.” — Tainá, 26
+* “A Nath fala minha língua. Aqui, tudo faz mais sentido.” — Mariana, 35
+
+> Se quiser, adicione 1–2 **“Notas de segurança”** curtas: “Este app não substitui atendimento profissional.”
+
+## 3.7 Guardrails práticos (MVP)
+
+* **Postagem**: texto curto, 1 imagem opcional, sem links.
+* **Novas contas**: só respondem QOD por 7 dias (ou até 3 aprovações) → depois liberam “Vitórias/Apoio”.
+* **Denúncia**: 1 toque, razões pré-definidas. 3 denúncias → oculta até revisão.
+* **Moderação**: fila com filtros (conteúdo sensível, caps lock, termos banidos, links).
+* **Privacidade**: proibir dados pessoais (telefone, endereço), bloquear imagens de crianças não borradas.
+* **Taxa**: rate limit por IP/uid (ex.: 3 posts/dia, 10 comentários/dia).
+* **Escalada**: comentários de saúde mental grave → mensagem padrão + canais de ajuda.
+
+---
+
+# 4) Próximos passos (entregáveis objetivos)
+
+1. **Criar tabelas + RLS** (acima) e seeds de preview (`is_preview=true`).
+2. **Implementar Home** lendo `home_config` ativo (ou preview via flag/query param).
+3. **Função Edge `moderate-content`** + fila de moderação (dash simples em `/admin/mod`).
+4. **Magic link de preview** com claim `preview=true`.
+5. **Carrossel de Depoimentos + QOD + Mural + Apoio** (4 componentes).
+6. **Eventos de telemetria** mínimos e sheet de “Regras da Comunidade”.
+
+Se quiser, eu já te **monto o prompt do Cursor/Replit** para gerar as telas, a função Edge e as migrações do Supabase de uma vez.
