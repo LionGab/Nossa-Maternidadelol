@@ -111,6 +111,8 @@ export class MemStorage implements IStorage {
   private achievements: Map<string, Achievement>;
   private userAchievements: Map<string, UserAchievement>;
   private favorites: Map<string, Favorite>;
+  private communityPosts: Map<string, CommunityPost>;
+  private dailyQuestions: Map<string, DailyQuestion>;
 
   constructor() {
     this.profiles = new Map();
@@ -129,6 +131,8 @@ export class MemStorage implements IStorage {
     this.achievements = new Map();
     this.userAchievements = new Map();
     this.favorites = new Map();
+    this.communityPosts = new Map();
+    this.dailyQuestions = new Map();
 
     this.seedData();
   }
@@ -362,6 +366,127 @@ export class MemStorage implements IStorage {
       { id: "level_10", title: "Nível 10", description: "Alcance o nível 10", emoji: "🎖️", requirement: 10, type: "level" },
     ];
     defaultAchievements.forEach((achievement) => this.achievements.set(achievement.id, achievement));
+
+    // Seed daily question
+    const dailyQuestion: DailyQuestion = {
+      id: "question-1",
+      date: today,
+      question: "Qual foi sua maior vitória como mãe hoje?",
+      active: true,
+      createdAt: new Date(),
+    };
+    this.dailyQuestions.set(dailyQuestion.id, dailyQuestion);
+
+    // Seed community posts (RefúgioNath)
+    const communityPosts: CommunityPost[] = [
+      // Vitórias (Mural de Vitórias)
+      {
+        id: "comm-1",
+        userId: "user-1",
+        authorName: "Carolina M.",
+        type: "victory",
+        content: "Hoje consegui tomar banho sem pressa! Parece bobagem mas pra mim foi uma vitória enorme 💙",
+        imageUrl: null,
+        tag: null,
+        likes: 12,
+        moderated: true,
+        featured: false,
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      },
+      {
+        id: "comm-2",
+        userId: "user-2",
+        authorName: "Julia S.",
+        type: "victory",
+        content: "Meu bebê dormiu 4 horas seguidas pela primeira vez! Eu consegui descansar um pouco ❤️",
+        imageUrl: null,
+        tag: null,
+        likes: 18,
+        moderated: true,
+        featured: true,
+        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
+      },
+      {
+        id: "comm-3",
+        userId: "user-3",
+        authorName: "Mariana P.",
+        type: "victory",
+        content: "Saí de casa sozinha hoje, mesmo com medo. Fui na padaria e voltei. Pequenos passos!",
+        imageUrl: null,
+        tag: null,
+        likes: 25,
+        moderated: true,
+        featured: false,
+        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
+      },
+      {
+        id: "comm-4",
+        userId: "user-4",
+        authorName: "Ana Clara",
+        type: "victory",
+        content: "Consegui fazer uma refeição completa sentada à mesa. Não foi só biscoito em pé na cozinha!",
+        imageUrl: null,
+        tag: null,
+        likes: 14,
+        moderated: true,
+        featured: false,
+        createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
+      },
+      {
+        id: "comm-5",
+        userId: "user-5",
+        authorName: "Beatriz L.",
+        type: "victory",
+        content: "Disse não pra visita inesperada hoje. Estou orgulhosa de colocar limites!",
+        imageUrl: null,
+        tag: null,
+        likes: 31,
+        moderated: true,
+        featured: true,
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+      },
+      // Respostas à Pergunta do Dia
+      {
+        id: "comm-6",
+        userId: "user-6",
+        authorName: "Fernanda T.",
+        type: "question_response",
+        content: "Vi minha filha dar os primeiros passinhos! Chorei de emoção 😭❤️",
+        imageUrl: null,
+        tag: null,
+        likes: 8,
+        moderated: true,
+        featured: false,
+        createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
+      },
+      {
+        id: "comm-7",
+        userId: "user-7",
+        authorName: "Patrícia R.",
+        type: "question_response",
+        content: "Consegui não gritar hoje, mesmo exausta. Respirei fundo e funcionou.",
+        imageUrl: null,
+        tag: null,
+        likes: 15,
+        moderated: true,
+        featured: false,
+        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
+      },
+      {
+        id: "comm-8",
+        userId: "user-8",
+        authorName: "Renata K.",
+        type: "question_response",
+        content: "Aceitei ajuda da minha mãe sem sentir culpa. Isso é ENORME pra mim!",
+        imageUrl: null,
+        tag: null,
+        likes: 22,
+        moderated: true,
+        featured: false,
+        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
+      },
+    ];
+    communityPosts.forEach((post) => this.communityPosts.set(post.id, post));
   }
 
   async getProfile(id: string): Promise<Profile | undefined> {
@@ -770,6 +895,56 @@ export class MemStorage implements IStorage {
     if (favorite) {
       this.favorites.delete(favorite.id);
     }
+  }
+
+  // Community
+  async getCommunityPosts(type?: string, limit?: number): Promise<CommunityPost[]> {
+    let posts = Array.from(this.communityPosts.values())
+      .filter(post => post.moderated); // Only moderated posts
+    
+    if (type) {
+      posts = posts.filter(post => post.type === type);
+    }
+    
+    posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    
+    if (limit) {
+      posts = posts.slice(0, limit);
+    }
+    
+    return posts;
+  }
+
+  async createCommunityPost(insertPost: InsertCommunityPost): Promise<CommunityPost> {
+    const id = randomUUID();
+    const post: CommunityPost = {
+      ...insertPost,
+      id,
+      likes: 0,
+      moderated: false,
+      featured: false,
+      createdAt: new Date(),
+    };
+    this.communityPosts.set(id, post);
+    return post;
+  }
+
+  async getDailyQuestion(date: string): Promise<DailyQuestion | undefined> {
+    return Array.from(this.dailyQuestions.values()).find(
+      q => q.date === date && q.active
+    );
+  }
+
+  async createDailyQuestion(insertQuestion: InsertDailyQuestion): Promise<DailyQuestion> {
+    const id = randomUUID();
+    const question: DailyQuestion = {
+      ...insertQuestion,
+      id,
+      active: true,
+      createdAt: new Date(),
+    };
+    this.dailyQuestions.set(id, question);
+    return question;
   }
 }
 
