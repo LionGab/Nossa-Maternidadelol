@@ -18,24 +18,18 @@ export function SiteFooter() {
             <h4 className="font-semibold text-foreground mb-3">Links</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/privacidade">
-                  <span className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                    Privacidade
-                  </span>
+                <Link href="/privacidade" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Privacidade
                 </Link>
               </li>
               <li>
-                <Link href="/termos">
-                  <span className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                    Termos de Uso
-                  </span>
+                <Link href="/termos" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Termos de Uso
                 </Link>
               </li>
               <li>
-                <Link href="/contato">
-                  <span className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                    Contato
-                  </span>
+                <Link href="/contato" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Contato
                 </Link>
               </li>
             </ul>

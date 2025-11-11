@@ -19,18 +19,18 @@ export function Hero() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/demo">
-                <Button size="lg" className="w-full sm:w-auto gap-2" data-testid="button-demo">
+              <Button asChild size="lg" className="w-full sm:w-auto gap-2" data-testid="button-demo">
+                <Link href="/demo">
                   Entrar como Convidada
                   <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-              <Link href="/nathia">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 backdrop-blur-sm" data-testid="button-nathia">
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto gap-2 backdrop-blur-sm" data-testid="button-nathia">
+                <Link href="/nathia">
                   <MessageCircle className="w-4 h-4" />
                   Falar com a NathIA
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
 
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground pt-2">

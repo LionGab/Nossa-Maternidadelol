@@ -43,4 +43,4 @@ args = "npm run dev"
 waitForPort = 5000
 
 [agent]
-integrations = ["javascript_gemini:1.0.0", "javascript_mem_db:1.0.0", "perplexity_v0:1.0.0"]
+integrations = ["javascript_gemini:1.0.0", "javascript_mem_db:1.0.0", "perplexity_v0:1.0.0", "javascript_gemini_ai_integrations:1.0.0"]

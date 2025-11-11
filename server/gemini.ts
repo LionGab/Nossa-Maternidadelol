@@ -1,19 +1,14 @@
-// DON'T DELETE THIS COMMENT
-// Follow these instructions when using this blueprint:
-// - Note that the newest Gemini model series is "gemini-2.5-flash" or gemini-2.5-pro"
-//   - do not change this unless explicitly requested by the user
-
+// Using Replit AI Integrations for Gemini (no personal API key needed)
 import { GoogleGenAI } from "@google/genai";
 
-// Verify API key is loaded (try both GOOGLE_API_KEY and GEMINI_API_KEY)
-const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
-console.log("🔑 Checking API KEY:", apiKey ? `Present (${apiKey.substring(0, 10)}...)` : "MISSING");
-if (!apiKey) {
-  console.error("⚠️ API KEY not found in environment variables");
-  console.error("Available env vars:", Object.keys(process.env).filter(k => k.includes('API') || k.includes('GEMINI') || k.includes('GOOGLE')));
-}
-
-const ai = new GoogleGenAI({ apiKey: apiKey || "" });
+// This uses Replit's AI Integrations service - charges are billed to your Replit credits
+const ai = new GoogleGenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
+  httpOptions: {
+    apiVersion: "",
+    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+  },
+});
 
 export interface ChatContext {
   userStage?: string;
@@ -77,16 +72,31 @@ ESTILO DE CONVERSA:
       contents,
     });
 
+    // Enhanced error handling with detailed logging
     if (!response.candidates || response.candidates.length === 0) {
-      console.warn("⚠️ NathIA: No candidates in response");
-      return "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?";
+      console.error("❌ NathIA: No candidates in response", {
+        finishReason: response.promptFeedback?.blockReason,
+        safetyRatings: response.promptFeedback?.safetyRatings,
+      });
+      return "Desculpe, não consegui processar sua mensagem. Pode tentar reformular?";
     }
 
     const candidate = response.candidates[0];
     
+    // Log finish reason if content is blocked
+    if (candidate.finishReason && candidate.finishReason !== "STOP") {
+      console.warn("⚠️ NathIA: Response blocked or incomplete", {
+        finishReason: candidate.finishReason,
+        safetyRatings: candidate.safetyRatings,
+      });
+    }
+    
     if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
-      console.warn("⚠️ NathIA: No content parts in response");
-      return "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?";
+      console.error("❌ NathIA: No content parts in response", {
+        finishReason: candidate.finishReason,
+        safetyRatings: candidate.safetyRatings,
+      });
+      return "Desculpe, não consegui processar sua mensagem. Pode tentar novamente com outras palavras?";
     }
 
     const textParts = candidate.content.parts
@@ -96,13 +106,24 @@ ESTILO DE CONVERSA:
     const responseText = textParts.join("\n\n");
 
     if (!responseText) {
-      console.warn("⚠️ NathIA: Empty response text");
-      return "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?";
+      console.warn("⚠️ NathIA: Empty response text after filtering");
+      return "Desculpe, não consegui gerar uma resposta. Pode tentar novamente?";
     }
 
     return responseText;
-  } catch (error) {
-    console.error("❌ Gemini Error:", error);
-    return "Desculpe, ocorreu um erro. Por favor, tente novamente.";
+  } catch (error: any) {
+    console.error("❌ Gemini API Error:", {
+      message: error.message,
+      status: error.status,
+      statusText: error.statusText,
+      details: error.errorDetails,
+    });
+    
+    // Better error messages based on error type
+    if (error.status === 429) {
+      return "O serviço está com muitas requisições no momento. Por favor, aguarde alguns segundos e tente novamente.";
+    }
+    
+    return "Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.";
   }
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Search, Heart, Phone, ExternalLink, Clock, BookmarkPlus, Sparkles } from "lucide-react";
+import { Search, Heart, Phone, ExternalLink, Clock, BookmarkPlus, Sparkles, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -112,18 +112,18 @@ export default function MaeValente() {
 
   return (
     <div className="flex flex-col h-screen bg-background pb-16">
-      {/* Header */}
-      <header className="bg-card border-b border-border p-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-accent/20 to-accent/20 flex items-center justify-center flex-shrink-0 border-2 border-pink-accent/30">
-              <Sparkles className="w-7 h-7 text-pink-accent" />
+      {/* Header - Fixed */}
+      <header className="bg-card border-b border-border px-4 py-4 sm:px-6 sm:py-6 flex-shrink-0">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center gap-3 sm:gap-4 mb-3">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-pink-accent/20 to-accent/20 flex items-center justify-center flex-shrink-0 border-2 border-pink-accent/30">
+              <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-pink-accent" />
             </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-serif font-bold text-foreground mb-1">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground mb-0.5 truncate">
                 Mãe Valente
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-sm sm:text-base text-muted-foreground truncate">
                 Descubra seu bem-estar interior
               </p>
             </div>
@@ -145,64 +145,11 @@ export default function MaeValente() {
 
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-            {/* Wellness Tips Section */}
-            {!searchResult && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-pink-accent" />
-                  <h2 className="text-xl font-serif font-bold text-foreground">
-                    Dicas de Bem-Estar
-                  </h2>
-                </div>
-
-                <div className="grid gap-4">
-                  {WELLNESS_TIPS.map((tip) => {
-                    const Icon = tip.icon;
-                    return (
-                      <Card
-                        key={tip.id}
-                        className="overflow-hidden hover-elevate active-elevate-2 cursor-pointer transition-all border-pink-accent/20"
-                        data-testid={`tip-${tip.id}`}
-                      >
-                        <div className="relative h-40 overflow-hidden">
-                          <img 
-                            src={tip.image} 
-                            alt={tip.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/90 dark:bg-gray-900/90 flex items-center justify-center shadow-md">
-                            <Icon className="w-5 h-5 text-pink-accent" />
-                          </div>
-                        </div>
-                        <div className="p-5">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline" className="text-xs">
-                              {tip.category}
-                            </Badge>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="w-3 h-3" />
-                              {tip.duration}
-                            </div>
-                          </div>
-                          <h3 className="font-serif font-semibold text-foreground mb-1">
-                            {tip.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {tip.description}
-                          </p>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
+          <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
             {/* Emergency Resources */}
             {showEmergency && (
-              <Card className="p-5 bg-pink-accent/5 border-pink-accent/30">
-                <h3 className="font-serif font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Card className="p-4 sm:p-5 bg-pink-accent/5 border-pink-accent/30">
+                <h3 className="font-serif font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
                   <Heart className="w-5 h-5 text-pink-accent" />
                   Recursos de Emergência
                 </h3>
@@ -212,20 +159,20 @@ export default function MaeValente() {
                     return (
                       <div
                         key={index}
-                        className="bg-card p-4 rounded-xl border border-border"
+                        className="bg-card p-3 sm:p-4 rounded-xl border border-border"
                       >
                         <div className="flex items-start gap-3">
                           <div className="w-10 h-10 rounded-full bg-pink-accent/10 flex items-center justify-center flex-shrink-0">
                             <Icon className="w-5 h-5 text-pink-accent" />
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-foreground mb-1">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-foreground mb-1 text-sm sm:text-base">
                               {resource.title}
                             </h4>
                             <p className="text-sm font-medium text-pink-accent mb-1">
                               {resource.contact}
                             </p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               {resource.description}
                             </p>
                           </div>
@@ -235,7 +182,7 @@ export default function MaeValente() {
                   })}
                 </div>
                 <div className="flex items-center justify-center gap-2 mt-4">
-                  <Heart className="w-4 h-4 text-pink-accent" />
+                  <Heart className="w-4 h-4 text-pink-accent flex-shrink-0" />
                   <p className="text-xs text-muted-foreground text-center">
                     Você não está sozinha. Pedir ajuda é um ato de coragem.
                   </p>
@@ -243,20 +190,20 @@ export default function MaeValente() {
               </Card>
             )}
 
-            {/* Welcome Card with Image */}
+            {/* Welcome Card with Image - Only when no search result */}
             {!searchResult && (
-              <Card className="p-6 bg-gradient-to-br from-accent/20 via-accent/10 to-card border-none">
-                <div className="flex flex-col md:flex-row items-center gap-6">
+              <Card className="p-4 sm:p-6 bg-gradient-to-br from-accent/20 via-accent/10 to-card border-none overflow-hidden">
+                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                   <img 
                     src={supportImage} 
                     alt="Apoio Materno" 
-                    className="w-32 h-32 md:w-40 md:h-40 rounded-lg object-cover flex-shrink-0 border-2 border-accent/30 shadow-md dark:border-border"
+                    className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg object-cover flex-shrink-0 border-2 border-accent/30 shadow-md dark:border-border"
                   />
-                  <div className="flex-1 text-center md:text-left">
-                    <h3 className="text-lg font-serif font-semibold text-foreground mb-2">
+                  <div className="flex-1 text-center sm:text-left">
+                    <h3 className="text-base sm:text-lg font-serif font-semibold text-foreground mb-2">
                       Bem-vinda ao seu espaço seguro
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                       Aqui você encontra informações confiáveis sobre saúde mental materna, 
                       autocuidado e bem-estar emocional. Sem julgamentos, só acolhimento.
                     </p>
@@ -266,7 +213,7 @@ export default function MaeValente() {
             )}
 
             {/* Search Input */}
-            <Card className="p-4">
+            <Card className="p-3 sm:p-4">
               <div className="flex gap-2">
                 <Input
                   value={query}
@@ -277,28 +224,28 @@ export default function MaeValente() {
                     }
                   }}
                   placeholder="Me conte, como está seu coração hoje?"
-                  className="flex-1 border-2 focus:border-pink-accent"
+                  className="flex-1 border-2 focus:border-pink-accent text-sm sm:text-base"
                   data-testid="input-search"
                 />
                 <Button
                   onClick={() => handleSearch()}
                   disabled={!query.trim() || searchMutation.isPending}
-                  className="bg-pink-accent hover:bg-pink-accent/90 text-white px-6"
+                  className="bg-pink-accent hover:bg-pink-accent/90 text-white px-4 sm:px-6 flex-shrink-0"
                   data-testid="button-search"
                 >
                   {searchMutation.isPending ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <Search className="w-5 h-5" />
+                    <Search className="w-4 h-4 sm:w-5 sm:h-5" />
                   )}
                 </Button>
               </div>
             </Card>
 
-            {/* Suggested Topics */}
+            {/* Suggested Topics - Only when no search result */}
             {!searchResult && (
               <div className="space-y-3">
-                <h3 className="text-sm font-serif font-semibold text-muted-foreground px-1">
+                <h3 className="text-xs sm:text-sm font-serif font-semibold text-muted-foreground px-1">
                   Tópicos que podem te ajudar:
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -306,7 +253,7 @@ export default function MaeValente() {
                     <Badge
                       key={index}
                       variant="outline"
-                      className="cursor-pointer hover-elevate active-elevate-2 py-2 px-4 border-2 border-accent/50 text-foreground rounded-full text-sm"
+                      className="cursor-pointer hover-elevate active-elevate-2 py-1.5 sm:py-2 px-3 sm:px-4 border-2 border-accent/50 text-foreground rounded-full text-xs sm:text-sm"
                       onClick={() => handleSearch(topic)}
                       data-testid={`topic-${index}`}
                     >
@@ -317,11 +264,66 @@ export default function MaeValente() {
               </div>
             )}
 
+            {/* Wellness Tips Section - Only when no search result */}
+            {!searchResult && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-pink-accent" />
+                  <h2 className="text-lg sm:text-xl font-serif font-bold text-foreground">
+                    Dicas de Bem-Estar
+                  </h2>
+                </div>
+
+                <div className="grid gap-3 sm:gap-4">
+                  {WELLNESS_TIPS.map((tip) => {
+                    const Icon = tip.icon;
+                    return (
+                      <Card
+                        key={tip.id}
+                        className="overflow-hidden hover-elevate active-elevate-2 cursor-pointer transition-all border-pink-accent/20"
+                        data-testid={`tip-${tip.id}`}
+                      >
+                        <div className="flex flex-col sm:flex-row">
+                          <div className="relative h-40 sm:h-32 sm:w-40 overflow-hidden flex-shrink-0">
+                            <img 
+                              src={tip.image} 
+                              alt={tip.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute top-3 right-3 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 dark:bg-gray-900/90 flex items-center justify-center shadow-md">
+                              <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-pink-accent" />
+                            </div>
+                          </div>
+                          <div className="p-4 sm:p-5 flex-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <Badge variant="outline" className="text-xs">
+                                {tip.category}
+                              </Badge>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="w-3 h-3" />
+                                {tip.duration}
+                              </div>
+                            </div>
+                            <h3 className="font-serif font-semibold text-foreground mb-1 text-sm sm:text-base">
+                              {tip.title}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                              {tip.description}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Search Result */}
             {searchResult && (
-              <Card className="p-6 bg-card border-2 border-pink-accent/20">
+              <Card className="p-4 sm:p-6 bg-card border-2 border-pink-accent/20">
                 <div className="flex items-start justify-between gap-3 mb-4">
-                  <h3 className="text-lg font-serif font-semibold text-foreground flex-1">
+                  <h3 className="text-base sm:text-lg font-serif font-semibold text-foreground flex-1">
                     {searchResult.question}
                   </h3>
                   <Button
@@ -337,14 +339,14 @@ export default function MaeValente() {
                 </div>
 
                 <div className="prose prose-sm max-w-none mb-4">
-                  <p className="text-foreground leading-relaxed whitespace-pre-wrap">
+                  <p className="text-sm sm:text-base text-foreground leading-relaxed whitespace-pre-wrap">
                     {searchResult.answer}
                   </p>
                 </div>
 
                 {searchResult.sources && searchResult.sources.length > 0 && (
                   <div className="border-t border-border pt-4">
-                    <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                    <h4 className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3">
                       Fontes Consultadas:
                     </h4>
                     <div className="space-y-2">
@@ -354,11 +356,11 @@ export default function MaeValente() {
                           href={source.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-sm text-primary hover:underline"
+                          className="flex items-center gap-2 text-xs sm:text-sm text-primary hover:underline"
                           data-testid={`source-${index}`}
                         >
-                          <ExternalLink className="w-4 h-4 flex-shrink-0" />
-                          <span className="line-clamp-1">{source.title}</span>
+                          <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                          <span className="line-clamp-1 break-all">{source.title}</span>
                         </a>
                       ))}
                     </div>
@@ -367,7 +369,7 @@ export default function MaeValente() {
 
                 <Button
                   variant="outline"
-                  className="w-full mt-4"
+                  className="w-full mt-4 text-sm sm:text-base"
                   onClick={() => {
                     setSearchResult(null);
                     setQuery("");
@@ -379,28 +381,28 @@ export default function MaeValente() {
               </Card>
             )}
 
-            {/* Saved Items */}
+            {/* Saved Items - Only when no search result */}
             {savedItems.length > 0 && !searchResult && (
               <div className="space-y-3">
-                <h3 className="text-lg font-serif font-semibold text-foreground">
+                <h3 className="text-base sm:text-lg font-serif font-semibold text-foreground">
                   Salvos para Você
                 </h3>
                 {savedItems.map((item) => (
                   <Card
                     key={item.id}
-                    className="p-4 hover-elevate active-elevate-2 cursor-pointer transition-all"
+                    className="p-3 sm:p-4 hover-elevate active-elevate-2 cursor-pointer transition-all"
                     onClick={() => setSearchResult(item)}
                     data-testid={`saved-item-${item.id}`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-pink-accent/10 flex items-center justify-center flex-shrink-0">
-                        <Heart className="w-5 h-5 text-pink-accent" />
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-pink-accent/10 flex items-center justify-center flex-shrink-0">
+                        <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-pink-accent" />
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-foreground mb-1">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-foreground mb-1 text-sm sm:text-base">
                           {item.question}
                         </h4>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
+                        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                           {item.answer}
                         </p>
                         {item.sources && item.sources.length > 0 && (
@@ -411,6 +413,7 @@ export default function MaeValente() {
                           </div>
                         )}
                       </div>
+                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0" />
                     </div>
                   </Card>
                 ))}
