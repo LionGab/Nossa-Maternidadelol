@@ -238,14 +238,14 @@ export default function Home() {
               </Card>
             </Link>
 
-            <Link href="/mae-valente">
+            <a href="#refugionath">
               <Card className="p-3 hover-elevate active-elevate-2 transition-all text-center" data-testid="card-quick-refugionath">
                 <div className="w-10 h-10 rounded-full bg-[hsl(var(--pink-light))] flex items-center justify-center mx-auto mb-2">
                   <Users className="w-5 h-5 text-pink-accent" />
                 </div>
                 <p className="text-xs font-medium text-foreground">RefúgioNath</p>
               </Card>
-            </Link>
+            </a>
           </div>
 
           {/* Dica do Dia (pequena, no final) */}
@@ -266,17 +266,12 @@ export default function Home() {
       </div>
 
       {/* RefúgioNath - Comunidade */}
-      <div className="max-w-5xl mx-auto px-4 pb-6">
+      <div id="refugionath" className="max-w-5xl mx-auto px-4 pb-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-pink-accent" />
             <h2 className="text-lg font-semibold text-foreground">RefúgioNath</h2>
           </div>
-          <Link href="/mae-valente">
-            <Button variant="ghost" size="sm" className="text-xs" data-testid="button-see-all-community">
-              Ver tudo
-            </Button>
-          </Link>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
