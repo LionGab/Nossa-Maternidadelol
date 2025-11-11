@@ -21,6 +21,7 @@ const SUGGESTED_PROMPTS = [
 export default function NathIA() {
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState<string>("");
+  const [optimisticMessage, setOptimisticMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: messages = [], isLoading } = useQuery<AiMessage[]>({
@@ -38,6 +39,10 @@ export default function NathIA() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/nathia/messages/${sessionId}`] });
       setInput("");
+      setOptimisticMessage(null);
+    },
+    onError: () => {
+      setOptimisticMessage(null);
     },
   });
 
@@ -56,11 +61,14 @@ export default function NathIA() {
 
   const handleSend = () => {
     if (!input.trim() || sendMessageMutation.isPending) return;
-    sendMessageMutation.mutate(input.trim());
+    const message = input.trim();
+    setOptimisticMessage(message);
+    sendMessageMutation.mutate(message);
   };
 
   const handlePromptClick = (prompt: string) => {
     if (sendMessageMutation.isPending) return;
+    setOptimisticMessage(prompt);
     sendMessageMutation.mutate(prompt);
   };
 
@@ -88,7 +96,7 @@ export default function NathIA() {
       </header>
 
       {/* Suggested Prompts */}
-      {messages.length === 0 && (
+      {messages.length === 0 && !optimisticMessage && (
         <div className="px-4 py-4">
           <div className="max-w-2xl mx-auto">
             <p className="text-sm text-muted-foreground mb-3">
@@ -118,43 +126,59 @@ export default function NathIA() {
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          ) : messages.length === 0 ? (
+          ) : messages.length === 0 && !optimisticMessage ? (
             <div className="text-center py-12">
               <Sparkles className="w-16 h-16 text-pink-accent mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 Olá! Como posso ajudar você hoje?
               </p>
             </div>
           ) : (
-            messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                data-testid={`message-${message.role}`}
-              >
+            <>
+              {messages.map((message) => (
                 <div
-                  className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-sm"
-                      : "bg-card text-card-foreground shadow-sm rounded-bl-sm border border-border"
-                  }`}
+                  key={message.id}
+                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                  data-testid={`message-${message.role}`}
                 >
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {message.content}
-                  </p>
+                  <div
+                    className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground rounded-br-sm"
+                        : "bg-card text-card-foreground shadow-sm rounded-bl-sm border border-border"
+                    }`}
+                  >
+                    <p className="text-base leading-relaxed whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+              {optimisticMessage && (
+                <div className="flex justify-end" data-testid="message-optimistic">
+                  <div className="max-w-[80%] rounded-lg px-4 py-3 bg-primary text-primary-foreground rounded-br-sm">
+                    <p className="text-base leading-relaxed whitespace-pre-wrap">
+                      {optimisticMessage}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
           {sendMessageMutation.isPending && (
-            <div className="flex justify-start">
-              <div className="bg-card text-card-foreground rounded-lg rounded-bl-sm px-4 py-3 shadow-sm border border-border">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-100"></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-200"></div>
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-start">
+                <div className="bg-card text-card-foreground rounded-lg rounded-bl-sm px-4 py-3 shadow-sm border border-border">
+                  <div className="flex gap-1.5 items-center">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Estou pensando na melhor resposta para você...
+              </p>
             </div>
           )}
         </div>
@@ -173,7 +197,7 @@ export default function NathIA() {
               }
             }}
             placeholder="Digite sua mensagem..."
-            className="resize-none rounded-xl border-2 focus:border-primary min-h-[44px] max-h-32"
+            className="resize-none rounded-xl border-2 focus:border-primary min-h-[44px] max-h-32 text-base"
             rows={1}
             data-testid="input-message"
           />
