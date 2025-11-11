@@ -5,7 +5,14 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+// Verify API key is loaded
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  console.error("⚠️ GEMINI_API_KEY not found in environment variables");
+  console.error("Available env vars:", Object.keys(process.env).filter(k => k.includes('GEMINI')));
+}
+
+const ai = new GoogleGenAI({ apiKey: apiKey || "" });
 
 export interface ChatContext {
   userStage?: string;

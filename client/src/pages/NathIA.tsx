@@ -24,7 +24,7 @@ export default function NathIA() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: messages = [], isLoading } = useQuery<AiMessage[]>({
-    queryKey: ["/api/nathia/messages", sessionId],
+    queryKey: [`/api/nathia/messages/${sessionId}`],
     enabled: !!sessionId,
   });
 
@@ -36,7 +36,7 @@ export default function NathIA() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/nathia/messages", sessionId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/nathia/messages/${sessionId}`] });
       setInput("");
     },
   });
