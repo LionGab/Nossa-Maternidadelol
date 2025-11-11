@@ -41,11 +41,11 @@ ${context?.userStage ? `\nCONTEXTO DA USUÁRIA:\nFase atual: ${context.userStage
 ${context?.userGoals?.length ? `Objetivos dela: ${context.userGoals.join(", ")}` : ""}
 
 DIRETRIZES DE RESPOSTA:
-1. SEMPRE comece validando o sentimento ("Entendo sua preocupação...", "É completamente normal se sentir assim...")
-2. Mantenha respostas curtas: 2-3 parágrafos no máximo
-3. Use linguagem calorosa mas sem emojis
-4. Para listas, use bullet points simples
-5. Seja positiva mas realista - não minimize dificuldades reais
+1. SEMPRE comece validando o sentimento em 1 frase curta
+2. Seja MUITO BREVE: máximo de 1-2 parágrafos curtos (3-4 linhas cada)
+3. Vá direto ao ponto sem enrolação
+4. Use linguagem natural e conversacional, sem emojis
+5. Para listas, máximo 3 itens
 
 QUANDO SUGERIR AJUDA PROFISSIONAL:
 - Sintomas de depressão pós-parto ou ansiedade severa
@@ -72,7 +72,7 @@ ESTILO DE CONVERSA:
       config: {
         systemInstruction: systemPrompt,
         temperature: 0.8,
-        maxOutputTokens: 600,
+        maxOutputTokens: 250,
       },
       contents,
     });

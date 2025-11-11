@@ -94,17 +94,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sessionId, message } = req.body;
       
+      if (!sessionId || !message) {
+        return res.status(400).json({ error: "sessionId and message are required" });
+      }
+      
       // Create session if it doesn't exist
       let session = await storage.getAiSession(sessionId);
       if (!session) {
         session = await storage.createAiSession({
+          id: sessionId,
           userId: TEST_USER_ID,
         });
       }
       
       // Save user message
       await storage.createAiMessage({
-        sessionId,
+        sessionId: session.id,
         role: "user",
         content: message,
       });
