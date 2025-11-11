@@ -13,6 +13,7 @@ import NathIA from "@/pages/NathIA";
 import MundoNath from "@/pages/MundoNath";
 import MaeValente from "@/pages/MaeValente";
 import Habitos from "@/pages/Habitos";
+import RefugioNath from "@/pages/RefugioNath";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -30,6 +31,7 @@ function Router() {
         <Route path="/mundo-nath" component={MundoNath} />
         <Route path="/mae-valente" component={MaeValente} />
         <Route path="/habitos" component={Habitos} />
+        <Route path="/refugio-nath" component={RefugioNath} />
         <Route component={NotFound} />
       </Switch>
       {showTabBar && <BottomTabBar />}

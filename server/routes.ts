@@ -468,7 +468,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const type = req.query.type as string | undefined;
     const tag = req.query.tag as string | undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-    const posts = await storage.getCommunityPosts(type, limit, tag);
+    const featured = req.query.featured === "true" ? true : req.query.featured === "false" ? false : undefined;
+    const posts = await storage.getCommunityPosts(type, limit, tag, featured);
     res.json(posts);
   });
 

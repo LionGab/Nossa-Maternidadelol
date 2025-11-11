@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { MessageCircle, Play, CheckCircle, Sparkles, TrendingUp, Send } from "lucide-react";
+import { MessageCircle, Play, CheckCircle, Sparkles, TrendingUp, Send, Users } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import type { DailyFeatured, Tip, Post } from "@shared/schema";
+import { Badge } from "@/components/ui/badge";
+import type { DailyFeatured, Tip, Post, CommunityPost } from "@shared/schema";
 import { useState } from "react";
 
 export default function Dashboard() {
@@ -21,6 +22,15 @@ export default function Dashboard() {
 
   const { data: latestPost } = useQuery<Post>({
     queryKey: ["/api/posts/latest"],
+  });
+
+  const { data: featuredPosts = [] } = useQuery<CommunityPost[]>({
+    queryKey: ["/api/community/posts", "featured"],
+    queryFn: async () => {
+      const response = await fetch("/api/community/posts?limit=10");
+      const posts = await response.json();
+      return posts.filter((p: CommunityPost) => p.featured).slice(0, 3);
+    },
   });
 
   const weekProgress = weekStats ? Math.round((weekStats.completed / weekStats.total) * 100) : 0;
@@ -224,15 +234,53 @@ export default function Dashboard() {
               </Card>
             </Link>
 
-            <Link href="/mae-valente">
-              <Card className="p-3 hover-elevate active-elevate-2 transition-all text-center" data-testid="card-quick-search">
+            <Link href="/refugio-nath">
+              <Card className="p-3 hover-elevate active-elevate-2 transition-all text-center" data-testid="card-quick-community">
                 <div className="w-10 h-10 rounded-full bg-[hsl(var(--pink-light))] flex items-center justify-center mx-auto mb-2">
-                  <Sparkles className="w-5 h-5 text-pink-accent" />
+                  <Users className="w-5 h-5 text-pink-accent" />
                 </div>
-                <p className="text-xs font-medium text-foreground">Comunidade</p>
+                <p className="text-xs font-medium text-foreground">RefúgioNath</p>
               </Card>
             </Link>
           </div>
+
+          {/* Destaques da Comunidade */}
+          {featuredPosts.length > 0 && (
+            <Card className="p-4" data-testid="card-community-preview">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-pink-accent" />
+                  <span className="text-sm font-semibold text-foreground">Destaques da Comunidade</span>
+                </div>
+                <Link href="/refugio-nath">
+                  <Button variant="ghost" size="sm" className="h-auto text-xs text-pink-accent" data-testid="button-view-all-posts">
+                    Ver todos
+                  </Button>
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {featuredPosts.slice(0, 3).map((post) => (
+                  <Link key={post.id} href="/refugio-nath">
+                    <div className="p-3 rounded-lg bg-muted/30 hover-elevate active-elevate-2 transition-all" data-testid={`preview-post-${post.id}`}>
+                      <div className="flex items-start gap-2 mb-2">
+                        <span className="text-xs font-medium text-foreground/90">{post.authorName}</span>
+                        <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                          {post.type === "desabafo" ? "Desabafo" : post.type === "vitoria" ? "Vitória" : post.type === "apoio" ? "Apoio" : "Reflexão"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-foreground/80 line-clamp-2 leading-relaxed">
+                        {post.content}
+                      </p>
+                      <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
+                        <span>{post.reactionCount} reações</span>
+                        <span>{post.commentCount} comentários</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </Card>
+          )}
 
           {/* Dica do Dia (pequena, no final) */}
           {dailyFeatured?.tip && (

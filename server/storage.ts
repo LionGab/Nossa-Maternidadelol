@@ -91,7 +91,7 @@ export interface IStorage {
   deleteFavorite(userId: string, postId: string): Promise<void>;
   
   // Community
-  getCommunityPosts(type?: string, limit?: number, tag?: string): Promise<CommunityPost[]>;
+  getCommunityPosts(type?: string, limit?: number, tag?: string, featured?: boolean): Promise<CommunityPost[]>;
   createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost>;
   getDailyQuestion(date: string): Promise<DailyQuestion | undefined>;
   createDailyQuestion(question: InsertDailyQuestion): Promise<DailyQuestion>;
@@ -1295,7 +1295,7 @@ export class MemStorage implements IStorage {
   }
 
   // Community
-  async getCommunityPosts(type?: string, limit?: number, tag?: string): Promise<CommunityPost[]> {
+  async getCommunityPosts(type?: string, limit?: number, tag?: string, featured?: boolean): Promise<CommunityPost[]> {
     let posts = Array.from(this.communityPosts.values())
       .filter(post => !post.hidden); // Only non-hidden posts
     
@@ -1305,6 +1305,10 @@ export class MemStorage implements IStorage {
     
     if (tag) {
       posts = posts.filter(post => post.tag === tag);
+    }
+    
+    if (featured !== undefined) {
+      posts = posts.filter(post => post.featured === featured);
     }
     
     posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
