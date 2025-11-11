@@ -56,7 +56,7 @@ export default function MundoNath() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="bg-gradient-to-br from-primary/10 via-accent/20 to-background p-6">
+      <header className="bg-card border-b border-border p-6">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-serif font-bold text-foreground mb-2">
             Mundo Nath

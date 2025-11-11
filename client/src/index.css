@@ -55,8 +55,8 @@
   --accent: 209 60% 96%;
   --accent-foreground: 209 60% 42%;
   
-  /* Pink accent for maternal warmth #FCA5A5 */
-  --pink-accent: 0 93% 80%;
+  /* Pink accent for maternal warmth #FF8BA3 */
+  --pink-accent: 349 100% 77%;
   
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
@@ -70,8 +70,8 @@
   --chart-4: 0 0% 15%;
   --chart-5: 209 60% 96%;
   
-  /* Claude-style typography: Serif for elegance */
-  --font-sans: system-ui, -apple-system, sans-serif;
+  /* Claude-style typography: Serif for elegance, Open Sans for clarity */
+  --font-sans: 'Open Sans', system-ui, -apple-system, sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
   --font-mono: Menlo, monospace;
   --radius: 0.5rem;
