@@ -73,16 +73,27 @@ export default function Home() {
         ) : null}
 
         {/* Quote Section with Image */}
-        <Card className="p-6 bg-gradient-to-br from-accent/20 via-accent/10 to-card border-none">
+        <Card className="p-6 bg-gradient-to-br from-pink-accent/10 via-accent/10 to-card border-pink-accent/20 hover-elevate transition-all" data-testid="card-welcome-quote">
           <div className="flex flex-col md:flex-row items-center gap-6">
-            <img 
-              src={welcomeImage} 
-              alt="Maternidade Acolhedora" 
-              className="w-32 h-32 md:w-40 md:h-40 rounded-lg object-cover flex-shrink-0 border-2 border-accent/30 shadow-md dark:border-border"
-            />
-            <div className="flex-1 text-center md:text-left">
-              <p className="text-xl italic text-foreground leading-relaxed">
-                "Você está fazendo um ótimo trabalho, mamãe. Cada dia é uma vitória!"
+            <div className="relative flex-shrink-0">
+              <img 
+                src={welcomeImage} 
+                alt="Maternidade Acolhedora" 
+                className="w-40 h-40 md:w-48 md:h-48 rounded-2xl object-cover border-2 border-pink-accent/30 shadow-lg dark:border-border"
+              />
+              <div className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-pink-accent flex items-center justify-center shadow-md">
+                <Heart className="w-5 h-5 text-white" />
+              </div>
+            </div>
+            <div className="flex-1 text-center md:text-left space-y-3">
+              <div className="inline-block">
+                <Sparkles className="w-6 h-6 text-pink-accent mb-2" />
+              </div>
+              <p className="text-2xl md:text-3xl font-serif font-semibold text-foreground leading-relaxed">
+                Você está fazendo um ótimo trabalho, mamãe. Cada dia é uma vitória!
+              </p>
+              <p className="text-sm text-muted-foreground font-medium">
+                — Nossa Maternidade
               </p>
             </div>
           </div>
