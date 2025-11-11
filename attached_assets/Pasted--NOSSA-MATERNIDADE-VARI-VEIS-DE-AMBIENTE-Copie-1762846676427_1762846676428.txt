@@ -1,0 +1,45 @@
+# ============================================
+# NOSSA MATERNIDADE - VARIÁVEIS DE AMBIENTE
+# Copie este arquivo para .env.local e preencha com suas credenciais
+# ============================================
+
+# ⚠️ OBRIGATÓRIAS - App não funciona sem essas variáveis
+# SUPABASE - Database & Authentication (OBRIGATORIO)
+EXPO_PUBLIC_SUPABASE_URL=https://bbcwitnbnosyfpfjtzkr.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiY3dpdG5ibm9zeWZwZmp0emtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyODI3NjgsImV4cCI6MjA3NTg1ODc2OH0.a9g_JqrWWnLli_PV0sPikz8KPAWiKY81mQ1hJAbNtCo
+
+# ⚠️ OPCIONAIS - App funciona sem essas, mas funcionalidades ficam limitadas
+# 
+ (Error Tracking)
+EXPO_PUBLIC_SENTRY_DSN=https://xxx@sentry.io/xxx
+
+# ========================================
+# APIs DE IA
+# ========================================
+EXPO_PUBLIC_GEMINI_API_KEY=AIzaSyC9YVWRmnGyGu4c9y7g-mNkkipDqb5JBZg
+EXPO_PUBLIC_CLAUDE_API_KEY=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
+EXPO_PUBLIC_OPENAI_API_KEY=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
+EXPO_PUBLIC_PERPLEXITY_API_KEY=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
+
+# Supabase Functions URL (Opcional)
+EXPO_PUBLIC_SUPABASE_FUNCTIONS_URL=https://seu-projeto.supabase.co/functions/v1
+
+# ⚠️ OPCIONAIS - Features Avançadas
+# Stripe (Pagamentos)
+EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+
+# OneSignal (Notificações Push)
+EXPO_PUBLIC_ONESIGNAL_APP_ID=sua_app_id_aqui
+
+# ElevenLabs (Text-to-Speech - Opcional)
+EXPO_PUBLIC_ELEVENLABS_API_KEY=sua_chave_elevenlabs_aqui
+
+# HeyGen (Vídeo AI - Opcional)
+EXPO_PUBLIC_HEYGEN_API_KEY=sua_chave_heygen_aqui
+
+# ============================================
+# NOTAS:
+# - Variáveis EXPO_PUBLIC_* são expostas ao cliente
+# - NUNCA coloque SERVICE_ROLE_KEY aqui (só no servidor)
+# - Para produção, configure via EAS Secrets: eas secret:create
+# ============================================

@@ -1,0 +1,64 @@
+Great visuals — it already gives the product an emotionally resonant appeal. To make it testable by Nathália today and reduce the risk of rejection, focus first on 5 critical fixes (functionality, performance, clarity) and then apply 7 high-impact polishes. I'll list them by priority and provide ready-to-use tasks/code snippets for you to paste.
+
+[Reasoning]
+
+The current interface communicates the brand well (welcoming tone, dark + pink palette). The risks for influencer validation are practical: paywall not very transparent for testers, possible latencies/AI responses without feedback, and absence of states (loading/error) that make small bugs apparent as a "broken app". Solving this ensures she experiences value (chat, content, habits) without friction — more important than polishing micro-animations now.
+
+[Prioritized Improvements — What to Do Now]
+Must-fix (delivery today, 0–4h)
+
+Paywall: Clearly indicate “Tester / Access granted” for Nathalia
+
+If she is whitelisted, show a banner/CTA that says Full Access (Test) — Granted to you. Avoids confusion and abandonment.
+
+Quick implementation: conditional isWhitelisted ? "Full Access (Test) — Granted" : "R$ 19.90/month".
+
+Loading + error states for NathIA & MãeValente
+
+When submitting a question, show skeleton + spinner + “We are thinking — this may take a few seconds” and Retry button on error.
+
+Without this, slow responses appear “not working”.
+
+Show sources / trust in MãeValente's response
+
+Every Perplexity response should display 1–3 sources with links; if none are available, show “Sources not available — we recommend confirming with a professional”.
+
+Do not expose keys on the client side — verify that calls to Gemini/Perplexity go through a serverless function (Edge Function).
+
+Blocking: if GEMINI_API_KEY is detected in the bundle, move it to a proxy now.
+
+Immediate visual feedback when favoriting/marking a habit.
+
+Haptics (mobile) + microanimation and instant counter (optimistic UI). Avoids latency sensation.
+
+High impact (4–12h)
+
+Medium performance: lazy loading and media compression
+
+Videos: preload="none", loading="lazy", serve webm/hevc variants, use CDN.
+
+Images: generate 2–3 sizes and use srcset. Compression <= 150KB per hero image.
+
+Minimal analytics (essential)
+
+Track: view_home, open_chat, send_message, play_video, try_premium, habit_checked.
+
+Rationale: know what fails in Nathalia's test.
+
+Hierarchy and CTA Contrast
+
+The main paywall button should have a solid primary color (bg-primary) and a subtle shadow; the current button text is too long — simplify: “Release Trial” or “Subscribe for R$19.90”.
+
+Polish (Day 2)
+
+Skeletons/placeholders in lists (feed, habits) — avoids layout shift.
+
+Basic accessibility — contrast ratio, aria-label on important buttons, role="alert" for errors, manageable focus (keyboard/voiceover).
+
+Timeouts and automatic retry for AI — 8s timeout + exponential backoff (1s, 2s, 4s) and fallback for cached answers.
+
+Nice-to-have (v2)
+
+Lightweight offline caching for habits (AsyncStorage/SecureStore) — ensures the trial doesn't break with a poor connection.
+
+Microcopy: adjust phrases for a more direct tone — e.g., "You're doing a great job, Mom." → already ok, just standardize.
