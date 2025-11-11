@@ -2,9 +2,22 @@
 
 ## Overview
 
-Nossa Maternidade (also known as Mundo Nath) is a mobile-first maternal wellness application designed as a "refuge without judgment" for mothers and pregnant women. The app provides AI-powered support through NathIA (Gemini 2.0 Flash), curated content from influencer Nathália Valente, research-backed answers via Perplexity AI, and habit tracking features. The platform operates on a subscription model (R$19.90/month) and targets Brazilian Portuguese-speaking mothers at various stages of their maternal journey.
+Nossa Maternidade (also known as Mundo Nath) is a mobile-first maternal wellness application designed as a "refuge without judgment" for mothers and pregnant women. The app provides AI-powered support through NathIA (Gemini 2.0 Flash), curated content from influencer Nathália Valente, research-backed answers via Perplexity AI, and an addictive gamified habit tracking system inspired by world-class apps like Duolingo, Habitica, and Streaks. The platform operates on a subscription model (R$19.90/month) and targets Brazilian Portuguese-speaking mothers at various stages of their maternal journey.
 
-The application features five core sections accessible via a bottom tab bar: Home (welcoming dashboard), NathIA (AI chat assistant), MundoNath (exclusive content from the influencer), MãeValente (research-based Q&A), and Hábitos (habit tracking). The design emphasizes maternal warmth with a minimalist aesthetic inspired by Claude.ai, using generous whitespace, serif typography for headings, and a soothing blue color palette (#6DA9E4, #DCEBFA, #FFF8F3) with pink accents (#FF8BA3).
+The application features five core sections accessible via a bottom tab bar: Home (welcoming dashboard), NathIA (AI chat assistant), MundoNath (exclusive content from the influencer), MãeValente (research-based Q&A), and Hábitos (gamified habit tracking with XP, levels, streaks, and achievements). The design emphasizes maternal warmth with a minimalist aesthetic inspired by Claude.ai, using generous whitespace, serif typography for headings, and a soothing blue color palette (#6DA9E4, #DCEBFA, #FFF8F3) with pink accents (#FF8BA3).
+
+## Recent Changes
+
+**November 11, 2025 - Gamified Habit System Implementation**
+- Completely redesigned Hábitos page with world-class gamification mechanics
+- Implemented personalized habits with custom emojis and gradient colors
+- Added comprehensive XP/level system with level-dependent progression (level * 100 formula)
+- Integrated streak tracking with visual indicators
+- Created 10 unlockable achievements system
+- Added celebration animations and visual feedback for habit completions
+- Implemented full CRUD API with automatic stats calculation and achievement unlocking
+- All interactive elements equipped with data-testid attributes for automated testing
+- System tested end-to-end with playwright verification
 
 ## User Preferences
 
@@ -34,7 +47,14 @@ Preferred communication style: Simple, everyday language.
 - **NathIA (Gemini 2.0 Flash)**: Primary conversational AI with custom system prompts emphasizing empathy and maternal support. Configured for low latency and cost-effectiveness with temperature 0.7 and 500 token limit.
 - **Perplexity API**: Research-focused AI for the MãeValente feature using llama-3.1-sonar-small-128k-online model with citation support. Configured with temperature 0.2 for factual accuracy and limited to 800 tokens.
 
-**Data Storage Strategy**: In-memory storage implementation (`server/storage.ts`) defining interfaces for profiles, subscriptions, posts, viral posts, tips, daily featured content, AI sessions/messages, Q&A cache, habits, and favorites. The storage layer is designed to be swapped for database implementations (Drizzle ORM schemas are defined but not actively used).
+**Data Storage Strategy**: In-memory storage implementation (`server/storage.ts`) defining interfaces for profiles, subscriptions, posts, viral posts, tips, daily featured content, AI sessions/messages, Q&A cache, habits, habit completions, user stats, achievements, user achievements, and favorites. The storage layer is designed to be swapped for database implementations (Drizzle ORM schemas are defined but not actively used).
+
+**Gamification System**: World-class habit tracking system inspired by Duolingo, Habitica, and Streaks, featuring:
+- **XP & Levels**: Progressive leveling system where each level requires `level * 100` XP (e.g., Level 1→2 needs 100 XP, Level 2→3 needs 200 XP). Each habit completion awards +10 XP with visual feedback and celebration animations.
+- **Streaks (Sequências)**: Daily streak tracking that increments when habits are completed on consecutive days. Streaks are preserved across habit sessions and reset after 24 hours of inactivity.
+- **Achievements (Conquistas)**: 10 unlockable achievements that reward milestone behaviors (First Step, Consistent 7-day streak, Dedicated 30-day streak, Completionist 50 habits, Centurion 100 habits, Marathon 365 days, Power User 10+ habits, etc.). Achievements auto-unlock when conditions are met and display with celebratory UI.
+- **Personalized Habits**: Users can create custom habits with unique emojis (⭐💪🧘‍♀️📚💧🌸🎯✨🔥💝🌿☀️) and gradient color schemes (Fogo, Roxo, Azul, Verde, Dourado, Rosa, Elétrico, Sunset).
+- **Visual Feedback**: Completion animations, progress bars, badges, gradient backgrounds, and real-time stat updates create an addictive feedback loop designed to maximize user engagement and retention.
 
 ### External Dependencies
 
