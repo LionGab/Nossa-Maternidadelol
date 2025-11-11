@@ -1,167 +1,170 @@
 # Design Guidelines: Nossa Maternidade / Mundo Nath
 
 ## Design Approach
-**Reference-Based:** Drawing inspiration from health/wellness apps like Headspace (calm, approachable) and Calm (nurturing, gentle), combined with the content organization of Instagram and the conversational UI of messaging apps. Creating a maternal sanctuary that feels personal, warm, and judgment-free.
-
-## Brand-Specified Color Palette
-- **Primary Blues:** #6DA9E4 (calm sky), #DCEBFA (soft powder)
-- **Background:** #FFF8F3 (warm cream)
-- **Text:** #6A5450 (warm brown/mauve)
-- **Accent:** #FF8BA3 (gentle pink for CTAs, highlights, achievements)
+**Reference-Based:** Claude.ai's minimalist aesthetic (generous whitespace, serif typography, subtle depth) combined with maternal warmth. Clean sidebar navigation on desktop, mobile-first with sophisticated simplicity that respects the mother's mental space.
 
 ## Typography Hierarchy
 
 **Font Families:**
-- **Headings:** 'Quicksand' (Google Fonts) - soft, rounded, maternal
-- **Body/UI:** 'Inter' (Google Fonts) - clean, highly readable
+- **Headings:** Georgia (serif) - elegant, trustworthy, maternal authority
+- **Body/UI:** Open Sans (sans-serif) - highly readable, approachable
 
 **Scale:**
-- Hero/Page Titles: text-3xl to text-4xl, font-bold
-- Section Headers: text-xl to text-2xl, font-semibold
-- Card Titles: text-lg, font-medium
-- Body Text: text-base, font-normal
-- Captions/Metadata: text-sm, text-[#6A5450]/70
+- Hero/Page Titles: text-4xl to text-5xl, font-serif, font-bold
+- Section Headers: text-2xl to text-3xl, font-serif, font-semibold
+- Card Titles: text-xl, font-serif, font-medium
+- Body Text: text-base, font-sans
+- Captions/Metadata: text-sm, font-sans, opacity-70
 
 ## Layout & Spacing System
 
-**Tailwind Spacing Primitives:** 2, 3, 4, 6, 8, 12, 16 units
-- Component padding: p-4 (mobile), p-6 (tablet+)
-- Section spacing: space-y-6 (mobile), space-y-8 (desktop)
-- Card gaps: gap-4
-- Screen margins: px-4 (mobile), px-6 (tablet), max-w-7xl mx-auto (desktop)
+**Tailwind Spacing Primitives:** 4, 6, 8, 12, 16, 20, 24 units
+- Component padding: p-6 (mobile), p-8 (tablet+), p-12 (desktop)
+- Section spacing: space-y-12 (mobile), space-y-16 (desktop)
+- Card gaps: gap-6 to gap-8
+- Screen margins: px-6 (mobile), px-8 (tablet), max-w-7xl mx-auto (desktop)
 
-**Mobile-First Containers:**
-- Tab content: Full-width with px-4 safe area
-- Cards/Components: Rounded corners (rounded-2xl)
-- Maximum content width: max-w-2xl for readability
+**Generous Whitespace:**
+- Section padding: py-16 to py-24
+- Content max-width: max-w-3xl for readability
+- Card spacing: More breathing room than typical designs
 
 ## Core UI Components
 
 ### Navigation
-**Bottom Tab Bar (Fixed):**
-- 5 icons with labels below (Home, NathIA, MundoNath, MãeValente, Hábitos)
-- Active state: Pink accent (#FF8BA3) with subtle scale
-- Inactive: Muted warm brown (#6A5450)/60
-- Height: h-16 with safe-area padding
-- Background: White with subtle shadow
+
+**Desktop Sidebar (Fixed Left):**
+- Width: w-64, background: sidebar, border-r
+- Logo/Brand at top (p-6)
+- Navigation items: Vertical list, py-3 px-4, rounded-lg
+- Active state: sidebar-accent background with sidebar-accent-foreground text
+- Icons: Heroicons outline (size-5)
+- Profile/Settings at bottom
+
+**Mobile Bottom Tab Bar:**
+- Fixed bottom, h-16, background with border-top
+- 5 icons with labels (text-xs)
+- Active: primary with scale-105 transition
+- Safe area padding
 
 ### Cards & Content Blocks
-**Action Cards (Home):**
-- White background, rounded-2xl, shadow-sm
-- Padding: p-6
-- Icon (top-left, size-8, accent pink) + Title + Brief description
-- Subtle hover lift (shadow-md transition)
+
+**Primary Cards:**
+- Background: card with card-foreground
+- Border radius: rounded-lg (less rounded per spec)
+- Padding: p-6 to p-8
+- Shadow: shadow-sm (subtle)
+- Border: border with 1px solid
 
 **Content Cards (MundoNath):**
-- Image thumbnail (aspect-video, rounded-t-2xl)
-- Content overlay gradient for text readability
-- Category tag (top-right, rounded-full badge, primary blue)
-- Premium lock icon when gated
-- Duration/metadata in muted text
+- Image: aspect-video, rounded-t-lg
+- Content: p-6
+- Category badge: Inline text with primary text, small caps
+- Premium indicator: Lock icon (Heroicons)
+- Metadata: Flex row with gap-4, text-sm, muted-foreground
 
-**Chat Bubbles (NathIA/MãeValente):**
-- User messages: Align right, bg-[#6DA9E4], text-white, rounded-2xl with tail
-- AI responses: Align left, bg-white, text-[#6A5450], rounded-2xl with shadow
-- Suggested prompts: Chips with border-2 border-[#DCEBFA], rounded-full, horizontal scroll
+**Embedded Social Posts:**
+- iframe containers with max-w-xl mx-auto
+- Wrapper: card background, p-1, rounded-lg
+- Maintain native aspect ratios
+- Loading skeleton: animate-pulse with muted background
+
+### Chat Interface (NathIA/MãeValente)
+
+**Message Bubbles:**
+- User: ml-auto, max-w-2xl, bg-primary, text-primary-foreground, rounded-lg, p-4
+- AI: mr-auto, max-w-2xl, bg-card, rounded-lg, p-4, shadow-sm
+- Spacing: space-y-4 between messages
+- No message tails (Claude-style simplicity)
+
+**Suggested Prompts:**
+- Horizontal scroll container, pb-4
+- Chips: border, rounded-lg, px-4 py-2, hover:bg-accent
+
+**Input Bar:**
+- Fixed bottom, border-t, bg-background
+- Textarea: border-0, focus:ring-0, resize-none
+- Send button: primary background, rounded-lg, p-2.5, icon only
 
 ### Forms & Inputs
+
 **Text Inputs:**
-- Border: border-2 border-[#DCEBFA]
-- Focus: border-[#6DA9E4], ring-2 ring-[#6DA9E4]/20
-- Rounded: rounded-xl
+- Border: border input
+- Focus: ring-2 ring-ring
+- Rounded: rounded-lg
 - Padding: px-4 py-3
-- Placeholder: text-[#6A5450]/50
+- Background: input
 
 **Primary Buttons:**
-- Background: bg-[#FF8BA3] (pink accent)
-- Text: text-white, font-semibold
+- Background: bg-primary, text-primary-foreground
 - Padding: px-6 py-3
-- Rounded: rounded-full
-- Shadow: shadow-md
-- States handled by component
+- Rounded: rounded-lg
+- Font: font-semibold
+- Shadow: shadow-sm
 
 **Secondary Buttons:**
-- Border: border-2 border-[#6DA9E4]
-- Text: text-[#6DA9E4]
-- Background: transparent or bg-white
-- Rounded: rounded-full
+- Background: bg-secondary, text-secondary-foreground
+- Border: border
+- Rounded: rounded-lg
 
-### Habit Tracker Components
-**Habit Check Items:**
-- List items with checkbox (left), icon, title, streak counter
-- Checked state: Pink checkmark with subtle glow
-- Unchecked: Border circle in light blue
-- Streak badges: Rounded-full, small, bg-[#6DA9E4]/10, text-[#6DA9E4]
+### Habit Tracker
 
-**Achievement Badges:**
-- Circular medals with gradient backgrounds (blue to pink)
-- Size: 20-24 units
-- Drop shadow for depth
-- Display in horizontal scrollable row
+**Habit Items:**
+- List: space-y-3
+- Item: Flex row, p-4, rounded-lg, border, hover:bg-accent
+- Checkbox: Custom with primary accent when checked
+- Streak badge: bg-primary/10, text-primary, rounded-full, px-2.5 py-0.5, text-xs
 
-### Subscription Paywall
-**Modal/Card:**
-- Centered overlay with blur backdrop
-- White card, rounded-3xl, p-8
-- Pink accent for pricing (text-4xl, font-bold)
-- Feature list with checkmark icons
-- CTA: Large pink button
-- Dismissible "Close" link in muted text
-
-### Content Player
-**Video/Audio Embedded:**
-- aspect-video container with rounded-xl
-- Custom controls in brand colors
-- Progress bar: bg-[#DCEBFA], fill-[#FF8BA3]
-- Play/pause icons in primary blue
-- Minimalist, clean interface
+**Progress Visualization:**
+- Progress bar: h-2, bg-muted, rounded-full
+- Fill: bg-primary, transition-all
+- Stats: Grid of metric cards (2-col mobile, 4-col desktop)
 
 ## Page-Specific Layouts
 
 ### Home Dashboard
-**Structure:**
-- Hero section: Daily featured tip card (gradient bg from #DCEBFA to #FFF8F3, p-6)
-- Quote/inspiration (centered, italic, text-xl, max-w-md)
-- Quick action grid: 2-column on mobile, 3-column on tablet+
-- Vertical spacing: space-y-6
-
-### NathIA/MãeValente Chat
-**Layout:**
-- Chat messages scrollable area (flex-1)
-- Suggested prompts row (sticky below header, horizontal scroll)
-- Input bar fixed at bottom (with send button, pink accent)
-- Background: Subtle texture or gradient (#FFF8F3 to white)
+- Hero card: p-12, rounded-lg, border-l-4 border-l-primary, mb-8
+- Daily tip: text-2xl font-serif, mb-4
+- Quote: Italic, text-muted-foreground, max-w-2xl
+- Quick actions: Grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3, gap-6
+- Each action card: Icon (size-8), title (text-xl font-serif), description
 
 ### MundoNath Feed
-**Grid:**
-- Single column on mobile
-- 2-column on tablet (md:grid-cols-2)
-- Card-based with consistent aspect ratios
-- Category filters: Horizontal pill navigation (sticky)
+- Filter tabs: Sticky top, flex gap-2, pb-4, border-b
+- Content grid: grid-cols-1 lg:grid-cols-2, gap-6
+- Embedded posts: Full width within card, maintain aspect ratio
+- Load more: Centered button at bottom
 
 ### Meus Hábitos
-**List View:**
-- Grouped by completion status
-- Daily date header (text-sm, uppercase, text-[#6A5450]/60)
-- Habit items with large touch targets (min-h-16)
-- Streak visualization at top (progress ring or bar chart)
+- Header stats: Grid of completion metrics, mb-8
+- Date grouping: text-sm uppercase tracking-wide, mb-4, text-muted-foreground
+- Habit list: Grouped by date, space-y-2
+- Achievement section: Horizontal scroll, gap-4, rounded-lg badges
+
+## Dark Mode
+- Background: #0A0A0A (deep black per spec)
+- Elevated surfaces: Subtle card color
+- Text: High contrast foreground
+- Primary blue maintains vibrancy
+- Borders: Subtle, low opacity
 
 ## Images
-- **Home Hero:** Soft, abstract maternal imagery (mother-child silhouette, gentle hands, warm lighting) - aspect-video, rounded-2xl
-- **MundoNath Thumbnails:** Video/article preview images - 16:9 ratio, quality imagery of Nathália or relevant maternal topics
-- **Onboarding:** Welcoming illustration of mother figure - full-width, top of screen
-- **Empty States:** Gentle, encouraging illustrations (not photos) in pastel colors
+- **Home Hero Card:** Soft maternal imagery (mother-child, gentle hands) - integrate within card, not full-bleed
+- **MundoNath:** Video thumbnails 16:9, quality lifestyle/maternal content
+- **Empty States:** Minimalist illustrations in primary blue tones
+- **Profile/Settings:** User avatar, circular, size-12 to size-16
 
 ## Accessibility & Polish
-- Touch targets minimum 44x44px
-- Sufficient color contrast (WCAG AA)
-- Loading states: Skeleton screens in #DCEBFA/20
-- Error states: Gentle messaging with light pink background
-- Success feedback: Subtle pink glow or checkmark animation
+- Touch targets: min-h-11 (44px)
+- Focus rings: ring-2 ring-ring
+- Loading: Skeleton screens with animate-pulse
+- Error states: destructive background with destructive-foreground
+- Success: Subtle primary glow effect
+- Contrast: WCAG AA compliant
 
 ## Animation Principles
-**Minimal, purposeful motion:**
-- Tab transitions: Gentle fade + slide (200ms)
-- Habit check: Satisfying scale + checkmark draw
-- Card interactions: Subtle lift on press
-- NO distracting scroll effects or excessive parallax
+**Minimal, refined motion:**
+- Transitions: 200ms ease-in-out
+- Hover states: Subtle scale or background shift
+- No scroll-triggered animations
+- Micro-interactions: Check animations, button presses only

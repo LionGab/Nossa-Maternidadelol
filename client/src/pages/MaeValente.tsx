@@ -87,7 +87,7 @@ export default function MaeValente() {
               <Heart className="w-6 h-6 text-pink-accent" />
             </div>
             <div className="flex-1">
-              <h1 className="text-3xl font-heading font-bold text-foreground mb-1">
+              <h1 className="text-3xl font-serif font-bold text-foreground mb-1">
                 Mãe Valente
               </h1>
               <p className="text-muted-foreground">
@@ -116,7 +116,7 @@ export default function MaeValente() {
             {/* Emergency Resources */}
             {showEmergency && (
               <Card className="p-5 bg-pink-accent/5 border-pink-accent/30">
-                <h3 className="font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+                <h3 className="font-serif font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Heart className="w-5 h-5 text-pink-accent" />
                   Recursos de Emergência
                 </h3>
@@ -164,10 +164,10 @@ export default function MaeValente() {
                   <img 
                     src={supportImage} 
                     alt="Apoio Materno" 
-                    className="w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover flex-shrink-0 border-2 border-accent/30 shadow-md dark:border-border"
+                    className="w-32 h-32 md:w-40 md:h-40 rounded-lg object-cover flex-shrink-0 border-2 border-accent/30 shadow-md dark:border-border"
                   />
                   <div className="flex-1 text-center md:text-left">
-                    <h3 className="text-lg font-heading font-semibold text-foreground mb-2">
+                    <h3 className="text-lg font-serif font-semibold text-foreground mb-2">
                       Bem-vinda ao seu espaço seguro
                     </h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
@@ -212,7 +212,7 @@ export default function MaeValente() {
             {/* Suggested Topics */}
             {!searchResult && (
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-muted-foreground px-1">
+                <h3 className="text-sm font-serif font-semibold text-muted-foreground px-1">
                   Tópicos que podem te ajudar:
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -235,7 +235,7 @@ export default function MaeValente() {
             {searchResult && (
               <Card className="p-6 bg-card border-2 border-pink-accent/20">
                 <div className="flex items-start justify-between gap-3 mb-4">
-                  <h3 className="text-lg font-heading font-semibold text-foreground flex-1">
+                  <h3 className="text-lg font-serif font-semibold text-foreground flex-1">
                     {searchResult.question}
                   </h3>
                   <Button
@@ -296,7 +296,7 @@ export default function MaeValente() {
             {/* Saved Items */}
             {savedItems.length > 0 && !searchResult && (
               <div className="space-y-3">
-                <h3 className="text-lg font-heading font-semibold text-foreground">
+                <h3 className="text-lg font-serif font-semibold text-foreground">
                   Salvos para Você
                 </h3>
                 {savedItems.map((item) => (

@@ -27,7 +27,7 @@ export default function Home() {
             className="w-16 h-16 rounded-full object-cover flex-shrink-0 border-2 border-accent/50 shadow-sm"
           />
           <div className="flex-1">
-            <h1 className="text-3xl font-heading font-bold text-foreground mb-1">
+            <h1 className="text-3xl font-serif font-bold text-foreground mb-1">
               Olá, mamãe!
             </h1>
             <p className="text-muted-foreground">
@@ -48,7 +48,7 @@ export default function Home() {
             <div className="flex items-start gap-3 mb-4">
               <Sparkles className="w-6 h-6 text-pink-accent flex-shrink-0 mt-1" />
               <div className="flex-1">
-                <h2 className="text-sm font-semibold text-primary mb-1">
+                <h2 className="text-sm font-serif font-semibold text-primary mb-1">
                   Frase do Dia
                 </h2>
                 {dailyFeatured.quote && (
@@ -61,7 +61,7 @@ export default function Home() {
 
             {dailyFeatured.tip && (
               <div className="mt-4 pt-4 border-t border-border/50">
-                <h3 className="text-sm font-semibold text-primary mb-2">
+                <h3 className="text-sm font-serif font-semibold text-primary mb-2">
                   Dica Prática
                 </h3>
                 <p className="text-foreground">
@@ -78,7 +78,7 @@ export default function Home() {
             <img 
               src={welcomeImage} 
               alt="Maternidade Acolhedora" 
-              className="w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover flex-shrink-0 border-2 border-accent/30 shadow-md dark:border-border"
+              className="w-32 h-32 md:w-40 md:h-40 rounded-lg object-cover flex-shrink-0 border-2 border-accent/30 shadow-md dark:border-border"
             />
             <div className="flex-1 text-center md:text-left">
               <p className="text-xl italic text-foreground leading-relaxed">
@@ -90,7 +90,7 @@ export default function Home() {
 
         {/* Quick Actions */}
         <div className="space-y-3">
-          <h2 className="text-lg font-heading font-semibold text-foreground">
+          <h2 className="text-lg font-serif font-semibold text-foreground">
             Ações Rápidas
           </h2>
 
@@ -101,7 +101,7 @@ export default function Home() {
                   <Play className="w-6 h-6 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-foreground mb-1">
+                  <h3 className="font-serif font-semibold text-foreground mb-1">
                     Vídeo Novo da Nath
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -119,7 +119,7 @@ export default function Home() {
                   <MessageCircle className="w-6 h-6 text-pink-accent" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-foreground mb-1">
+                  <h3 className="font-serif font-semibold text-foreground mb-1">
                     Pergunte à NathIA
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -137,7 +137,7 @@ export default function Home() {
                   <CheckCircle className="w-6 h-6 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-foreground mb-1">
+                  <h3 className="font-serif font-semibold text-foreground mb-1">
                     Registrar Hábito
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -153,7 +153,7 @@ export default function Home() {
         <Card className="bg-gradient-to-br from-pink-accent/10 to-primary/5 p-6 border-pink-accent/20" data-testid="card-subscribe-cta">
           <div className="text-center">
             <Heart className="w-12 h-12 text-pink-accent mx-auto mb-3" />
-            <h3 className="text-xl font-heading font-bold text-foreground mb-2">
+            <h3 className="text-xl font-serif font-bold text-foreground mb-2">
               Acesso Completo
             </h3>
             <p className="text-muted-foreground mb-4">

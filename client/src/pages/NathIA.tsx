@@ -76,7 +76,7 @@ export default function NathIA() {
               className="w-12 h-12 rounded-full object-cover border-2 border-pink-accent shadow-md dark:shadow-lg"
             />
             <div>
-              <h1 className="text-xl font-heading font-bold text-foreground">
+              <h1 className="text-xl font-serif font-bold text-foreground">
                 NathIA
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -133,7 +133,7 @@ export default function NathIA() {
                 data-testid={`message-${message.role}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                  className={`max-w-[80%] rounded-lg px-4 py-3 ${
                     message.role === "user"
                       ? "bg-primary text-primary-foreground rounded-br-sm"
                       : "bg-card text-card-foreground shadow-sm rounded-bl-sm border border-border"
@@ -148,7 +148,7 @@ export default function NathIA() {
           )}
           {sendMessageMutation.isPending && (
             <div className="flex justify-start">
-              <div className="bg-card text-card-foreground rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm border border-border">
+              <div className="bg-card text-card-foreground rounded-lg rounded-bl-sm px-4 py-3 shadow-sm border border-border">
                 <div className="flex gap-1">
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-100"></div>

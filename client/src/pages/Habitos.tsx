@@ -48,7 +48,7 @@ export default function Habitos() {
       {/* Header */}
       <header className="bg-gradient-to-br from-primary/10 via-accent/20 to-background p-6">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
+          <h1 className="text-3xl font-serif font-bold text-foreground mb-2">
             Meus Hábitos
           </h1>
           <p className="text-muted-foreground">
@@ -62,7 +62,7 @@ export default function Habitos() {
         <Card className="p-6 bg-gradient-to-br from-pink-accent/10 to-primary/5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-heading font-semibold text-foreground mb-1">
+              <h2 className="text-lg font-serif font-semibold text-foreground mb-1">
                 Hoje
               </h2>
               <p className="text-3xl font-bold text-foreground">
@@ -103,7 +103,7 @@ export default function Habitos() {
 
         {/* Habits List */}
         <div className="space-y-3">
-          <h2 className="text-lg font-heading font-semibold text-foreground">
+          <h2 className="text-lg font-serif font-semibold text-foreground">
             Seus Hábitos
           </h2>
 
@@ -148,7 +148,7 @@ export default function Habitos() {
                       </div>
 
                       <div className="flex-1">
-                        <h3 className="font-semibold text-foreground mb-1">
+                        <h3 className="font-serif font-semibold text-foreground mb-1">
                           {habit.title}
                         </h3>
                         {streak > 0 && (
@@ -184,7 +184,7 @@ export default function Habitos() {
         {completedToday === totalHabits && totalHabits > 0 && (
           <Card className="p-6 bg-gradient-to-br from-pink-accent/20 to-primary/10 text-center">
             <Award className="w-16 h-16 text-pink-accent mx-auto mb-3" />
-            <h3 className="text-xl font-heading font-bold text-foreground mb-2">
+            <h3 className="text-xl font-serif font-bold text-foreground mb-2">
               Parabéns! 🎉
             </h3>
             <p className="text-muted-foreground">

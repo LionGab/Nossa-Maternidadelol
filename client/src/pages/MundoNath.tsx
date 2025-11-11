@@ -53,7 +53,7 @@ export default function MundoNath() {
       {/* Header */}
       <header className="bg-gradient-to-br from-primary/10 via-accent/20 to-background p-6">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
+          <h1 className="text-3xl font-serif font-bold text-foreground mb-2">
             Mundo Nath
           </h1>
           <p className="text-muted-foreground">
@@ -84,7 +84,7 @@ export default function MundoNath() {
           <div className="grid gap-4">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse">
-                <div className="aspect-video bg-muted rounded-t-2xl"></div>
+                <div className="aspect-video bg-muted rounded-t-lg"></div>
                 <div className="p-4 space-y-2">
                   <div className="h-4 bg-muted rounded w-3/4"></div>
                   <div className="h-3 bg-muted rounded w-1/2"></div>
@@ -148,7 +148,7 @@ export default function MundoNath() {
                   {/* Content */}
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-3 mb-2">
-                      <h3 className="font-semibold text-foreground flex-1">
+                      <h3 className="font-serif font-semibold text-foreground flex-1">
                         {post.title}
                       </h3>
                       <Button
@@ -207,7 +207,7 @@ export default function MundoNath() {
                 <div className="w-16 h-16 bg-pink-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Lock className="w-8 h-8 text-pink-accent" />
                 </div>
-                <h3 className="text-xl font-heading font-bold text-foreground mb-2">
+                <h3 className="text-xl font-serif font-bold text-foreground mb-2">
                   Conteúdo Premium
                 </h3>
                 <p className="text-muted-foreground mb-6">
