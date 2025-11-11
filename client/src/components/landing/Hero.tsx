@@ -11,7 +11,7 @@ export function Hero() {
           <div className="space-y-6">
             <div className="space-y-3">
               <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground leading-tight">
-                Acolhimento, orientação e rotina leve — em 5 minutos por dia.
+                Acolhimento, orientação e rotina leve — em 5 minutos por dia. 💙
               </h1>
               <p className="text-lg text-muted-foreground">
                 Criado com a Nathália Valente para quem quer menos culpa e mais apoio de verdade.
