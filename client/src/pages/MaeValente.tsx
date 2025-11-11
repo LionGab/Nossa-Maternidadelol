@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SavedQa } from "@shared/schema";
 import supportImage from "@assets/nat1_1762840094067.png";
+import yogaImage from "@assets/stock_images/pregnant_woman_doing_04c8a625.jpg";
+import foodImage from "@assets/stock_images/healthy_nutritious_f_df90cf04.jpg";
+import meditationImage from "@assets/stock_images/woman_meditating_pea_e4e09398.jpg";
 
 interface SearchResult {
   question: string;
@@ -35,6 +38,7 @@ const WELLNESS_TIPS = [
     category: "Gestação",
     duration: "15 min",
     icon: Sparkles,
+    image: yogaImage,
   },
   {
     id: "receitas-puerperio",
@@ -43,6 +47,7 @@ const WELLNESS_TIPS = [
     category: "Culinária",
     duration: "Leitura rápida",
     icon: Heart,
+    image: foodImage,
   },
   {
     id: "meditacao-ansiedade",
@@ -51,6 +56,7 @@ const WELLNESS_TIPS = [
     category: "Bem-estar",
     duration: "10 min",
     icon: Sparkles,
+    image: meditationImage,
   },
 ];
 
@@ -156,30 +162,35 @@ export default function MaeValente() {
                     return (
                       <Card
                         key={tip.id}
-                        className="p-5 hover-elevate active-elevate-2 cursor-pointer transition-all border-pink-accent/20"
+                        className="overflow-hidden hover-elevate active-elevate-2 cursor-pointer transition-all border-pink-accent/20"
                         data-testid={`tip-${tip.id}`}
                       >
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 rounded-full bg-pink-accent/10 flex items-center justify-center flex-shrink-0">
-                            <Icon className="w-6 h-6 text-pink-accent" />
+                        <div className="relative h-40 overflow-hidden">
+                          <img 
+                            src={tip.image} 
+                            alt={tip.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/90 dark:bg-gray-900/90 flex items-center justify-center shadow-md">
+                            <Icon className="w-5 h-5 text-pink-accent" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Badge variant="outline" className="text-xs">
-                                {tip.category}
-                              </Badge>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="w-3 h-3" />
-                                {tip.duration}
-                              </div>
+                        </div>
+                        <div className="p-5">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline" className="text-xs">
+                              {tip.category}
+                            </Badge>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="w-3 h-3" />
+                              {tip.duration}
                             </div>
-                            <h3 className="font-serif font-semibold text-foreground mb-1">
-                              {tip.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {tip.description}
-                            </p>
                           </div>
+                          <h3 className="font-serif font-semibold text-foreground mb-1">
+                            {tip.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {tip.description}
+                          </p>
                         </div>
                       </Card>
                     );
