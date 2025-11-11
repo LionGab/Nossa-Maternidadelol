@@ -166,28 +166,6 @@ export default function Home() {
             </Card>
           </Link>
         </div>
-
-        {/* CTA for non-subscribers */}
-        <Card className="bg-gradient-to-br from-[hsl(var(--pink-light))] to-[hsl(var(--primary-light))] p-6 border-pink-accent animate-in fade-in zoom-in duration-700 delay-600" data-testid="card-subscribe-cta">
-          <div className="text-center">
-            <Heart className="w-12 h-12 text-pink-accent mx-auto mb-3" />
-            <h3 className="text-xl font-serif font-bold text-foreground mb-2">
-              Acesso Completo
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Conteúdos exclusivos, NathIA ilimitada e muito mais
-            </p>
-            <p className="text-2xl font-bold text-pink-accent mb-4">
-              R$ 19,90/mês
-            </p>
-            <Button
-              className="w-full bg-pink-accent hover:bg-pink-accent/90 text-white font-semibold rounded-full"
-              data-testid="button-subscribe"
-            >
-              Assinar Agora
-            </Button>
-          </div>
-        </Card>
       </div>
     </div>
   );
