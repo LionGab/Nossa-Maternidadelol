@@ -188,37 +188,93 @@ export const insertSavedQaSchema = createInsertSchema(savedQa).omit({
 export type InsertSavedQa = z.infer<typeof insertSavedQaSchema>;
 export type SavedQa = typeof savedQa.$inferSelect;
 
-// Habits
+// Habits (Customizable)
 export const habits = pgTable("habits", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
   title: text("title").notNull(),
-  icon: text("icon").notNull(), // lucide icon name
+  emoji: text("emoji").notNull(),
+  color: text("color").notNull(), // gradient class like "from-blue-500 to-purple-500"
   order: integer("order").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertHabitSchema = createInsertSchema(habits).omit({
   id: true,
+  createdAt: true,
 });
 
 export type InsertHabit = z.infer<typeof insertHabitSchema>;
 export type Habit = typeof habits.$inferSelect;
 
-// Habit Entries
-export const habitEntries = pgTable("habit_entries", {
+// Habit Completions (Daily tracking)
+export const habitCompletions = pgTable("habit_completions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   habitId: varchar("habit_id").notNull(),
+  userId: varchar("user_id").notNull(),
   date: text("date").notNull(), // YYYY-MM-DD
-  done: boolean("done").default(false).notNull(),
-  completedAt: timestamp("completed_at"),
+  completedAt: timestamp("completed_at").defaultNow().notNull(),
 });
 
-export const insertHabitEntrySchema = createInsertSchema(habitEntries).omit({
+export const insertHabitCompletionSchema = createInsertSchema(habitCompletions).omit({
   id: true,
+  completedAt: true,
 });
 
-export type InsertHabitEntry = z.infer<typeof insertHabitEntrySchema>;
-export type HabitEntry = typeof habitEntries.$inferSelect;
+export type InsertHabitCompletion = z.infer<typeof insertHabitCompletionSchema>;
+export type HabitCompletion = typeof habitCompletions.$inferSelect;
+
+// User Stats (Gamification)
+export const userStats = pgTable("user_stats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  xp: integer("xp").default(0).notNull(),
+  level: integer("level").default(1).notNull(),
+  currentStreak: integer("current_streak").default(0).notNull(),
+  longestStreak: integer("longest_streak").default(0).notNull(),
+  totalCompletions: integer("total_completions").default(0).notNull(),
+  lastActivityDate: text("last_activity_date"), // YYYY-MM-DD
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertUserStatsSchema = createInsertSchema(userStats).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertUserStats = z.infer<typeof insertUserStatsSchema>;
+export type UserStats = typeof userStats.$inferSelect;
+
+// Achievements (Badges)
+export const achievements = pgTable("achievements", {
+  id: varchar("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  emoji: text("emoji").notNull(),
+  requirement: integer("requirement").notNull(), // Number needed to unlock
+  type: text("type").notNull(), // "streak", "completions", "level", "habit_count"
+});
+
+export const insertAchievementSchema = createInsertSchema(achievements);
+
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+export type Achievement = typeof achievements.$inferSelect;
+
+// User Achievements (Unlocked badges)
+export const userAchievements = pgTable("user_achievements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  achievementId: varchar("achievement_id").notNull(),
+  unlockedAt: timestamp("unlocked_at").defaultNow().notNull(),
+});
+
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({
+  id: true,
+  unlockedAt: true,
+});
+
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+export type UserAchievement = typeof userAchievements.$inferSelect;
 
 // Favorites
 export const favorites = pgTable("favorites", {

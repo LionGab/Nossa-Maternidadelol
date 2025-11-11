@@ -10,7 +10,10 @@ import {
   type QaCache, type InsertQaCache,
   type SavedQa, type InsertSavedQa,
   type Habit, type InsertHabit,
-  type HabitEntry, type InsertHabitEntry,
+  type HabitCompletion, type InsertHabitCompletion,
+  type UserStats, type InsertUserStats,
+  type Achievement, type InsertAchievement,
+  type UserAchievement, type InsertUserAchievement,
   type Favorite, type InsertFavorite,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -58,9 +61,24 @@ export interface IStorage {
   // Habits
   getHabits(userId: string): Promise<Habit[]>;
   createHabit(habit: InsertHabit): Promise<Habit>;
-  getHabitEntry(habitId: string, date: string): Promise<HabitEntry | undefined>;
-  createOrUpdateHabitEntry(entry: InsertHabitEntry): Promise<HabitEntry>;
-  getHabitStreak(habitId: string, currentDate: string): Promise<number>;
+  deleteHabit(habitId: string): Promise<void>;
+  updateHabitOrder(habitId: string, newOrder: number): Promise<void>;
+  
+  // Habit Completions
+  getHabitCompletion(habitId: string, date: string): Promise<HabitCompletion | undefined>;
+  getHabitCompletions(userId: string, startDate: string, endDate: string): Promise<HabitCompletion[]>;
+  createHabitCompletion(completion: InsertHabitCompletion): Promise<HabitCompletion>;
+  deleteHabitCompletion(habitId: string, date: string): Promise<void>;
+  
+  // User Stats (Gamification)
+  getUserStats(userId: string): Promise<UserStats | undefined>;
+  createOrUpdateUserStats(userId: string, xpGain: number): Promise<UserStats>;
+  updateStreak(userId: string, date: string): Promise<UserStats>;
+  
+  // Achievements
+  getAchievements(): Promise<Achievement[]>;
+  getUserAchievements(userId: string): Promise<UserAchievement[]>;
+  unlockAchievement(userId: string, achievementId: string): Promise<UserAchievement | null>;
   
   // Favorites
   getFavorites(userId: string): Promise<Favorite[]>;
@@ -80,7 +98,10 @@ export class MemStorage implements IStorage {
   private qaCache: Map<string, QaCache>;
   private savedQa: Map<string, SavedQa>;
   private habits: Map<string, Habit>;
-  private habitEntries: Map<string, HabitEntry>;
+  private habitCompletions: Map<string, HabitCompletion>;
+  private userStats: Map<string, UserStats>;
+  private achievements: Map<string, Achievement>;
+  private userAchievements: Map<string, UserAchievement>;
   private favorites: Map<string, Favorite>;
 
   constructor() {
@@ -95,7 +116,10 @@ export class MemStorage implements IStorage {
     this.qaCache = new Map();
     this.savedQa = new Map();
     this.habits = new Map();
-    this.habitEntries = new Map();
+    this.habitCompletions = new Map();
+    this.userStats = new Map();
+    this.achievements = new Map();
+    this.userAchievements = new Map();
     this.favorites = new Map();
 
     this.seedData();
@@ -316,15 +340,20 @@ export class MemStorage implements IStorage {
       quote: "Você está fazendo um trabalho incrível. Seja gentil consigo mesma.",
     });
 
-    // Seed default habits for test user
-    const defaultHabits: Habit[] = [
-      { id: "habit-1", userId: "test-user", title: "Beber 2L de água", icon: "droplet", order: 1 },
-      { id: "habit-2", userId: "test-user", title: "Exercícios de respiração", icon: "wind", order: 2 },
-      { id: "habit-3", userId: "test-user", title: "Alongamento leve", icon: "stretch", order: 3 },
-      { id: "habit-4", userId: "test-user", title: "Diário de humor", icon: "bookHeart", order: 4 },
-      { id: "habit-5", userId: "test-user", title: "Leitura de 10 min", icon: "bookOpen", order: 5 },
+    // Seed achievements
+    const defaultAchievements: Achievement[] = [
+      { id: "first_habit", title: "Primeiro Passo", description: "Crie seu primeiro hábito", emoji: "🎯", requirement: 1, type: "habit_count" },
+      { id: "habit_master", title: "Organizadora", description: "Crie 5 hábitos", emoji: "📋", requirement: 5, type: "habit_count" },
+      { id: "streak_3", title: "Consistente", description: "Mantenha 3 dias de sequência", emoji: "🔥", requirement: 3, type: "streak" },
+      { id: "streak_7", title: "Uma Semana", description: "Complete 7 dias seguidos", emoji: "✨", requirement: 7, type: "streak" },
+      { id: "streak_30", title: "Mãe Dedicada", description: "Incrível! 30 dias de sequência", emoji: "👑", requirement: 30, type: "streak" },
+      { id: "completions_10", title: "Iniciante", description: "Complete 10 hábitos", emoji: "🌱", requirement: 10, type: "completions" },
+      { id: "completions_50", title: "Comprometida", description: "Complete 50 hábitos", emoji: "🌟", requirement: 50, type: "completions" },
+      { id: "completions_100", title: "Determinada", description: "100 hábitos completados!", emoji: "💪", requirement: 100, type: "completions" },
+      { id: "level_5", title: "Nível 5", description: "Alcance o nível 5", emoji: "⭐", requirement: 5, type: "level" },
+      { id: "level_10", title: "Nível 10", description: "Alcance o nível 10", emoji: "🎖️", requirement: 10, type: "level" },
     ];
-    defaultHabits.forEach((habit) => this.habits.set(habit.id, habit));
+    defaultAchievements.forEach((achievement) => this.achievements.set(achievement.id, achievement));
   }
 
   async getProfile(id: string): Promise<Profile | undefined> {
@@ -498,7 +527,7 @@ export class MemStorage implements IStorage {
       hash: insertCache.hash,
       question: insertCache.question,
       answer: insertCache.answer,
-      sources: insertCache.sources ?? [],
+      sources: (insertCache.sources ?? []) as { title: string; url: string }[],
       ttlExpiresAt: insertCache.ttlExpiresAt,
       createdAt: new Date(),
     };
@@ -519,13 +548,14 @@ export class MemStorage implements IStorage {
       userId: insertSavedQa.userId,
       question: insertSavedQa.question,
       answer: insertSavedQa.answer,
-      sources: insertSavedQa.sources ?? [],
+      sources: (insertSavedQa.sources ?? []) as { title: string; url: string }[],
       savedAt: new Date(),
     };
     this.savedQa.set(id, savedQa);
     return savedQa;
   }
 
+  // Habits
   async getHabits(userId: string): Promise<Habit[]> {
     return Array.from(this.habits.values())
       .filter((h) => h.userId === userId)
@@ -534,60 +564,180 @@ export class MemStorage implements IStorage {
 
   async createHabit(insertHabit: InsertHabit): Promise<Habit> {
     const id = randomUUID();
-    const habit: Habit = { ...insertHabit, id };
+    const habit: Habit = { ...insertHabit, id, createdAt: new Date() };
     this.habits.set(id, habit);
     return habit;
   }
 
-  async getHabitEntry(habitId: string, date: string): Promise<HabitEntry | undefined> {
-    const key = `${habitId}-${date}`;
-    return this.habitEntries.get(key);
+  async deleteHabit(habitId: string): Promise<void> {
+    this.habits.delete(habitId);
+    // Also delete all completions
+    Array.from(this.habitCompletions.keys())
+      .filter((key) => key.startsWith(`${habitId}-`))
+      .forEach((key) => this.habitCompletions.delete(key));
   }
 
-  async createOrUpdateHabitEntry(insertEntry: InsertHabitEntry): Promise<HabitEntry> {
-    const key = `${insertEntry.habitId}-${insertEntry.date}`;
-    const existing = this.habitEntries.get(key);
+  async updateHabitOrder(habitId: string, newOrder: number): Promise<void> {
+    const habit = this.habits.get(habitId);
+    if (habit) {
+      habit.order = newOrder;
+      this.habits.set(habitId, habit);
+    }
+  }
+
+  // Habit Completions
+  async getHabitCompletion(habitId: string, date: string): Promise<HabitCompletion | undefined> {
+    const key = `${habitId}-${date}`;
+    return this.habitCompletions.get(key);
+  }
+
+  async getHabitCompletions(userId: string, startDate: string, endDate: string): Promise<HabitCompletion[]> {
+    return Array.from(this.habitCompletions.values()).filter((completion) => {
+      return completion.userId === userId && completion.date >= startDate && completion.date <= endDate;
+    });
+  }
+
+  async createHabitCompletion(insertCompletion: InsertHabitCompletion): Promise<HabitCompletion> {
+    const id = randomUUID();
+    const key = `${insertCompletion.habitId}-${insertCompletion.date}`;
+    const completion: HabitCompletion = {
+      id,
+      habitId: insertCompletion.habitId,
+      userId: insertCompletion.userId,
+      date: insertCompletion.date,
+      completedAt: new Date(),
+    };
+    this.habitCompletions.set(key, completion);
+    return completion;
+  }
+
+  async deleteHabitCompletion(habitId: string, date: string): Promise<void> {
+    const key = `${habitId}-${date}`;
+    this.habitCompletions.delete(key);
+  }
+
+  // User Stats (Gamification)
+  async getUserStats(userId: string): Promise<UserStats | undefined> {
+    return Array.from(this.userStats.values()).find((stats) => stats.userId === userId);
+  }
+
+  async createOrUpdateUserStats(userId: string, xpGain: number): Promise<UserStats> {
+    const existing = await this.getUserStats(userId);
     
     if (existing) {
-      const isDone = insertEntry.done ?? false;
-      const updated: HabitEntry = {
+      const newXp = existing.xp + xpGain;
+      const newLevel = Math.floor(newXp / 100) + 1; // 100 XP per level
+      
+      const updated: UserStats = {
         ...existing,
-        done: isDone,
-        completedAt: isDone ? new Date() : null,
+        xp: newXp,
+        level: newLevel,
+        totalCompletions: existing.totalCompletions + 1,
+        updatedAt: new Date(),
       };
-      this.habitEntries.set(key, updated);
+      this.userStats.set(existing.id, updated);
       return updated;
     }
     
+    // Create new stats
     const id = randomUUID();
-    const entry: HabitEntry = {
+    const stats: UserStats = {
       id,
-      habitId: insertEntry.habitId,
-      date: insertEntry.date,
-      done: insertEntry.done ?? false,
-      completedAt: insertEntry.done ? new Date() : null,
+      userId,
+      xp: xpGain,
+      level: Math.floor(xpGain / 100) + 1,
+      currentStreak: 0,
+      longestStreak: 0,
+      totalCompletions: 1,
+      lastActivityDate: null,
+      updatedAt: new Date(),
     };
-    this.habitEntries.set(key, entry);
-    return entry;
+    this.userStats.set(id, stats);
+    return stats;
   }
 
-  async getHabitStreak(habitId: string, currentDate: string): Promise<number> {
-    let streak = 0;
-    let checkDate = new Date(currentDate);
+  async updateStreak(userId: string, date: string): Promise<UserStats> {
+    const existing = await this.getUserStats(userId);
     
-    while (true) {
-      const dateStr = checkDate.toISOString().split("T")[0];
-      const entry = await this.getHabitEntry(habitId, dateStr);
-      
-      if (!entry || !entry.done) break;
-      
-      streak++;
-      checkDate.setDate(checkDate.getDate() - 1);
-      
-      if (streak > 365) break; // Safety limit
+    if (!existing) {
+      const id = randomUUID();
+      const stats: UserStats = {
+        id,
+        userId,
+        xp: 0,
+        level: 1,
+        currentStreak: 1,
+        longestStreak: 1,
+        totalCompletions: 0,
+        lastActivityDate: date,
+        updatedAt: new Date(),
+      };
+      this.userStats.set(id, stats);
+      return stats;
     }
     
-    return streak;
+    // Check if yesterday
+    const lastDate = existing.lastActivityDate ? new Date(existing.lastActivityDate) : null;
+    const currentDate = new Date(date);
+    
+    let newStreak = existing.currentStreak;
+    
+    if (lastDate) {
+      const dayDiff = Math.floor((currentDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (dayDiff === 1) {
+        // Consecutive day
+        newStreak = existing.currentStreak + 1;
+      } else if (dayDiff > 1) {
+        // Streak broken
+        newStreak = 1;
+      }
+      // If same day, keep streak
+    } else {
+      newStreak = 1;
+    }
+    
+    const updated: UserStats = {
+      ...existing,
+      currentStreak: newStreak,
+      longestStreak: Math.max(existing.longestStreak, newStreak),
+      lastActivityDate: date,
+      updatedAt: new Date(),
+    };
+    
+    this.userStats.set(existing.id, updated);
+    return updated;
+  }
+
+  // Achievements
+  async getAchievements(): Promise<Achievement[]> {
+    return Array.from(this.achievements.values());
+  }
+
+  async getUserAchievements(userId: string): Promise<UserAchievement[]> {
+    return Array.from(this.userAchievements.values())
+      .filter((ua) => ua.userId === userId)
+      .sort((a, b) => b.unlockedAt.getTime() - a.unlockedAt.getTime());
+  }
+
+  async unlockAchievement(userId: string, achievementId: string): Promise<UserAchievement | null> {
+    // Check if already unlocked
+    const existing = Array.from(this.userAchievements.values()).find(
+      (ua) => ua.userId === userId && ua.achievementId === achievementId
+    );
+    
+    if (existing) return null;
+    
+    const id = randomUUID();
+    const userAchievement: UserAchievement = {
+      id,
+      userId,
+      achievementId,
+      unlockedAt: new Date(),
+    };
+    
+    this.userAchievements.set(id, userAchievement);
+    return userAchievement;
   }
 
   async getFavorites(userId: string): Promise<Favorite[]> {
