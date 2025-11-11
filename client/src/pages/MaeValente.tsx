@@ -126,7 +126,7 @@ export default function MaeValente() {
                     return (
                       <div
                         key={index}
-                        className="bg-white p-4 rounded-xl border border-border"
+                        className="bg-card p-4 rounded-xl border border-border"
                       >
                         <div className="flex items-start gap-3">
                           <div className="w-10 h-10 rounded-full bg-pink-accent/10 flex items-center justify-center flex-shrink-0">
@@ -159,12 +159,12 @@ export default function MaeValente() {
 
             {/* Welcome Card with Image */}
             {!searchResult && (
-              <Card className="p-6 bg-gradient-to-br from-accent/20 to-white border-none">
+              <Card className="p-6 bg-gradient-to-br from-accent/20 via-accent/10 to-card border-none">
                 <div className="flex flex-col md:flex-row items-center gap-6">
                   <img 
                     src={supportImage} 
                     alt="Apoio Materno" 
-                    className="w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover flex-shrink-0"
+                    className="w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover flex-shrink-0 border-2 border-accent/30 shadow-md dark:border-border"
                   />
                   <div className="flex-1 text-center md:text-left">
                     <h3 className="text-lg font-heading font-semibold text-foreground mb-2">
@@ -233,7 +233,7 @@ export default function MaeValente() {
 
             {/* Search Result */}
             {searchResult && (
-              <Card className="p-6 bg-white border-2 border-pink-accent/20">
+              <Card className="p-6 bg-card border-2 border-pink-accent/20">
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <h3 className="text-lg font-heading font-semibold text-foreground flex-1">
                     {searchResult.question}

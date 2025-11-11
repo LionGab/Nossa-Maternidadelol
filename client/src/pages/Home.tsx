@@ -24,7 +24,7 @@ export default function Home() {
           <img 
             src={logoImage} 
             alt="Nossa Maternidade" 
-            className="w-16 h-16 rounded-full object-cover flex-shrink-0"
+            className="w-16 h-16 rounded-full object-cover flex-shrink-0 border-2 border-accent/50 shadow-sm"
           />
           <div className="flex-1">
             <h1 className="text-3xl font-heading font-bold text-foreground mb-1">
@@ -44,7 +44,7 @@ export default function Home() {
             <div className="h-20 bg-muted rounded"></div>
           </Card>
         ) : dailyFeatured ? (
-          <Card className="bg-gradient-to-br from-accent/30 to-white p-6 border-none shadow-md" data-testid="card-daily-featured">
+          <Card className="bg-gradient-to-br from-accent/30 via-accent/15 to-card p-6 border-none shadow-md" data-testid="card-daily-featured">
             <div className="flex items-start gap-3 mb-4">
               <Sparkles className="w-6 h-6 text-pink-accent flex-shrink-0 mt-1" />
               <div className="flex-1">
@@ -73,12 +73,12 @@ export default function Home() {
         ) : null}
 
         {/* Quote Section with Image */}
-        <Card className="p-6 bg-gradient-to-br from-accent/20 to-white border-none">
+        <Card className="p-6 bg-gradient-to-br from-accent/20 via-accent/10 to-card border-none">
           <div className="flex flex-col md:flex-row items-center gap-6">
             <img 
               src={welcomeImage} 
               alt="Maternidade Acolhedora" 
-              className="w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover flex-shrink-0"
+              className="w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover flex-shrink-0 border-2 border-accent/30 shadow-md dark:border-border"
             />
             <div className="flex-1 text-center md:text-left">
               <p className="text-xl italic text-foreground leading-relaxed">

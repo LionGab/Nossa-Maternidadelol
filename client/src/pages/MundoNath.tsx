@@ -65,7 +65,7 @@ export default function MundoNath() {
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Category Tabs */}
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="mb-6">
-          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap bg-white border border-border rounded-full p-1">
+          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap bg-card border border-border rounded-full p-1">
             {CATEGORIES.map((cat) => (
               <TabsTrigger
                 key={cat.id}

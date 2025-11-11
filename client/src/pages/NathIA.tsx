@@ -67,13 +67,13 @@ export default function NathIA() {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-background via-accent/5 to-background pb-16">
       {/* Header */}
-      <header className="bg-white border-b border-border p-4 shadow-sm">
+      <header className="bg-card border-b border-border p-4 shadow-sm">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center gap-3">
             <img 
               src={nathPortrait} 
               alt="Nath" 
-              className="w-12 h-12 rounded-full object-cover border-2 border-pink-accent"
+              className="w-12 h-12 rounded-full object-cover border-2 border-pink-accent shadow-md dark:shadow-lg"
             />
             <div>
               <h1 className="text-xl font-heading font-bold text-foreground">
@@ -135,8 +135,8 @@ export default function NathIA() {
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                     message.role === "user"
-                      ? "bg-primary text-white rounded-br-sm"
-                      : "bg-white text-foreground shadow-sm rounded-bl-sm"
+                      ? "bg-primary text-primary-foreground rounded-br-sm"
+                      : "bg-card text-card-foreground shadow-sm rounded-bl-sm border border-border"
                   }`}
                 >
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -148,7 +148,7 @@ export default function NathIA() {
           )}
           {sendMessageMutation.isPending && (
             <div className="flex justify-start">
-              <div className="bg-white text-foreground rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+              <div className="bg-card text-card-foreground rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm border border-border">
                 <div className="flex gap-1">
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-100"></div>
@@ -161,7 +161,7 @@ export default function NathIA() {
       </ScrollArea>
 
       {/* Input */}
-      <div className="bg-white border-t border-border p-4 shadow-lg">
+      <div className="bg-card border-t border-border p-4 shadow-lg">
         <div className="max-w-2xl mx-auto flex gap-2">
           <Textarea
             value={input}
