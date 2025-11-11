@@ -62,6 +62,31 @@ export const insertPostSchema = createInsertSchema(posts).omit({
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Post = typeof posts.$inferSelect;
 
+// Viral Social Media Posts (TikTok/Instagram)
+export const viralPosts = pgTable("viral_posts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  platform: text("platform").notNull(), // "tiktok", "instagram"
+  externalId: text("external_id").notNull(), // Platform's video/post ID
+  embedUrl: text("embed_url").notNull(), // Full canonical share URL
+  title: text("title").notNull(),
+  description: text("description"),
+  category: text("category"), // Optional: "Gestação", "Puerpério", "Treinos", "Culinária"
+  thumbnailUrl: text("thumbnail_url"),
+  likes: integer("likes"), // Nullable - manual snapshots only
+  comments: integer("comments"), // Nullable - manual snapshots only
+  shares: integer("shares"), // Nullable - manual snapshots only
+  featured: boolean("featured").default(false).notNull(),
+  publishedAt: timestamp("published_at").defaultNow().notNull(),
+});
+
+export const insertViralPostSchema = createInsertSchema(viralPosts).omit({
+  id: true,
+  publishedAt: true,
+});
+
+export type InsertViralPost = z.infer<typeof insertViralPostSchema>;
+export type ViralPost = typeof viralPosts.$inferSelect;
+
 // Daily Tips
 export const tips = pgTable("tips", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

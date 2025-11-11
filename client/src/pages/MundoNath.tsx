@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Play, Heart, Lock, Clock } from "lucide-react";
+import { Play, Heart, Lock, Clock, Sparkles, TrendingUp } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Post } from "@shared/schema";
+import { TikTokEmbed, InstagramEmbed } from "react-social-media-embed";
+import type { Post, ViralPost } from "@shared/schema";
 
 const CATEGORIES = [
   { id: "all", label: "Todos" },
@@ -26,6 +27,10 @@ export default function MundoNath() {
 
   const { data: favorites = [] } = useQuery<string[]>({
     queryKey: ["/api/favorites"],
+  });
+
+  const { data: viralPosts = [], isLoading: viralLoading } = useQuery<ViralPost[]>({
+    queryKey: ["/api/viral-posts?featured=true"],
   });
 
   const toggleFavoriteMutation = useMutation({
@@ -62,7 +67,81 @@ export default function MundoNath() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
+        {/* Viral Posts Section */}
+        {viralPosts.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-pink-accent" />
+              <h2 className="text-xl font-serif font-bold text-foreground">
+                Viral da Nath
+              </h2>
+            </div>
+
+            {viralLoading ? (
+              <Card className="p-6 animate-pulse">
+                <div className="h-96 bg-muted rounded-lg"></div>
+              </Card>
+            ) : (
+              <div className="grid gap-6">
+                {viralPosts.map((vpost) => (
+                  <Card key={vpost.id} className="overflow-hidden" data-testid={`card-viral-${vpost.id}`}>
+                    <div className="p-4 border-b border-border">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-serif font-semibold text-foreground mb-1">
+                            {vpost.title}
+                          </h3>
+                          {vpost.description && (
+                            <p className="text-sm text-muted-foreground">
+                              {vpost.description}
+                            </p>
+                          )}
+                        </div>
+                        <Badge variant="outline" className="flex-shrink-0 gap-1">
+                          <TrendingUp className="w-3 h-3" />
+                          {vpost.platform === "tiktok" ? "TikTok" : "Instagram"}
+                        </Badge>
+                      </div>
+
+                      {/* Engagement Metrics */}
+                      {(vpost.likes || vpost.comments || vpost.shares) && (
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          {vpost.likes && (
+                            <div className="flex items-center gap-1">
+                              <Heart className="w-3 h-3" />
+                              {vpost.likes.toLocaleString()}
+                            </div>
+                          )}
+                          {vpost.comments && (
+                            <div className="flex items-center gap-1">
+                              💬 {vpost.comments.toLocaleString()}
+                            </div>
+                          )}
+                          {vpost.shares && (
+                            <div className="flex items-center gap-1">
+                              🔄 {vpost.shares.toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Embed */}
+                    <div className="flex justify-center bg-muted/30 p-4">
+                      {vpost.platform === "tiktok" ? (
+                        <TikTokEmbed url={vpost.embedUrl} width={325} />
+                      ) : (
+                        <InstagramEmbed url={vpost.embedUrl} width={328} />
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Category Tabs */}
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="mb-6">
           <TabsList className="w-full justify-start overflow-x-auto flex-nowrap bg-card border border-border rounded-full p-1">

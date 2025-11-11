@@ -44,6 +44,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(posts);
   });
 
+  // Viral Posts
+  app.get("/api/viral-posts", async (req, res) => {
+    const featured = req.query.featured === "true" ? true : undefined;
+    const category = req.query.category as string;
+    const viralPosts = await storage.getViralPosts(featured, category);
+    res.json(viralPosts);
+  });
+
   // Favorites
   app.get("/api/favorites", async (req, res) => {
     const favorites = await storage.getFavorites(TEST_USER_ID);

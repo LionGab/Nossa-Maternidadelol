@@ -2,6 +2,7 @@ import {
   type Profile, type InsertProfile,
   type Subscription, type InsertSubscription,
   type Post, type InsertPost,
+  type ViralPost, type InsertViralPost,
   type Tip, type InsertTip,
   type DailyFeatured, type InsertDailyFeatured,
   type AiSession, type InsertAiSession,
@@ -27,6 +28,10 @@ export interface IStorage {
   getPosts(category?: string): Promise<Post[]>;
   getPost(id: string): Promise<Post | undefined>;
   createPost(post: InsertPost): Promise<Post>;
+  
+  // Viral Posts
+  getViralPosts(featured?: boolean, category?: string): Promise<ViralPost[]>;
+  createViralPost(post: InsertViralPost): Promise<ViralPost>;
   
   // Tips
   getTips(): Promise<Tip[]>;
@@ -67,6 +72,7 @@ export class MemStorage implements IStorage {
   private profiles: Map<string, Profile>;
   private subscriptions: Map<string, Subscription>;
   private posts: Map<string, Post>;
+  private viralPosts: Map<string, ViralPost>;
   private tips: Map<string, Tip>;
   private dailyFeatured: Map<string, DailyFeatured>;
   private aiSessions: Map<string, AiSession>;
@@ -81,6 +87,7 @@ export class MemStorage implements IStorage {
     this.profiles = new Map();
     this.subscriptions = new Map();
     this.posts = new Map();
+    this.viralPosts = new Map();
     this.tips = new Map();
     this.dailyFeatured = new Map();
     this.aiSessions = new Map();
@@ -158,6 +165,56 @@ export class MemStorage implements IStorage {
       },
     ];
     posts.forEach((post) => this.posts.set(post.id, post));
+
+    // Seed viral posts
+    const viralPosts: ViralPost[] = [
+      {
+        id: "viral-1",
+        platform: "tiktok",
+        externalId: "7072819797184171310",
+        embedUrl: "https://www.tiktok.com/@scout2015/video/7072819797184171310",
+        title: "Como lidar com ansiedade na gestação",
+        description: "Dicas práticas e exercícios de respiração para mamães",
+        category: "Gestação",
+        thumbnailUrl: null,
+        likes: 15200,
+        comments: 340,
+        shares: 890,
+        featured: true,
+        publishedAt: new Date("2025-01-05"),
+      },
+      {
+        id: "viral-2",
+        platform: "instagram",
+        externalId: "CUbHfhpswxt",
+        embedUrl: "https://www.instagram.com/p/CUbHfhpswxt/",
+        title: "Treino seguro no puerpério",
+        description: "Exercícios leves para recuperação pós-parto",
+        category: "Treinos",
+        thumbnailUrl: null,
+        likes: 8900,
+        comments: 210,
+        shares: null,
+        featured: true,
+        publishedAt: new Date("2025-01-03"),
+      },
+      {
+        id: "viral-3",
+        platform: "tiktok",
+        externalId: "7050841962837806342",
+        embedUrl: "https://www.tiktok.com/@nathaliaarcuri/video/7050841962837806342",
+        title: "Receita de panqueca proteica para o puerpério",
+        description: "Rápido, nutritivo e delicioso para mamães ocupadas",
+        category: "Culinária",
+        thumbnailUrl: null,
+        likes: null,
+        comments: null,
+        shares: null,
+        featured: false,
+        publishedAt: new Date("2025-01-01"),
+      },
+    ];
+    viralPosts.forEach((vp) => this.viralPosts.set(vp.id, vp));
 
     // Seed daily featured
     const today = new Date().toISOString().split("T")[0];
@@ -242,6 +299,45 @@ export class MemStorage implements IStorage {
       publishedAt: new Date(),
     };
     this.posts.set(id, post);
+    return post;
+  }
+
+  async getViralPosts(featured?: boolean, category?: string): Promise<ViralPost[]> {
+    let posts = Array.from(this.viralPosts.values());
+    
+    if (featured !== undefined) {
+      posts = posts.filter((p) => p.featured === featured);
+    }
+    
+    if (category && category !== "all") {
+      posts = posts.filter((p) => p.category === category);
+    }
+    
+    return posts.sort((a, b) => {
+      if (a.featured && !b.featured) return -1;
+      if (!a.featured && b.featured) return 1;
+      return b.publishedAt.getTime() - a.publishedAt.getTime();
+    });
+  }
+
+  async createViralPost(insertPost: InsertViralPost): Promise<ViralPost> {
+    const id = randomUUID();
+    const post: ViralPost = {
+      id,
+      platform: insertPost.platform,
+      externalId: insertPost.externalId,
+      embedUrl: insertPost.embedUrl,
+      title: insertPost.title,
+      description: insertPost.description || null,
+      category: insertPost.category || null,
+      thumbnailUrl: insertPost.thumbnailUrl || null,
+      likes: insertPost.likes || null,
+      comments: insertPost.comments || null,
+      shares: insertPost.shares || null,
+      featured: insertPost.featured ?? false,
+      publishedAt: new Date(),
+    };
+    this.viralPosts.set(id, post);
     return post;
   }
 
