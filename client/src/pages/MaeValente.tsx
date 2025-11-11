@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Search, Heart, Phone, ExternalLink, Clock, BookmarkPlus } from "lucide-react";
+import { Search, Heart, Phone, ExternalLink, Clock, BookmarkPlus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -80,18 +80,18 @@ export default function MaeValente() {
   return (
     <div className="flex flex-col h-screen bg-background pb-16">
       {/* Header */}
-      <header className="bg-gradient-to-br from-pink-accent/10 via-accent/20 to-background p-6 border-b border-border">
+      <header className="bg-card border-b border-border p-6">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center gap-4 mb-3">
-            <div className="w-12 h-12 rounded-full bg-pink-accent/20 flex items-center justify-center flex-shrink-0">
-              <Heart className="w-6 h-6 text-pink-accent" />
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-accent/20 to-accent/20 flex items-center justify-center flex-shrink-0 border-2 border-pink-accent/30">
+              <Sparkles className="w-7 h-7 text-pink-accent" />
             </div>
             <div className="flex-1">
               <h1 className="text-3xl font-serif font-bold text-foreground mb-1">
                 Mãe Valente
               </h1>
               <p className="text-muted-foreground">
-                Seu espaço seguro de autocuidado emocional
+                Descubra seu bem-estar interior
               </p>
             </div>
           </div>
@@ -190,7 +190,7 @@ export default function MaeValente() {
                       handleSearch();
                     }
                   }}
-                  placeholder="Como você está se sentindo hoje?"
+                  placeholder="Me conte, como está seu coração hoje?"
                   className="flex-1 border-2 focus:border-pink-accent"
                   data-testid="input-search"
                 />

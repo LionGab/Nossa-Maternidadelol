@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Droplet, Wind, Move, BookHeart, BookOpen, Award, Flame } from "lucide-react";
+import { Droplet, Wind, Move, BookHeart, BookOpen, Award, Flame, Sparkles, Heart } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
@@ -46,37 +46,55 @@ export default function Habitos() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="bg-gradient-to-br from-primary/10 via-accent/20 to-background p-6">
+      <header className="bg-card border-b border-border p-6">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-serif font-bold text-foreground mb-2">
-            Meus Hábitos
-          </h1>
-          <p className="text-muted-foreground">
-            Pequenas vitórias diárias
-          </p>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-accent/20 to-primary/20 flex items-center justify-center flex-shrink-0 border-2 border-pink-accent/30">
+              <Sparkles className="w-7 h-7 text-pink-accent" />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-3xl font-serif font-bold text-foreground mb-1">
+                Meus Hábitos
+              </h1>
+              <p className="text-muted-foreground">
+                Pequenas vitórias, grandes transformações
+              </p>
+            </div>
+          </div>
         </div>
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* Progress Overview */}
-        <Card className="p-6 bg-gradient-to-br from-pink-accent/10 to-primary/5">
+        <Card className="p-6 bg-gradient-to-br from-pink-accent/10 via-accent/5 to-primary/5 border-pink-accent/20">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-serif font-semibold text-foreground mb-1">
                 Hoje
               </h2>
-              <p className="text-3xl font-bold text-foreground">
+              <p className="text-3xl font-bold bg-gradient-to-r from-pink-accent to-primary bg-clip-text text-transparent">
                 {completedToday}/{totalHabits}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
                 hábitos completados
               </p>
             </div>
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-accent to-primary flex items-center justify-center">
-              <Flame className="w-10 h-10 text-white" />
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-accent to-primary flex items-center justify-center shadow-lg">
+              {completedToday === totalHabits && totalHabits > 0 ? (
+                <Sparkles className="w-10 h-10 text-white animate-pulse" />
+              ) : (
+                <Flame className="w-10 h-10 text-white" />
+              )}
             </div>
           </div>
           <Progress value={progressPercent} className="h-3" />
+          {completedToday > 0 && (
+            <p className="text-center text-sm text-pink-accent mt-3 font-medium">
+              {completedToday === totalHabits
+                ? "🎉 Incrível! Você completou tudo hoje!"
+                : `Você está indo muito bem! Continue assim! 💪`}
+            </p>
+          )}
         </Card>
 
         {/* Week Stats */}
@@ -132,15 +150,17 @@ export default function Habitos() {
                   <Card
                     key={habit.id}
                     className={`p-4 transition-all ${
-                      isDone ? "bg-accent/30 border-primary/30" : "hover-elevate"
+                      isDone 
+                        ? "bg-gradient-to-r from-pink-accent/10 to-primary/10 border-pink-accent/30" 
+                        : "hover-elevate"
                     }`}
                     data-testid={`card-habit-${habit.id}`}
                   >
                     <div className="flex items-center gap-4">
                       <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                           isDone
-                            ? "bg-primary text-white"
+                            ? "bg-gradient-to-br from-pink-accent to-primary text-white shadow-md"
                             : "bg-accent text-primary"
                         }`}
                       >
@@ -148,14 +168,17 @@ export default function Habitos() {
                       </div>
 
                       <div className="flex-1">
-                        <h3 className="font-serif font-semibold text-foreground mb-1">
+                        <h3 className={`font-serif font-semibold mb-1 ${isDone ? "text-foreground" : "text-foreground"}`}>
                           {habit.title}
                         </h3>
                         {streak > 0 && (
                           <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Flame className="w-3 h-3 text-pink-accent" />
-                              <span>{streak} dia{streak > 1 ? "s" : ""} seguidos</span>
+                            <div className="flex items-center gap-1 text-xs">
+                              <Flame className={`w-3 h-3 ${streak >= 7 ? "text-pink-accent animate-pulse" : "text-pink-accent"}`} />
+                              <span className="text-muted-foreground">
+                                {streak} dia{streak > 1 ? "s" : ""} seguidos
+                                {streak >= 7 && " 🔥"}
+                              </span>
                             </div>
                           </div>
                         )}
@@ -169,7 +192,7 @@ export default function Habitos() {
                             done: checked as boolean,
                           });
                         }}
-                        className="w-6 h-6 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        className="w-6 h-6 data-[state=checked]:bg-gradient-to-br data-[state=checked]:from-pink-accent data-[state=checked]:to-primary data-[state=checked]:border-pink-accent"
                         data-testid={`checkbox-habit-${habit.id}`}
                       />
                     </div>
@@ -182,14 +205,26 @@ export default function Habitos() {
 
         {/* Achievement Badges */}
         {completedToday === totalHabits && totalHabits > 0 && (
-          <Card className="p-6 bg-gradient-to-br from-pink-accent/20 to-primary/10 text-center">
-            <Award className="w-16 h-16 text-pink-accent mx-auto mb-3" />
-            <h3 className="text-xl font-serif font-bold text-foreground mb-2">
-              Parabéns! 🎉
-            </h3>
-            <p className="text-muted-foreground">
-              Você completou todos os hábitos de hoje!
-            </p>
+          <Card className="p-8 bg-gradient-to-br from-pink-accent/20 via-accent/10 to-primary/10 text-center border-2 border-pink-accent/30 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-pink-accent/5 to-primary/5 animate-pulse"></div>
+            <div className="relative z-10">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-pink-accent to-primary flex items-center justify-center shadow-lg">
+                <Award className="w-12 h-12 text-white" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-foreground mb-2">
+                Que conquista! 🎉
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Você completou todos os hábitos de hoje!
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <Heart className="w-4 h-4 text-pink-accent" />
+                <span className="text-sm text-pink-accent font-medium">
+                  Você está cuidando de si mesma com carinho
+                </span>
+                <Heart className="w-4 h-4 text-pink-accent" />
+              </div>
+            </div>
           </Card>
         )}
       </div>
