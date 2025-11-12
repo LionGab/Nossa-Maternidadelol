@@ -34,7 +34,11 @@ app.use(helmet({
 // CORS configuration
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',')
-  : ['https://nossa-maternidadelol.vercel.app'];
+  : [
+      'https://nossa-maternidadelol.vercel.app',
+      'https://www.nossamaternidade.com.br',
+      'https://nossamaternidade.com.br'
+    ];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -88,6 +92,13 @@ if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
   );
 }
 
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL é obrigatório em produção. " +
+    "Configure em: Vercel Dashboard → Project Settings → Environment Variables"
+  );
+}
+
 // Session configuration for Vercel (using MemoryStore - not recommended for production multi-instance)
 const sessionSecret = process.env.SESSION_SECRET || "nossa-maternidade-dev-secret-change-in-production";
 app.use(
@@ -104,26 +115,17 @@ app.use(
   })
 );
 
-// Initialize Passport
+// Initialize Supabase Auth
 setupAuth(app);
 
-// Auto-login demo user if not authenticated
-app.use(autoDemoLogin(storage));
+// Demo user disabled - use proper authentication
+// app.use(autoDemoLogin(storage));
 
 // Request logging middleware
 app.use(requestLogger);
 
 // Register authentication routes
 registerAuthRoutes(app);
-
-// Register application routes (async IIFE to handle async registerRoutes)
-(async () => {
-  try {
-    await registerRoutes(app);
-  } catch (error) {
-    logger.error({ error, msg: "Failed to register routes" });
-  }
-})();
 
 // Error logging middleware
 app.use(errorLogger);
@@ -136,5 +138,29 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(status).json({ message });
 });
 
+// Register application routes (async - must be awaited before export)
+// This ensures all routes are registered before Vercel uses the handler
+let routesRegistered = false;
+const initRoutes = async () => {
+  if (routesRegistered) return;
+  try {
+    // registerRoutes returns a Server, but we don't need it for Vercel serverless
+    await registerRoutes(app);
+    routesRegistered = true;
+    logger.info({ msg: "Routes registered successfully for Vercel" });
+  } catch (error) {
+    logger.error({ error, msg: "Failed to register routes" });
+    throw error;
+  }
+};
+
+// Initialize routes immediately (Vercel will wait for this)
+// This is a top-level await pattern that Vercel supports
+initRoutes().catch((error) => {
+  logger.error({ error, msg: "Critical: Failed to initialize routes" });
+  // Don't throw here - let Vercel handle the error
+});
+
 // Export for Vercel serverless
+// Vercel will use this as the handler for /api/* routes
 export default app;
