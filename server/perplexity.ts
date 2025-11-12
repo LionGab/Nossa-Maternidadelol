@@ -1,3 +1,5 @@
+import { AI } from "./constants";
+
 export interface PerplexityResponse {
   answer: string;
   sources: { title: string; url: string }[];
@@ -40,7 +42,7 @@ export async function searchWithPerplexity(question: string): Promise<Perplexity
   const sources = citations.map((url: string) => ({
     title: new URL(url).hostname,
     url,
-  })).slice(0, 4); // Limit to 4 sources
+  })).slice(0, AI.PERPLEXITY_MAX_SOURCES);
 
   return { answer, sources };
 }

@@ -455,7 +455,7 @@ export function registerRoutesSync(app: Express): void {
 
     const today = new Date();
     const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - 6); // 7 days including today
+    startDate.setDate(startDate.getDate() - TIME.HABIT_HISTORY_DAYS_OFFSET); // 7 days including today
 
     const startDateStr = startDate.toISOString().split("T")[0];
     const endDateStr = today.toISOString().split("T")[0];

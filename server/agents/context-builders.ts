@@ -4,7 +4,7 @@ import type { HabitsContext } from "./prompts/habits-prompt";
 import type { ContentContext } from "./prompts/content-prompt";
 import type { CommunityContext } from "./prompts/community-prompt";
 import type { AgentType } from "@shared/schema";
-import { GAMIFICATION } from "../constants";
+import { GAMIFICATION, AI, TIME } from "../constants";
 
 export async function buildGeneralContext(userId: string): Promise<ChatContext> {
   const profile = await storage.getProfileByUserId(userId);
@@ -30,16 +30,16 @@ export async function buildHabitsContext(userId: string): Promise<HabitsContext>
   const allAchievements = await storage.getAchievements();
   const achievementMap = new Map(allAchievements.map(a => [a.id, a]));
   const recentAchievements = userAchievements
-    .slice(-5)
+    .slice(-AI.RECENT_ACHIEVEMENTS_COUNT)
     .map(ua => achievementMap.get(ua.achievementId)?.title)
     .filter(Boolean) as string[];
   
-  // Calcular taxa de conclusão (últimos 7 dias)
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const startDate = sevenDaysAgo.toISOString().split("T")[0];
+  // Calcular taxa de conclusão (últimos N dias)
+  const daysAgo = new Date();
+  daysAgo.setDate(daysAgo.getDate() - TIME.COMPLETION_RATE_DAYS);
+  const startDate = daysAgo.toISOString().split("T")[0];
   const recentCompletions = await storage.getHabitCompletions(userId, startDate, today);
-  const totalPossible = habits.length * 7;
+  const totalPossible = habits.length * TIME.COMPLETION_RATE_DAYS;
   const completionRate = totalPossible > 0 ? recentCompletions.length / totalPossible : 0;
   
   return {
@@ -65,7 +65,7 @@ export async function buildContentContext(userId: string): Promise<ContentContex
   // Buscar posts favoritados para extrair categorias
   const postIds = favorites.map(f => f.postId);
   const posts = await Promise.all(
-    postIds.slice(-10).map(id => storage.getPost(id))
+    postIds.slice(-AI.FAVORITE_POSTS_FETCH_COUNT).map(id => storage.getPost(id))
   );
   const validPosts = posts.filter(Boolean) as any[];
   
@@ -74,7 +74,7 @@ export async function buildContentContext(userId: string): Promise<ContentContex
   ) as string[];
   
   const recentFavorites = validPosts
-    .slice(-5)
+    .slice(-AI.RECENT_FAVORITES_COUNT)
     .map(p => ({
       title: p.title,
       category: p.category,
@@ -118,13 +118,13 @@ export async function buildCommunityContext(userId: string): Promise<CommunityCo
   });
   const activeTopics = Array.from(tagCounts.entries())
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
+    .slice(0, AI.ACTIVE_TOPICS_COUNT)
     .map(([topic]) => topic);
   
   return {
     userStage: profile?.stage,
     userGoals: profile?.goals || [],
-    recentPosts: recentPosts.slice(0, 5).map(p => ({
+    recentPosts: recentPosts.slice(0, AI.RECENT_COMMUNITY_POSTS_COUNT).map(p => ({
       title: p.content.substring(0, 50) + (p.content.length > 50 ? "..." : ""),
       reactions: 0, // Seria necessário buscar reações
       comments: 0, // Seria necessário buscar comentários

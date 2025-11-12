@@ -27,7 +27,7 @@ export const ACHIEVEMENTS = {
   LEVEL_10: "level_10",
   HABIT_COUNT_1: "first_habit",
   HABIT_COUNT_5: "habit_master",
-  
+
   THRESHOLDS: {
     STREAK_3: 3,
     STREAK_7: 7,
@@ -56,18 +56,22 @@ export const COMMUNITY = {
 export const AI = {
   /** Number of recent messages to include in context */
   RECENT_MESSAGES_COUNT: 6,
+  /** Number of recent achievements to include in context */
+  RECENT_ACHIEVEMENTS_COUNT: 5,
+  /** Number of recent favorite posts to include in context */
+  RECENT_FAVORITES_COUNT: 5,
+  /** Number of favorite posts to fetch for category analysis */
+  FAVORITE_POSTS_FETCH_COUNT: 10,
+  /** Number of active topics to include in context */
+  ACTIVE_TOPICS_COUNT: 5,
+  /** Number of recent community posts to include in context */
+  RECENT_COMMUNITY_POSTS_COUNT: 5,
+  /** Number of sources to return from Perplexity API */
+  PERPLEXITY_MAX_SOURCES: 4,
 } as const;
 
 // Upload constants
 export const UPLOAD = {
-  /** Maximum file size for avatar upload (5MB) */
-  MAX_AVATAR_SIZE: 5 * 1024 * 1024,
-  /** Maximum file size for general file upload (10MB) */
-  MAX_FILE_SIZE: 10 * 1024 * 1024,
-  /** Cache control header value (1 hour in seconds) */
-  CACHE_CONTROL: "3600",
-  /** Cache control value in seconds (1 hour) */
-  CACHE_CONTROL_SECONDS: 3600,
   /** Allowed file types for avatar uploads */
   AVATAR_ALLOWED_TYPES: ["jpg", "jpeg", "png", "webp"] as const,
   /** Maximum file size for avatar upload (5MB) */
@@ -82,6 +86,10 @@ export const UPLOAD = {
   CONTENT_BUCKET: "content",
   /** Default content type for image uploads */
   DEFAULT_CONTENT_TYPE: "image/jpeg",
+  /** Cache control value in seconds (1 hour) */
+  CACHE_CONTROL_SECONDS: 3600,
+  /** Cache control header value (1 hour in seconds) - @deprecated Use CACHE_CONTROL_SECONDS */
+  CACHE_CONTROL: "3600",
 } as const;
 
 // Time constants
@@ -90,6 +98,10 @@ export const TIME = {
   DAYS_PER_YEAR: 365,
   /** Milliseconds per day */
   MS_PER_DAY: 1000 * 60 * 60 * 24,
+  /** Days to calculate completion rate (last week) */
+  COMPLETION_RATE_DAYS: 7,
+  /** Days offset for habit history (6 days ago = 7 days including today) */
+  HABIT_HISTORY_DAYS_OFFSET: 6,
 } as const;
 
 // Content constants

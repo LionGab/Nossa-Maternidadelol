@@ -151,42 +151,46 @@ export function validateUserId(
   next: NextFunction
 ): void {
   const authenticatedUserId = (req as AuthenticatedRequest).user?.id;
-  
+
   if (!authenticatedUserId) {
-    return res.status(401).json({ error: "Não autenticado" });
+    res.status(401).json({ error: "Não autenticado" });
+    return;
   }
 
   // Check userId from body
   if (req.body?.userId && req.body.userId !== authenticatedUserId) {
-    logger.warn({ 
+    logger.warn({
       msg: "Identity spoofing attempt detected",
       authenticatedUserId,
       attemptedUserId: req.body.userId,
-      path: req.path 
+      path: req.path
     });
-    return res.status(403).json({ error: "Não autorizado: userId não corresponde ao usuário autenticado" });
+    res.status(403).json({ error: "Não autorizado: userId não corresponde ao usuário autenticado" });
+    return;
   }
 
   // Check userId from params
   if (req.params?.userId && req.params.userId !== authenticatedUserId) {
-    logger.warn({ 
+    logger.warn({
       msg: "Identity spoofing attempt detected",
       authenticatedUserId,
       attemptedUserId: req.params.userId,
-      path: req.path 
+      path: req.path
     });
-    return res.status(403).json({ error: "Não autorizado: userId não corresponde ao usuário autenticado" });
+    res.status(403).json({ error: "Não autorizado: userId não corresponde ao usuário autenticado" });
+    return;
   }
 
   // Check userId from query
   if (req.query?.userId && req.query.userId !== authenticatedUserId) {
-    logger.warn({ 
+    logger.warn({
       msg: "Identity spoofing attempt detected",
       authenticatedUserId,
       attemptedUserId: req.query.userId,
-      path: req.path 
+      path: req.path
     });
-    return res.status(403).json({ error: "Não autorizado: userId não corresponde ao usuário autenticado" });
+    res.status(403).json({ error: "Não autorizado: userId não corresponde ao usuário autenticado" });
+    return;
   }
 
   next();

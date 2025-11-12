@@ -95,7 +95,7 @@ export async function getSignedUrl(
  */
 export function validateFileType(
   filename: string,
-  allowedTypes: string[]
+  allowedTypes: readonly string[]
 ): boolean {
   const extension = filename.split(".").pop()?.toLowerCase();
   return extension ? allowedTypes.includes(extension) : false;
