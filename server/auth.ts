@@ -114,6 +114,105 @@ export async function optionalAuth(
 }
 
 /**
+ * Middleware to validate that userId in request matches authenticated user
+ * Prevents identity spoofing by ensuring users can only access their own resources
+ */
+export function validateUserId(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const authenticatedUserId = (req as any).user?.id;
+  
+  if (!authenticatedUserId) {
+    return res.status(401).json({ error: "Não autenticado" });
+  }
+
+  // Check userId from body
+  if (req.body?.userId && req.body.userId !== authenticatedUserId) {
+    logger.warn({ 
+      msg: "Identity spoofing attempt detected",
+      authenticatedUserId,
+      attemptedUserId: req.body.userId,
+      path: req.path 
+    });
+    return res.status(403).json({ error: "Não autorizado: userId não corresponde ao usuário autenticado" });
+  }
+
+  // Check userId from params
+  if (req.params?.userId && req.params.userId !== authenticatedUserId) {
+    logger.warn({ 
+      msg: "Identity spoofing attempt detected",
+      authenticatedUserId,
+      attemptedUserId: req.params.userId,
+      path: req.path 
+    });
+    return res.status(403).json({ error: "Não autorizado: userId não corresponde ao usuário autenticado" });
+  }
+
+  // Check userId from query
+  if (req.query?.userId && req.query.userId !== authenticatedUserId) {
+    logger.warn({ 
+      msg: "Identity spoofing attempt detected",
+      authenticatedUserId,
+      attemptedUserId: req.query.userId,
+      path: req.path 
+    });
+    return res.status(403).json({ error: "Não autorizado: userId não corresponde ao usuário autenticado" });
+  }
+
+  next();
+}
+
+/**
+ * Middleware to validate that sessionId belongs to authenticated user
+ * Prevents users from accessing other users' AI sessions
+ */
+export async function validateSessionOwnership(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const authenticatedUserId = (req as any).user?.id;
+    
+    if (!authenticatedUserId) {
+      return res.status(401).json({ error: "Não autenticado" });
+    }
+
+    // Get sessionId from params or body
+    const sessionId = req.params?.sessionId || req.body?.sessionId;
+    
+    if (!sessionId) {
+      // No sessionId to validate, continue
+      return next();
+    }
+
+    // Import storage here to avoid circular dependency
+    const { storage } = await import("./storage");
+    
+    // Check if session exists and belongs to user
+    const session = await storage.getAiSession(sessionId);
+    
+    if (session && session.userId !== authenticatedUserId) {
+      logger.warn({ 
+        msg: "Unauthorized session access attempt",
+        authenticatedUserId,
+        sessionUserId: session.userId,
+        sessionId,
+        path: req.path 
+      });
+      return res.status(403).json({ error: "Não autorizado: sessão não pertence ao usuário autenticado" });
+    }
+
+    next();
+  } catch (error) {
+    logger.error({ err: error, msg: "Error validating session ownership" });
+    return res.status(500).json({ error: "Erro ao validar autorização" });
+  }
+}
+
+/**
  * Setup function for compatibility (no longer needed with Supabase Auth)
  * Kept for backwards compatibility but does nothing
  */

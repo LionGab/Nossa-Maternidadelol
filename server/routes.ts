@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { chatWithNathIA } from "./gemini";
 import { searchWithPerplexity } from "./perplexity";
-import { requireAuth } from "./auth";
+import { requireAuth, validateUserId, validateSessionOwnership } from "./auth";
 import type { UserStats } from "@shared/schema";
 import crypto from "crypto";
 import { aiChatLimiter, aiSearchLimiter } from "./rate-limit";
@@ -22,10 +22,18 @@ import {
   createFavoriteSchema,
   postIdParamSchema,
   habitIdParamSchema,
+  agentTypeParamSchema,
+  agentChatSchema,
+  sessionIdParamSchema,
 } from "./validation";
+import { chatWithAgent } from "./agents/base-agent";
+import { buildContextForAgent } from "./agents/context-builders";
+import type { AgentType } from "@shared/schema";
 import { logger } from "./logger";
 import { paginationSchema, paginateArray } from "./pagination";
 import { generateAvatar } from "./avatar";
+import { cache, CacheKeys, CacheTTL } from "./cache";
+import { uploadFile, validateFileType, validateFileSize } from "./storage-upload";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Daily Featured
@@ -82,14 +90,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Favorites (protected routes)
   app.get("/api/favorites", requireAuth, async (req, res) => {
-    const userId = req.user!.id;
+    const userId = (req as any).user!.id;
     const favorites = await storage.getFavorites(userId);
     const postIds = favorites.map((f) => f.postId);
     res.json(postIds);
   });
 
   app.post("/api/favorites", requireAuth, validateBody(createFavoriteSchema), async (req, res) => {
-    const userId = req.user!.id;
+    const userId = (req as any).user!.id;
     const { postId } = req.body;
     const favorite = await storage.createFavorite({
       userId,
@@ -99,32 +107,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/favorites/:postId", requireAuth, validateParams(postIdParamSchema), async (req, res) => {
-    const userId = req.user!.id;
+    const userId = (req as any).user!.id;
     const { postId } = req.params;
     await storage.deleteFavorite(userId, postId);
     res.json({ success: true });
   });
 
-  // NathIA Chat (protected routes)
-  app.get("/api/nathia/messages/:sessionId", requireAuth, async (req, res) => {
-    const userId = req.user!.id;
-    const { sessionId } = req.params;
+  // Unified Agent Routes (protected routes)
+  app.get("/api/agents/:agentType/messages/:sessionId", requireAuth, validateSessionOwnership, validateParams(agentTypeParamSchema.merge(sessionIdParamSchema)), async (req, res) => {
+    const userId = (req as any).user!.id;
+    const { agentType, sessionId } = req.params as { agentType: AgentType; sessionId: string };
 
     // Create session if it doesn't exist
     let session = await storage.getAiSession(sessionId);
     if (!session) {
       session = await storage.createAiSession({
         userId,
+        agentType: agentType as AgentType,
       });
+    } else {
+      // Double-check ownership (defense in depth)
+      if (session.userId !== userId) {
+        return res.status(403).json({ error: "Não autorizado: sessão não pertence ao usuário" });
+      }
     }
 
     const messages = await storage.getAiMessages(sessionId);
     res.json(messages);
   });
 
-  app.post("/api/nathia/chat", requireAuth, aiChatLimiter, validateBody(nathiaChatSchema), async (req, res) => {
+  app.post("/api/agents/:agentType/chat", requireAuth, validateSessionOwnership, aiChatLimiter, validateParams(agentTypeParamSchema), validateBody(agentChatSchema), async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req as any).user!.id;
+      const { agentType } = req.params as { agentType: AgentType };
       const { sessionId, message } = req.body;
 
       // Create session if it doesn't exist
@@ -133,7 +148,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         session = await storage.createAiSession({
           id: sessionId,
           userId,
+          agentType: agentType as AgentType,
         });
+      } else {
+        // Double-check ownership (defense in depth)
+        if (session.userId !== userId) {
+          return res.status(403).json({ error: "Não autorizado: sessão não pertence ao usuário" });
+        }
       }
       
       // Save user message
@@ -147,10 +168,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allMessages = await storage.getAiMessages(sessionId);
       const recentMessages = allMessages.slice(-6);
       
+      // Build context for agent
+      const context = await buildContextForAgent(agentType, userId);
+      
       // Get AI response
-      const aiResponse = await chatWithNathIA(
+      const aiResponse = await chatWithAgent(
+        agentType,
         recentMessages.map((m) => ({ role: m.role, content: m.content })),
-        { userStage: "pregnant" } // Could be dynamic based on profile
+        context
+      );
+      
+      // Save AI response
+      await storage.createAiMessage({
+        sessionId,
+        role: "assistant",
+        content: aiResponse,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      logger.error({ err: error, msg: `Agent ${req.params.agentType} chat error` });
+      res.status(500).json({ error: "Failed to get response" });
+    }
+  });
+
+  // NathIA Chat (protected routes) - Maintain compatibility, redirects to general agent
+  app.get("/api/nathia/messages/:sessionId", requireAuth, validateSessionOwnership, async (req, res) => {
+    const userId = (req as any).user!.id;
+    const { sessionId } = req.params;
+
+    // Create session if it doesn't exist (general agent for compatibility)
+    let session = await storage.getAiSession(sessionId);
+    if (!session) {
+      session = await storage.createAiSession({
+        userId,
+        agentType: "general",
+      });
+    } else {
+      // Double-check ownership (defense in depth)
+      if (session.userId !== userId) {
+        return res.status(403).json({ error: "Não autorizado: sessão não pertence ao usuário" });
+      }
+    }
+
+    const messages = await storage.getAiMessages(sessionId);
+    res.json(messages);
+  });
+
+  app.post("/api/nathia/chat", requireAuth, validateSessionOwnership, aiChatLimiter, validateBody(nathiaChatSchema), async (req, res) => {
+    try {
+      const userId = (req as any).user!.id;
+      const { sessionId, message } = req.body;
+
+      // Create session if it doesn't exist (general agent for compatibility)
+      let session = await storage.getAiSession(sessionId);
+      if (!session) {
+        session = await storage.createAiSession({
+          id: sessionId,
+          userId,
+          agentType: "general",
+        });
+      } else {
+        // Double-check ownership (defense in depth)
+        if (session.userId !== userId) {
+          return res.status(403).json({ error: "Não autorizado: sessão não pertence ao usuário" });
+        }
+      }
+      
+      // Save user message
+      await storage.createAiMessage({
+        sessionId: session.id,
+        role: "user",
+        content: message,
+      });
+      
+      // Get recent messages for context (last 6 messages)
+      const allMessages = await storage.getAiMessages(sessionId);
+      const recentMessages = allMessages.slice(-6);
+      
+      // Build context for general agent
+      const context = await buildContextForAgent("general", userId);
+      
+      // Get AI response using unified agent system
+      const aiResponse = await chatWithAgent(
+        "general",
+        recentMessages.map((m) => ({ role: m.role, content: m.content })),
+        context
       );
       
       // Save AI response
@@ -169,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // MãeValente Search (protected routes)
   app.get("/api/mae-valente/saved", requireAuth, async (req, res) => {
-    const userId = req.user!.id;
+    const userId = (req as any).user!.id;
     const saved = await storage.getSavedQa(userId);
     res.json(saved);
   });
@@ -219,7 +322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/mae-valente/save", requireAuth, validateBody(saveQaSchema), async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req as any).user!.id;
       const { question, answer, sources } = req.body;
 
       const saved = await storage.createSavedQa({
@@ -238,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Habits (Gamified - protected routes)
   app.get("/api/habits", requireAuth, async (req, res) => {
-    const userId = req.user!.id;
+    const userId = (req as any).user!.id;
     const habits = await storage.getHabits(userId);
 
     if (habits.length === 0) {
@@ -253,11 +356,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     startDate.setDate(startDate.getDate() - 365);
     const startDateStr = startDate.toISOString().split("T")[0];
 
-    const allCompletions = await storage.getHabitCompletionsByHabitIds(
-      habitIds,
-      startDateStr,
-      today
-    );
+    // Check cache first
+    const cacheKey = CacheKeys.habitCompletions(userId, startDateStr, today);
+    let allCompletions = await cache.get<any[]>(cacheKey);
+    
+    if (!allCompletions) {
+      allCompletions = await storage.getHabitCompletionsByHabitIds(
+        habitIds,
+        startDateStr,
+        today
+      );
+      // Cache for 1 hour
+      await cache.set(cacheKey, allCompletions, CacheTTL.HABIT_COMPLETIONS);
+    }
 
     // Group completions by habitId and date for O(1) lookup
     const completionMap = new Map<string, Set<string>>();
@@ -304,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Week stats (legacy endpoint for backwards compatibility)
   app.get("/api/habits/week-stats", requireAuth, async (req, res) => {
-    const userId = req.user!.id;
+    const userId = (req as any).user!.id;
     const habits = await storage.getHabits(userId);
 
     if (habits.length === 0) {
@@ -334,7 +445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/habits", requireAuth, validateBody(createHabitSchema), async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req as any).user!.id;
       const { title, emoji, color } = req.body;
 
       const existingHabits = await storage.getHabits(userId);
@@ -367,7 +478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/habits/:habitId", requireAuth, validateParams(habitIdParamSchema), async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req as any).user!.id;
       const { habitId } = req.params;
 
       // Verify ownership
@@ -386,7 +497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/habits/:habitId/complete", requireAuth, validateParams(habitIdParamSchema), async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req as any).user!.id;
       const { habitId } = req.params;
       const today = new Date().toISOString().split("T")[0];
 
@@ -408,6 +519,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         date: today,
       });
+
+      // Invalidate habit completions cache
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 365);
+      const startDateStr = startDate.toISOString().split("T")[0];
+      const cacheKey = CacheKeys.habitCompletions(userId, startDateStr, today);
+      await cache.del(cacheKey);
+      
+      // Invalidate user stats cache
+      await cache.del(CacheKeys.userStats(userId));
 
       // Update user stats (+10 XP per completion)
       const stats = await storage.createOrUpdateUserStats(userId, 10);
@@ -453,7 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/habits/:habitId/complete", requireAuth, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req as any).user!.id;
       const { habitId } = req.params;
       const today = new Date().toISOString().split("T")[0];
 
@@ -496,8 +617,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // User Stats (protected)
   app.get("/api/stats", requireAuth, async (req, res) => {
-    const userId = req.user!.id;
-    const stats = await storage.getUserStats(userId);
+    const userId = (req as any).user!.id;
+    
+    // Check cache first
+    const cacheKey = CacheKeys.userStats(userId);
+    let stats = await cache.get<any>(cacheKey);
+    
+    if (!stats) {
+      stats = await storage.getUserStats(userId);
+      if (stats) {
+        await cache.set(cacheKey, stats, CacheTTL.USER_STATS);
+      }
+    }
     if (!stats) {
       // Return default stats
       return res.json({
@@ -513,7 +644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Achievements (protected)
   app.get("/api/achievements", requireAuth, async (req, res) => {
-    const userId = req.user!.id;
+    const userId = (req as any).user!.id;
     const allAchievements = await storage.getAchievements();
     const userAchievements = await storage.getUserAchievements(userId);
     const unlockedIds = new Set(userAchievements.map((ua) => ua.achievementId));
@@ -529,7 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Habit History (for calendar view - protected)
   app.get("/api/habits/history", requireAuth, async (req, res) => {
-    const userId = req.user!.id;
+    const userId = (req as any).user!.id;
     const { startDate, endDate } = req.query;
 
     if (!startDate || !endDate) {
@@ -567,7 +698,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/community/posts", requireAuth, validateBody(createCommunityPostSchema), async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req as any).user!.id;
 
       // Fetch user profile to get authorName
       const profile = await storage.getProfile(userId);
@@ -602,7 +733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/community/posts/:postId/comments", requireAuth, validateBody(createCommentSchema), async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req as any).user!.id;
       const { postId } = req.params;
 
       // Fetch user profile to get authorName
@@ -631,7 +762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reactions
   app.post("/api/community/posts/:postId/reactions", requireAuth, validateBody(createReactionSchema), async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req as any).user!.id;
       const { postId } = req.params;
       const reaction = await storage.createReaction({
         postId,
@@ -646,7 +777,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/community/posts/:postId/reactions/:type", requireAuth, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req as any).user!.id;
       const { postId, type } = req.params;
       await storage.deleteReaction(postId, userId, type);
       res.json({ success: true });
@@ -658,7 +789,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reports
   app.post("/api/community/posts/:postId/reports", requireAuth, validateBody(createReportSchema), async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const userId = (req as any).user!.id;
       const { postId } = req.params;
       const report = await storage.createReport({
         postId,
@@ -668,6 +799,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(report);
     } catch (error) {
       res.status(400).json({ error: error instanceof Error ? error.message : "Erro ao reportar post" });
+    }
+  });
+
+  // File Upload Routes (protected)
+  // Note: For now, these routes accept base64 encoded files
+  // In production, use proper multipart/form-data with multer
+  app.post("/api/upload/avatar", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user!.id;
+      const { file, filename, contentType } = req.body;
+
+      if (!file || !filename) {
+        return res.status(400).json({ error: "Arquivo não fornecido" });
+      }
+
+      // Validate file type
+      const allowedTypes = ["jpg", "jpeg", "png", "webp"];
+      if (!validateFileType(filename, allowedTypes)) {
+        return res.status(400).json({ error: "Tipo de arquivo não permitido. Use: JPG, PNG ou WebP" });
+      }
+
+      // Decode base64 file
+      const fileBuffer = Buffer.from(file, "base64");
+
+      // Validate file size (5MB max)
+      if (!validateFileSize(fileBuffer.length, 5 * 1024 * 1024)) {
+        return res.status(400).json({ error: "Arquivo muito grande. Máximo: 5MB" });
+      }
+
+      // Generate unique filename
+      const extension = filename.split(".").pop();
+      const uniqueFilename = `${userId}/${Date.now()}.${extension}`;
+
+      // Upload to Supabase Storage
+      const result = await uploadFile("avatars", uniqueFilename, fileBuffer, contentType || "image/jpeg", {
+        upsert: false,
+        cacheControl: "3600",
+      });
+
+      res.json({
+        url: result.publicUrl,
+        path: result.path,
+      });
+    } catch (error) {
+      logger.error({ err: error, msg: "Avatar upload error" });
+      res.status(500).json({ error: "Erro ao fazer upload do avatar" });
+    }
+  });
+
+  app.post("/api/upload/content", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user!.id;
+      const { file, filename, contentType } = req.body;
+
+      if (!file || !filename) {
+        return res.status(400).json({ error: "Arquivo não fornecido" });
+      }
+
+      // Validate file type
+      const allowedTypes = ["jpg", "jpeg", "png", "webp", "gif"];
+      if (!validateFileType(filename, allowedTypes)) {
+        return res.status(400).json({ error: "Tipo de arquivo não permitido. Use: JPG, PNG, WebP ou GIF" });
+      }
+
+      // Decode base64 file
+      const fileBuffer = Buffer.from(file, "base64");
+
+      // Validate file size (10MB max)
+      if (!validateFileSize(fileBuffer.length, 10 * 1024 * 1024)) {
+        return res.status(400).json({ error: "Arquivo muito grande. Máximo: 10MB" });
+      }
+
+      // Generate unique filename
+      const extension = filename.split(".").pop();
+      const uniqueFilename = `${userId}/${Date.now()}.${extension}`;
+
+      // Upload to Supabase Storage
+      const result = await uploadFile("content", uniqueFilename, fileBuffer, contentType || "image/jpeg", {
+        upsert: false,
+        cacheControl: "3600",
+      });
+
+      res.json({
+        url: result.publicUrl,
+        path: result.path,
+      });
+    } catch (error) {
+      logger.error({ err: error, msg: "Content upload error" });
+      res.status(500).json({ error: "Erro ao fazer upload do arquivo" });
     }
   });
 
