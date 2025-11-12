@@ -13,27 +13,14 @@
       }
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.ts",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
     },
     {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|svg|ico|json|woff|woff2|ttf|eot|webp|gif|mp4|webmanifest|xml|txt|pdf))",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable"
-      },
-      "methods": ["GET", "HEAD"],
-      "continue": true
-    },
-    {
-      "src": "/((?!api|.*\\.[a-z0-9]+$).*)",
-      "dest": "/index.html",
-      "methods": ["GET", "HEAD"]
+      "source": "/((?!api).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
@@ -51,6 +38,15 @@
         {
           "key": "X-XSS-Protection",
           "value": "1; mode=block"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.(js|css|png|jpg|jpeg|svg|ico|json|woff|woff2|ttf|eot|webp|gif|mp4|webmanifest|xml|txt|pdf))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     }
