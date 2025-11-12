@@ -41,13 +41,15 @@ coverage/
 
 # Misc
 .turbo
-*.tsbuildinfoattached_assets/*.zip
-attached_assets/
-attached_assets/
+*.tsbuildinfo
+
+# Assets
 attached_assets/*.zip
+attached_assets/
+
+# Deployment & Tools
 .vercel
 .cursor/
-Nossa-Maternidadelol/
 
 # Documentation backups
 docs_backup_*/
