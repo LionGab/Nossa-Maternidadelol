@@ -35,7 +35,11 @@ export const profiles = pgTable("profiles", {
   goals: text("goals").array().default(sql`ARRAY[]::text[]`),
   avatarUrl: text("avatar_url"), // Optional: URL to avatar in Supabase Storage
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // userId already has unique constraint, which creates an index automatically
+  // But we can add explicit index for clarity
+  userIdIdx: index("profiles_user_id_idx").on(table.userId),
+}));
 
 export const insertProfileSchema = createInsertSchema(profiles).pick({
   name: true,
@@ -53,7 +57,9 @@ export const subscriptions = pgTable("subscriptions", {
   status: text("status").notNull(), // "active", "trial", "inactive", "tester"
   trialUntil: timestamp("trial_until"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("subscriptions_user_id_idx").on(table.userId),
+}));
 
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).pick({
   userId: true,
@@ -77,7 +83,9 @@ export const posts = pgTable("posts", {
   description: text("description"),
   tags: text("tags").array().default(sql`ARRAY[]::text[]`),
   publishedAt: timestamp("published_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  categoryPublishedAtIdx: index("posts_category_published_at_idx").on(table.category, table.publishedAt),
+}));
 
 export const insertPostSchema = createInsertSchema(posts).omit({
   id: true,
@@ -102,7 +110,10 @@ export const viralPosts = pgTable("viral_posts", {
   shares: integer("shares"), // Nullable - manual snapshots only
   featured: boolean("featured").default(false).notNull(),
   publishedAt: timestamp("published_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  featuredPublishedAtIdx: index("viral_posts_featured_published_at_idx").on(table.featured, table.publishedAt),
+  categoryIdx: index("viral_posts_category_idx").on(table.category),
+}));
 
 export const insertViralPostSchema = createInsertSchema(viralPosts).omit({
   id: true,
@@ -159,7 +170,9 @@ export const aiSessions = pgTable("ai_sessions", {
   userId: varchar("user_id").notNull(),
   agentType: text("agent_type").default("general").notNull(),
   startedAt: timestamp("started_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("ai_sessions_user_id_idx").on(table.userId),
+}));
 
 export const insertAiSessionSchema = createInsertSchema(aiSessions).pick({
   userId: true,
@@ -218,7 +231,9 @@ export const savedQa = pgTable("saved_qa", {
   answer: text("answer").notNull(),
   sources: json("sources").$type<{ title: string; url: string }[]>().default([]),
   savedAt: timestamp("saved_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("saved_qa_user_id_idx").on(table.userId),
+}));
 
 export const insertSavedQaSchema = createInsertSchema(savedQa).omit({
   id: true,
@@ -280,7 +295,11 @@ export const userStats = pgTable("user_stats", {
   totalCompletions: integer("total_completions").default(0).notNull(),
   lastActivityDate: text("last_activity_date"), // YYYY-MM-DD
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // userId already has unique constraint, which creates an index automatically
+  // But we can add additional indexes if needed for queries
+  lastActivityDateIdx: index("user_stats_last_activity_date_idx").on(table.lastActivityDate),
+}));
 
 export const insertUserStatsSchema = createInsertSchema(userStats).omit({
   id: true,
@@ -311,7 +330,10 @@ export const userAchievements = pgTable("user_achievements", {
   userId: varchar("user_id").notNull(),
   achievementId: varchar("achievement_id").notNull(),
   unlockedAt: timestamp("unlocked_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("user_achievements_user_id_idx").on(table.userId),
+  userAchievementIdx: index("user_achievements_user_achievement_idx").on(table.userId, table.achievementId),
+}));
 
 export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({
   id: true,
@@ -327,7 +349,10 @@ export const favorites = pgTable("favorites", {
   userId: varchar("user_id").notNull(),
   postId: varchar("post_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("favorites_user_id_idx").on(table.userId),
+  userPostIdx: index("favorites_user_post_idx").on(table.userId, table.postId),
+}));
 
 export const insertFavoriteSchema = createInsertSchema(favorites).omit({
   id: true,
@@ -379,7 +404,10 @@ export const comments = pgTable("comments", {
   avatarUrl: text("avatar_url").notNull(),
   content: text("content").notNull(), // max 150 chars enforced in validation
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  postIdIdx: index("comments_post_id_idx").on(table.postId),
+  userIdIdx: index("comments_user_id_idx").on(table.userId),
+}));
 
 export const insertCommentSchema = createInsertSchema(comments).omit({
   id: true,
@@ -399,7 +427,11 @@ export const reactions = pgTable("reactions", {
   userId: varchar("user_id").notNull(),
   type: text("type").notNull(), // "heart", "hands", "sparkles"
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  postIdIdx: index("reactions_post_id_idx").on(table.postId),
+  userIdIdx: index("reactions_user_id_idx").on(table.userId),
+  postUserTypeIdx: index("reactions_post_user_type_idx").on(table.postId, table.userId, table.type),
+}));
 
 export const insertReactionSchema = createInsertSchema(reactions).omit({
   id: true,
@@ -417,7 +449,11 @@ export const reports = pgTable("reports", {
   userId: varchar("user_id").notNull(),
   reason: text("reason"), // Optional
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  postIdIdx: index("reports_post_id_idx").on(table.postId),
+  userIdIdx: index("reports_user_id_idx").on(table.userId),
+  postUserIdx: index("reports_post_user_idx").on(table.postId, table.userId),
+}));
 
 export const insertReportSchema = createInsertSchema(reports).omit({
   id: true,

@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { supabase, getUserFromToken } from "./supabase";
 import { storage } from "./storage";
 import { logger } from "./logger";
+import type { AuthenticatedRequest } from "./types";
 
 /**
  * Extract JWT token from Authorization header or cookies
@@ -41,19 +42,21 @@ export async function requireAuth(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   try {
     const token = extractToken(req);
 
     if (!token) {
-      return res.status(401).json({ error: "Não autenticado. Faça login primeiro." });
+      res.status(401).json({ error: "Não autenticado. Faça login primeiro." });
+      return;
     }
 
     // Verify token and get user
     const user = await getUserFromToken(token);
 
     if (!user) {
-      return res.status(401).json({ error: "Token inválido ou expirado." });
+      res.status(401).json({ error: "Token inválido ou expirado." });
+      return;
     }
 
     // Get user from our database (to ensure they exist in our system)
@@ -64,18 +67,20 @@ export async function requireAuth(
     } catch (dbError) {
       logger.error({ err: dbError, userId: user.id, msg: "Error fetching user from database" });
       // If database error, return 500 instead of 401
-      return res.status(500).json({ error: "Erro interno do servidor. Tente novamente mais tarde." });
+      res.status(500).json({ error: "Erro interno do servidor. Tente novamente mais tarde." });
+      return;
     }
 
     if (!dbUser) {
       // User exists in Supabase Auth but not in our database
       // This shouldn't happen, but handle gracefully
       logger.warn({ userId: user.id, msg: "User in Supabase Auth but not in database" });
-      return res.status(401).json({ error: "Usuário não encontrado no sistema." });
+      res.status(401).json({ error: "Usuário não encontrado no sistema." });
+      return;
     }
 
     // Attach user to request
-    (req as any).user = {
+    (req as AuthenticatedRequest).user = {
       ...dbUser,
     };
 
@@ -92,13 +97,15 @@ export async function requireAuth(
     // Check if it's a Supabase configuration error
     if (error.message?.includes("SUPABASE_URL") && process.env.NODE_ENV !== "production") {
       logger.error({ err: error, msg: "Supabase not configured - cannot authenticate" });
-      return res.status(500).json({ 
+      res.status(500).json({ 
         error: "Autenticação não configurada. Configure Supabase ou use modo de desenvolvimento sem autenticação." 
       });
+      return;
     }
     
     logger.error({ err: error, msg: "Auth middleware error" });
-    return res.status(401).json({ error: "Erro ao verificar autenticação." });
+    res.status(401).json({ error: "Erro ao verificar autenticação." });
+    return;
   }
 }
 
@@ -119,7 +126,7 @@ export async function optionalAuth(
       if (user) {
         const dbUser = await storage.getUser(user.id);
         if (dbUser) {
-          (req as any).user = {
+          (req as AuthenticatedRequest).user = {
             ...dbUser,
           };
         }
@@ -142,8 +149,8 @@ export function validateUserId(
   req: Request,
   res: Response,
   next: NextFunction
-) {
-  const authenticatedUserId = (req as any).user?.id;
+): void {
+  const authenticatedUserId = (req as AuthenticatedRequest).user?.id;
   
   if (!authenticatedUserId) {
     return res.status(401).json({ error: "Não autenticado" });
@@ -195,7 +202,7 @@ export async function validateSessionOwnership(
   next: NextFunction
 ) {
   try {
-    const authenticatedUserId = (req as any).user?.id;
+    const authenticatedUserId = (req as AuthenticatedRequest).user?.id;
     
     if (!authenticatedUserId) {
       return res.status(401).json({ error: "Não autenticado" });

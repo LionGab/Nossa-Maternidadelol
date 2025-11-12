@@ -4,6 +4,7 @@ import type { HabitsContext } from "./prompts/habits-prompt";
 import type { ContentContext } from "./prompts/content-prompt";
 import type { CommunityContext } from "./prompts/community-prompt";
 import type { AgentType } from "@shared/schema";
+import { GAMIFICATION } from "../constants";
 
 export async function buildGeneralContext(userId: string): Promise<ChatContext> {
   const profile = await storage.getProfileByUserId(userId);
@@ -51,7 +52,7 @@ export async function buildHabitsContext(userId: string): Promise<HabitsContext>
     })),
     currentStreak: stats?.currentStreak,
     totalXP: stats?.xp,
-    level: stats?.xp ? Math.floor(stats.xp / 100) + 1 : undefined,
+    level: stats?.xp ? Math.floor(stats.xp / GAMIFICATION.XP_PER_LEVEL) + 1 : undefined,
     recentAchievements,
     completionRate,
   };

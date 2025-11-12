@@ -32,6 +32,16 @@ import { paginationSchema, paginateArray } from "./pagination";
 import { generateAvatar } from "./avatar";
 import { cache, CacheKeys, CacheTTL } from "./cache";
 import { uploadFile, validateFileType, validateFileSize } from "./storage-upload";
+import type { AuthenticatedRequest } from "./types";
+import {
+  GAMIFICATION,
+  ACHIEVEMENTS,
+  COMMUNITY,
+  AI,
+  UPLOAD,
+  TIME,
+  CONTENT,
+} from "./constants";
 
 /**
  * Register routes without creating HTTP server (for Vercel/serverless)
@@ -42,20 +52,20 @@ export function registerRoutesSync(app: Express): void {
     try {
       const today = new Date().toISOString().split("T")[0];
       const featured = await storage.getDailyFeatured(today);
-      
+
       if (featured) {
         let tip = undefined;
         let post = undefined;
-        
+
         if (featured.tipId) {
           const tips = await storage.getTips();
           tip = tips.find((t) => t.id === featured.tipId);
         }
-        
+
         if (featured.postId) {
           post = await storage.getPost(featured.postId);
         }
-        
+
         res.json({ ...featured, tip, post });
       } else {
         res.json(null);
@@ -70,7 +80,7 @@ export function registerRoutesSync(app: Express): void {
   app.get("/api/posts/featured", async (req, res) => {
     try {
       const posts = await storage.getPosts();
-      res.json(posts.slice(0, 3));
+      res.json(posts.slice(0, CONTENT.FEATURED_POSTS_COUNT));
     } catch (error) {
       logger.error({ err: error, msg: "Error fetching featured posts" });
       res.status(500).json({ error: "Erro ao carregar posts em destaque." });
@@ -111,14 +121,14 @@ export function registerRoutesSync(app: Express): void {
 
   // Favorites (protected routes)
   app.get("/api/favorites", requireAuth, async (req, res) => {
-    const userId = (req as any).user!.id;
+    const userId = (req as AuthenticatedRequest).user.id;
     const favorites = await storage.getFavorites(userId);
     const postIds = favorites.map((f) => f.postId);
     res.json(postIds);
   });
 
   app.post("/api/favorites", requireAuth, validateBody(createFavoriteSchema), async (req, res) => {
-    const userId = (req as any).user!.id;
+    const userId = (req as AuthenticatedRequest).user.id;
     const { postId } = req.body;
     const favorite = await storage.createFavorite({
       userId,
@@ -128,7 +138,7 @@ export function registerRoutesSync(app: Express): void {
   });
 
   app.delete("/api/favorites/:postId", requireAuth, validateParams(postIdParamSchema), async (req, res) => {
-    const userId = (req as any).user!.id;
+    const userId = (req as AuthenticatedRequest).user.id;
     const { postId } = req.params;
     await storage.deleteFavorite(userId, postId);
     res.json({ success: true });
@@ -136,7 +146,7 @@ export function registerRoutesSync(app: Express): void {
 
   // Unified Agent Routes (protected routes)
   app.get("/api/agents/:agentType/messages/:sessionId", requireAuth, validateSessionOwnership, validateParams(sessionIdParamSchema), async (req, res) => {
-    const userId = (req as any).user!.id;
+    const userId = (req as AuthenticatedRequest).user.id;
     const { agentType, sessionId } = req.params as { agentType: AgentType; sessionId: string };
 
     // Create session if it doesn't exist
@@ -159,7 +169,7 @@ export function registerRoutesSync(app: Express): void {
 
   app.post("/api/agents/:agentType/chat", requireAuth, validateSessionOwnership, aiChatLimiter, async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { agentType } = req.params as { agentType: AgentType };
       const { sessionId, message } = req.body;
 
@@ -177,35 +187,35 @@ export function registerRoutesSync(app: Express): void {
           return res.status(403).json({ error: "Não autorizado: sessão não pertence ao usuário" });
         }
       }
-      
+
       // Save user message
       await storage.createAiMessage({
         sessionId: session.id,
         role: "user",
         content: message,
       });
-      
-      // Get recent messages for context (last 6 messages)
+
+      // Get recent messages for context
       const allMessages = await storage.getAiMessages(sessionId);
-      const recentMessages = allMessages.slice(-6);
-      
+      const recentMessages = allMessages.slice(-AI.RECENT_MESSAGES_COUNT);
+
       // Build context for agent
       const context = await buildContextForAgent(agentType, userId);
-      
+
       // Get AI response
       const aiResponse = await chatWithAgent(
         agentType,
         recentMessages.map((m) => ({ role: m.role, content: m.content })),
         context
       );
-      
+
       // Save AI response
       await storage.createAiMessage({
         sessionId,
         role: "assistant",
         content: aiResponse,
       });
-      
+
       res.json({ success: true });
     } catch (error) {
       logger.error({ err: error, msg: `Agent ${req.params.agentType} chat error` });
@@ -215,7 +225,7 @@ export function registerRoutesSync(app: Express): void {
 
   // NathIA Chat (protected routes) - Maintain compatibility, redirects to general agent
   app.get("/api/nathia/messages/:sessionId", requireAuth, validateSessionOwnership, async (req, res) => {
-    const userId = (req as any).user!.id;
+    const userId = (req as AuthenticatedRequest).user.id;
     const { sessionId } = req.params;
 
     // Create session if it doesn't exist (general agent for compatibility)
@@ -238,7 +248,7 @@ export function registerRoutesSync(app: Express): void {
 
   app.post("/api/nathia/chat", requireAuth, validateSessionOwnership, aiChatLimiter, validateBody(nathiaChatSchema), async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { sessionId, message } = req.body;
 
       // Create session if it doesn't exist (general agent for compatibility)
@@ -255,35 +265,35 @@ export function registerRoutesSync(app: Express): void {
           return res.status(403).json({ error: "Não autorizado: sessão não pertence ao usuário" });
         }
       }
-      
+
       // Save user message
       await storage.createAiMessage({
         sessionId: session.id,
         role: "user",
         content: message,
       });
-      
-      // Get recent messages for context (last 6 messages)
+
+      // Get recent messages for context
       const allMessages = await storage.getAiMessages(sessionId);
-      const recentMessages = allMessages.slice(-6);
-      
+      const recentMessages = allMessages.slice(-AI.RECENT_MESSAGES_COUNT);
+
       // Build context for general agent
       const context = await buildContextForAgent("general", userId);
-      
+
       // Get AI response using unified agent system
       const aiResponse = await chatWithAgent(
         "general",
         recentMessages.map((m) => ({ role: m.role, content: m.content })),
         context
       );
-      
+
       // Save AI response
       await storage.createAiMessage({
         sessionId,
         role: "assistant",
         content: aiResponse,
       });
-      
+
       res.json({ success: true });
     } catch (error) {
       logger.error({ err: error, msg: "NathIA chat error" });
@@ -293,7 +303,7 @@ export function registerRoutesSync(app: Express): void {
 
   // MãeValente Search (protected routes)
   app.get("/api/mae-valente/saved", requireAuth, async (req, res) => {
-    const userId = (req as any).user!.id;
+    const userId = (req as AuthenticatedRequest).user.id;
     const saved = await storage.getSavedQa(userId);
     res.json(saved);
   });
@@ -301,10 +311,10 @@ export function registerRoutesSync(app: Express): void {
   app.post("/api/mae-valente/search", aiSearchLimiter, validateBody(maeValenteSearchSchema), async (req, res) => {
     try {
       const { question } = req.body;
-      
+
       // Create hash for caching
       const hash = crypto.createHash("md5").update(question.toLowerCase()).digest("hex");
-      
+
       // Check cache first
       const cached = await storage.getQaCache(hash);
       if (cached) {
@@ -314,14 +324,14 @@ export function registerRoutesSync(app: Express): void {
           sources: cached.sources,
         });
       }
-      
+
       // Search with Perplexity
       const result = await searchWithPerplexity(question);
-      
+
       // Cache the result (TTL: 7 days)
       const ttlExpiresAt = new Date();
       ttlExpiresAt.setDate(ttlExpiresAt.getDate() + 7);
-      
+
       await storage.createQaCache({
         hash,
         question,
@@ -329,7 +339,7 @@ export function registerRoutesSync(app: Express): void {
         sources: result.sources,
         ttlExpiresAt,
       });
-      
+
       res.json({
         question,
         answer: result.answer,
@@ -343,7 +353,7 @@ export function registerRoutesSync(app: Express): void {
 
   app.post("/api/mae-valente/save", requireAuth, validateBody(saveQaSchema), async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { question, answer, sources } = req.body;
 
       const saved = await storage.createSavedQa({
@@ -362,7 +372,7 @@ export function registerRoutesSync(app: Express): void {
 
   // Habits (Gamified - protected routes)
   app.get("/api/habits", requireAuth, async (req, res) => {
-    const userId = (req as any).user!.id;
+    const userId = (req as AuthenticatedRequest).user.id;
     const habits = await storage.getHabits(userId);
 
     if (habits.length === 0) {
@@ -372,15 +382,15 @@ export function registerRoutesSync(app: Express): void {
     const today = new Date().toISOString().split("T")[0];
     const habitIds = habits.map((h) => h.id);
 
-    // Optimize: fetch all completions in one query (last 365 days)
+    // Optimize: fetch all completions in one query (last year)
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 365);
+    startDate.setDate(startDate.getDate() - TIME.DAYS_PER_YEAR);
     const startDateStr = startDate.toISOString().split("T")[0];
 
     // Check cache first
     const cacheKey = CacheKeys.habitCompletions(userId, startDateStr, today);
     let allCompletions = await cache.get<any[]>(cacheKey);
-    
+
     if (!allCompletions) {
       allCompletions = await storage.getHabitCompletionsByHabitIds(
         habitIds,
@@ -408,7 +418,7 @@ export function registerRoutesSync(app: Express): void {
       // Calculate streak by checking consecutive days backwards from today
       let streak = 0;
       let checkDate = new Date(today);
-      while (streak < 365) {
+      while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
         const dateStr = checkDate.toISOString().split("T")[0];
         if (!habitDates.has(dateStr)) break;
         streak++;
@@ -421,11 +431,11 @@ export function registerRoutesSync(app: Express): void {
         // Legacy support for old frontend
         entry: completedToday
           ? {
-              done: true,
-              completedAt: allCompletions.find(
-                (c) => c.habitId === habit.id && c.date === today
-              )?.completedAt,
-            }
+            done: true,
+            completedAt: allCompletions.find(
+              (c) => c.habitId === habit.id && c.date === today
+            )?.completedAt,
+          }
           : undefined,
         streak,
       };
@@ -436,7 +446,7 @@ export function registerRoutesSync(app: Express): void {
 
   // Week stats (legacy endpoint for backwards compatibility)
   app.get("/api/habits/week-stats", requireAuth, async (req, res) => {
-    const userId = (req as any).user!.id;
+    const userId = (req as AuthenticatedRequest).user.id;
     const habits = await storage.getHabits(userId);
 
     if (habits.length === 0) {
@@ -466,7 +476,7 @@ export function registerRoutesSync(app: Express): void {
 
   app.post("/api/habits", requireAuth, validateBody(createHabitSchema), async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { title, emoji, color } = req.body;
 
       const existingHabits = await storage.getHabits(userId);
@@ -484,10 +494,10 @@ export function registerRoutesSync(app: Express): void {
 
       // Check for achievements
       const habits = await storage.getHabits(userId);
-      if (habits.length === 1) {
-        await storage.unlockAchievement(userId, "first_habit");
-      } else if (habits.length === 5) {
-        await storage.unlockAchievement(userId, "habit_master");
+      if (habits.length === ACHIEVEMENTS.THRESHOLDS.HABIT_COUNT_1) {
+        await storage.unlockAchievement(userId, ACHIEVEMENTS.HABIT_COUNT_1);
+      } else if (habits.length === ACHIEVEMENTS.THRESHOLDS.HABIT_COUNT_5) {
+        await storage.unlockAchievement(userId, ACHIEVEMENTS.HABIT_COUNT_5);
       }
 
       res.json(habit);
@@ -499,7 +509,7 @@ export function registerRoutesSync(app: Express): void {
 
   app.delete("/api/habits/:habitId", requireAuth, validateParams(habitIdParamSchema), async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { habitId } = req.params;
 
       // Verify ownership
@@ -518,7 +528,7 @@ export function registerRoutesSync(app: Express): void {
 
   app.post("/api/habits/:habitId/complete", requireAuth, validateParams(habitIdParamSchema), async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { habitId } = req.params;
       const today = new Date().toISOString().split("T")[0];
 
@@ -543,16 +553,16 @@ export function registerRoutesSync(app: Express): void {
 
       // Invalidate habit completions cache
       const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 365);
+      startDate.setDate(startDate.getDate() - TIME.DAYS_PER_YEAR);
       const startDateStr = startDate.toISOString().split("T")[0];
       const cacheKey = CacheKeys.habitCompletions(userId, startDateStr, today);
       await cache.del(cacheKey);
-      
+
       // Invalidate user stats cache
       await cache.del(CacheKeys.userStats(userId));
 
-      // Update user stats (+10 XP per completion)
-      const stats = await storage.createOrUpdateUserStats(userId, 10);
+      // Update user stats (XP per completion)
+      const stats = await storage.createOrUpdateUserStats(userId, GAMIFICATION.XP_PER_COMPLETION);
 
       // Update streak
       await storage.updateStreak(userId, today);
@@ -561,28 +571,28 @@ export function registerRoutesSync(app: Express): void {
       const updatedStats = await storage.getUserStats(userId);
       if (updatedStats) {
         // Check streak achievements
-        if (updatedStats.currentStreak === 3) {
-          await storage.unlockAchievement(userId, "streak_3");
-        } else if (updatedStats.currentStreak === 7) {
-          await storage.unlockAchievement(userId, "streak_7");
-        } else if (updatedStats.currentStreak === 30) {
-          await storage.unlockAchievement(userId, "streak_30");
+        if (updatedStats.currentStreak === ACHIEVEMENTS.THRESHOLDS.STREAK_3) {
+          await storage.unlockAchievement(userId, ACHIEVEMENTS.STREAK_3);
+        } else if (updatedStats.currentStreak === ACHIEVEMENTS.THRESHOLDS.STREAK_7) {
+          await storage.unlockAchievement(userId, ACHIEVEMENTS.STREAK_7);
+        } else if (updatedStats.currentStreak === ACHIEVEMENTS.THRESHOLDS.STREAK_30) {
+          await storage.unlockAchievement(userId, ACHIEVEMENTS.STREAK_30);
         }
 
         // Check completion achievements
-        if (updatedStats.totalCompletions === 10) {
-          await storage.unlockAchievement(userId, "completions_10");
-        } else if (updatedStats.totalCompletions === 50) {
-          await storage.unlockAchievement(userId, "completions_50");
-        } else if (updatedStats.totalCompletions === 100) {
-          await storage.unlockAchievement(userId, "completions_100");
+        if (updatedStats.totalCompletions === ACHIEVEMENTS.THRESHOLDS.COMPLETIONS_10) {
+          await storage.unlockAchievement(userId, ACHIEVEMENTS.COMPLETIONS_10);
+        } else if (updatedStats.totalCompletions === ACHIEVEMENTS.THRESHOLDS.COMPLETIONS_50) {
+          await storage.unlockAchievement(userId, ACHIEVEMENTS.COMPLETIONS_50);
+        } else if (updatedStats.totalCompletions === ACHIEVEMENTS.THRESHOLDS.COMPLETIONS_100) {
+          await storage.unlockAchievement(userId, ACHIEVEMENTS.COMPLETIONS_100);
         }
 
         // Check level achievements
-        if (updatedStats.level === 5) {
-          await storage.unlockAchievement(userId, "level_5");
-        } else if (updatedStats.level === 10) {
-          await storage.unlockAchievement(userId, "level_10");
+        if (updatedStats.level === ACHIEVEMENTS.THRESHOLDS.LEVEL_5) {
+          await storage.unlockAchievement(userId, ACHIEVEMENTS.LEVEL_5);
+        } else if (updatedStats.level === ACHIEVEMENTS.THRESHOLDS.LEVEL_10) {
+          await storage.unlockAchievement(userId, ACHIEVEMENTS.LEVEL_10);
         }
       }
 
@@ -595,14 +605,14 @@ export function registerRoutesSync(app: Express): void {
 
   app.delete("/api/habits/:habitId/complete", requireAuth, async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { habitId } = req.params;
       const today = new Date().toISOString().split("T")[0];
 
       await storage.deleteHabitCompletion(habitId, today);
 
       // Subtract XP and decrement total completions
-      await storage.createOrUpdateUserStats(userId, -10, false);
+      await storage.createOrUpdateUserStats(userId, -GAMIFICATION.XP_PER_COMPLETION, false);
 
       // Recalculate streak
       const stats = await storage.getUserStats(userId);
@@ -611,7 +621,7 @@ export function registerRoutesSync(app: Express): void {
         let checkDate = new Date(today);
         checkDate.setDate(checkDate.getDate() - 1); // Start from yesterday
 
-        while (newStreak < 365) {
+        while (newStreak < GAMIFICATION.MAX_STREAK_DAYS) {
           const dateStr = checkDate.toISOString().split("T")[0];
           const dayCompletions = await storage.getHabitCompletions(userId, dateStr, dateStr);
           if (dayCompletions.length === 0) break;
@@ -619,14 +629,8 @@ export function registerRoutesSync(app: Express): void {
           checkDate.setDate(checkDate.getDate() - 1);
         }
 
-        // Update streak directly
-        const updatedStats = { ...stats, currentStreak: newStreak, updatedAt: new Date() };
-        // Access internal map to update
-        const statsArray = Array.from((storage as any).userStats.values()) as UserStats[];
-        const userStat = statsArray.find((s) => s.userId === userId);
-        if (userStat) {
-          Object.assign(userStat, updatedStats);
-        }
+        // Update streak using storage method
+        await storage.updateStreakValue(userId, newStreak);
       }
 
       res.json({ success: true });
@@ -638,12 +642,12 @@ export function registerRoutesSync(app: Express): void {
 
   // User Stats (protected)
   app.get("/api/stats", requireAuth, async (req, res) => {
-    const userId = (req as any).user!.id;
-    
+    const userId = (req as AuthenticatedRequest).user.id;
+
     // Check cache first
     const cacheKey = CacheKeys.userStats(userId);
     let stats = await cache.get<any>(cacheKey);
-    
+
     if (!stats) {
       stats = await storage.getUserStats(userId);
       if (stats) {
@@ -665,7 +669,7 @@ export function registerRoutesSync(app: Express): void {
 
   // Achievements (protected)
   app.get("/api/achievements", requireAuth, async (req, res) => {
-    const userId = (req as any).user!.id;
+    const userId = (req as AuthenticatedRequest).user.id;
     const allAchievements = await storage.getAchievements();
     const userAchievements = await storage.getUserAchievements(userId);
     const unlockedIds = new Set(userAchievements.map((ua) => ua.achievementId));
@@ -681,7 +685,7 @@ export function registerRoutesSync(app: Express): void {
 
   // Habit History (for calendar view - protected)
   app.get("/api/habits/history", requireAuth, async (req, res) => {
-    const userId = (req as any).user!.id;
+    const userId = (req as AuthenticatedRequest).user.id;
     const { startDate, endDate } = req.query;
 
     if (!startDate || !endDate) {
@@ -729,7 +733,7 @@ export function registerRoutesSync(app: Express): void {
 
   app.post("/api/community/posts", requireAuth, validateBody(createCommunityPostSchema), async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
 
       // Fetch user profile to get authorName
       const profile = await storage.getProfile(userId);
@@ -769,7 +773,7 @@ export function registerRoutesSync(app: Express): void {
 
   app.post("/api/community/posts/:postId/comments", requireAuth, validateBody(createCommentSchema), async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { postId } = req.params;
 
       // Fetch user profile to get authorName
@@ -798,7 +802,7 @@ export function registerRoutesSync(app: Express): void {
   // Reactions
   app.post("/api/community/posts/:postId/reactions", requireAuth, validateBody(createReactionSchema), async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { postId } = req.params;
       const reaction = await storage.createReaction({
         postId,
@@ -813,7 +817,7 @@ export function registerRoutesSync(app: Express): void {
 
   app.delete("/api/community/posts/:postId/reactions/:type", requireAuth, async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { postId, type } = req.params;
       await storage.deleteReaction(postId, userId, type);
       res.json({ success: true });
@@ -825,7 +829,7 @@ export function registerRoutesSync(app: Express): void {
   // Reports
   app.post("/api/community/posts/:postId/reports", requireAuth, validateBody(createReportSchema), async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { postId } = req.params;
       const report = await storage.createReport({
         postId,
@@ -843,7 +847,7 @@ export function registerRoutesSync(app: Express): void {
   // In production, use proper multipart/form-data with multer
   app.post("/api/upload/avatar", requireAuth, async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { file, filename, contentType } = req.body;
 
       if (!file || !filename) {
@@ -851,17 +855,16 @@ export function registerRoutesSync(app: Express): void {
       }
 
       // Validate file type
-      const allowedTypes = ["jpg", "jpeg", "png", "webp"];
-      if (!validateFileType(filename, allowedTypes)) {
-        return res.status(400).json({ error: "Tipo de arquivo não permitido. Use: JPG, PNG ou WebP" });
+      if (!validateFileType(filename, UPLOAD.AVATAR_ALLOWED_TYPES)) {
+        return res.status(400).json({ error: `Tipo de arquivo não permitido. Use: ${UPLOAD.AVATAR_ALLOWED_TYPES.join(", ").toUpperCase()}` });
       }
 
       // Decode base64 file
       const fileBuffer = Buffer.from(file, "base64");
 
-      // Validate file size (5MB max)
-      if (!validateFileSize(fileBuffer.length, 5 * 1024 * 1024)) {
-        return res.status(400).json({ error: "Arquivo muito grande. Máximo: 5MB" });
+      // Validate file size
+      if (!validateFileSize(fileBuffer.length, UPLOAD.AVATAR_MAX_SIZE)) {
+        return res.status(400).json({ error: `Arquivo muito grande. Máximo: ${UPLOAD.AVATAR_MAX_SIZE / (1024 * 1024)}MB` });
       }
 
       // Generate unique filename
@@ -869,9 +872,9 @@ export function registerRoutesSync(app: Express): void {
       const uniqueFilename = `${userId}/${Date.now()}.${extension}`;
 
       // Upload to Supabase Storage
-      const result = await uploadFile("avatars", uniqueFilename, fileBuffer, contentType || "image/jpeg", {
+      const result = await uploadFile(UPLOAD.AVATAR_BUCKET, uniqueFilename, fileBuffer, contentType || UPLOAD.DEFAULT_CONTENT_TYPE, {
         upsert: false,
-        cacheControl: "3600",
+        cacheControl: String(UPLOAD.CACHE_CONTROL_SECONDS),
       });
 
       res.json({
@@ -886,7 +889,7 @@ export function registerRoutesSync(app: Express): void {
 
   app.post("/api/upload/content", requireAuth, async (req, res) => {
     try {
-      const userId = (req as any).user!.id;
+      const userId = (req as AuthenticatedRequest).user.id;
       const { file, filename, contentType } = req.body;
 
       if (!file || !filename) {
@@ -894,17 +897,16 @@ export function registerRoutesSync(app: Express): void {
       }
 
       // Validate file type
-      const allowedTypes = ["jpg", "jpeg", "png", "webp", "gif"];
-      if (!validateFileType(filename, allowedTypes)) {
-        return res.status(400).json({ error: "Tipo de arquivo não permitido. Use: JPG, PNG, WebP ou GIF" });
+      if (!validateFileType(filename, UPLOAD.CONTENT_ALLOWED_TYPES)) {
+        return res.status(400).json({ error: `Tipo de arquivo não permitido. Use: ${UPLOAD.CONTENT_ALLOWED_TYPES.join(", ").toUpperCase()}` });
       }
 
       // Decode base64 file
       const fileBuffer = Buffer.from(file, "base64");
 
-      // Validate file size (10MB max)
-      if (!validateFileSize(fileBuffer.length, 10 * 1024 * 1024)) {
-        return res.status(400).json({ error: "Arquivo muito grande. Máximo: 10MB" });
+      // Validate file size
+      if (!validateFileSize(fileBuffer.length, UPLOAD.CONTENT_MAX_SIZE)) {
+        return res.status(400).json({ error: `Arquivo muito grande. Máximo: ${UPLOAD.CONTENT_MAX_SIZE / (1024 * 1024)}MB` });
       }
 
       // Generate unique filename
@@ -912,9 +914,9 @@ export function registerRoutesSync(app: Express): void {
       const uniqueFilename = `${userId}/${Date.now()}.${extension}`;
 
       // Upload to Supabase Storage
-      const result = await uploadFile("content", uniqueFilename, fileBuffer, contentType || "image/jpeg", {
+      const result = await uploadFile(UPLOAD.CONTENT_BUCKET, uniqueFilename, fileBuffer, contentType || UPLOAD.DEFAULT_CONTENT_TYPE, {
         upsert: false,
-        cacheControl: "3600",
+        cacheControl: String(UPLOAD.CACHE_CONTROL_SECONDS),
       });
 
       res.json({
@@ -934,9 +936,9 @@ export function registerRoutesSync(app: Express): void {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register all routes synchronously
   registerRoutesSync(app);
-  
+
   // Create HTTP server for traditional Express
   const httpServer = createServer(app);
-  
+
   return httpServer;
 }
