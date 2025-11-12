@@ -1,0 +1,41 @@
+{
+  "name": "Pre-push Validation",
+  "description": "Validates code is production-ready before git push",
+  "trigger": "pre-push",
+  "enabled": true,
+  "checks": [
+    {
+      "name": "Build Check",
+      "command": "npm run build",
+      "blocking": true,
+      "message": "❌ Build failed. Fix build errors before pushing.",
+      "timeout": 120000
+    },
+    {
+      "name": "TypeScript Strict Check",
+      "command": "npm run check",
+      "blocking": true,
+      "message": "❌ TypeScript errors found. Fix all type errors before pushing."
+    },
+    {
+      "name": "Security Audit",
+      "command": "npm audit --production --audit-level=high",
+      "blocking": false,
+      "message": "⚠️ High/Critical vulnerabilities found. Review before pushing."
+    },
+    {
+      "name": "Check for TODOs",
+      "pattern": "TODO:|FIXME:|XXX:|HACK:",
+      "exclude": ["node_modules/**", "*.md", "CLAUDE.md"],
+      "blocking": false,
+      "message": "⚠️ Found TODO/FIXME comments. Consider completing before push."
+    },
+    {
+      "name": "Validate Environment Example",
+      "check": "file-exists",
+      "file": ".env.example",
+      "blocking": true,
+      "message": "❌ .env.example is missing. Create it to document required environment variables."
+    }
+  ]
+}

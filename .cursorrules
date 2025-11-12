@@ -1,0 +1,142 @@
+# Cursor Rules - Nossa Maternidade
+
+## Contexto do Projeto
+
+Este é um projeto fullstack TypeScript (React + Express) para uma plataforma de bem-estar materno criada por Nathália Valente. O projeto usa:
+- **Frontend**: React + Vite + Wouter + TanStack Query + shadcn/ui + Tailwind
+- **Backend**: Express.js + Passport.js + Drizzle ORM + Neon PostgreSQL
+- **Shared**: Tipos e schemas compartilhados (Zod + Drizzle)
+
+## Padrões de Código Obrigatórios
+
+### TypeScript
+- Sempre use tipos explícitos, nunca `any`
+- Importe tipos de `@shared/schema` para manter type safety
+- Use path aliases: `@/` para `client/src/`, `@shared/` para `shared/`
+- Strict mode está habilitado - siga as regras
+
+### Backend (server/)
+- **SEMPRE** valide inputs com Zod usando `validateBody`, `validateQuery`, `validateParams`
+- **SEMPRE** use `requireAuth` para rotas protegidas
+- **SEMPRE** use `logger` ao invés de `console.log/error` (veja `server/logger.ts`)
+- **SEMPRE** aplique rate limiting em rotas de AI (`aiChatLimiter`, `aiSearchLimiter`)
+- Padrão de resposta: `res.json({ data: ... })` para sucesso, `res.status(400).json({ error: "..." })` para erro
+- Acesse user ID via `req.user!.id` em rotas protegidas
+
+### Frontend (client/)
+- Use TanStack Query para server state, hooks locais para component state
+- Componentes shadcn/ui estão em `client/src/components/ui/`
+- Use `@/` para imports de `client/src/`
+- Mobile-first: sempre pense em responsividade
+- Use componentes existentes antes de criar novos
+
+### Schemas e Validação
+- Schemas Zod estão em `server/validation.ts`
+- Schemas Drizzle estão em `shared/schema.ts`
+- **NUNCA** aceite `authorName` manual em posts/comments - sempre pegue do perfil autenticado
+- Use `generateAvatar()` de `server/avatar.ts` para avatares
+
+### Performance
+- Use paginação para listas grandes (`pagination.ts`)
+- Evite N+1 queries - use batch loading quando possível
+- Cache Q&A responses por 7 dias (já implementado)
+
+## Convenções de Nomenclatura
+
+- **Componentes React**: PascalCase (`Home.tsx`, `NathIA.tsx`)
+- **Funções/utilities**: camelCase (`generateAvatar`, `validateBody`)
+- **Tipos/Interfaces**: PascalCase (`UserStats`, `DailyFeatured`)
+- **Arquivos**: kebab-case para configs, PascalCase para componentes
+- **Rotas API**: `/api/*` prefix, kebab-case (`/api/daily-featured`)
+
+## Estrutura de Arquivos
+
+```
+client/src/
+  ├── pages/          # Páginas principais (rotas)
+  ├── components/     # Componentes reutilizáveis
+  │   ├── ui/        # Componentes shadcn/ui
+  │   └── landing/   # Componentes da landing page
+  ├── hooks/         # Custom hooks
+  └── lib/           # Utilities e configurações
+
+server/
+  ├── routes.ts      # Rotas principais da API
+  ├── auth-routes.ts # Rotas de autenticação
+  ├── storage.ts     # Interface de storage (in-memory atual)
+  ├── db.ts          # Drizzle ORM (preparado para migração)
+  ├── validation.ts  # Schemas Zod
+  ├── logger.ts      # Sistema de logging
+  ├── rate-limit.ts  # Rate limiters
+  └── pagination.ts  # Utilitários de paginação
+
+shared/
+  └── schema.ts      # Schemas Drizzle + Zod (fonte única de verdade)
+```
+
+## Quando Usar Cursor vs Escalar para Claude Max
+
+### Use Cursor ($20) para:
+- ✅ Edições rápidas e refatorações simples
+- ✅ Correções de bugs pequenos
+- ✅ Adicionar novos campos a componentes existentes
+- ✅ Ajustes de UI/styling
+- ✅ Completar código enquanto digita
+- ✅ Navegação e busca no código
+- ✅ Comandos do terminal integrados
+
+### Escale para Claude Max ($100) quando:
+- 🔥 Arquitetura complexa ou decisões de design
+- 🔥 Refatorações grandes (ex: migrar storage para Drizzle)
+- 🔥 Otimizações de performance profundas
+- 🔥 Planejamento de features grandes
+- 🔥 Bugs difíceis que requerem análise profunda
+- 🔥 Revisões de código complexas
+- 🔥 Quando Cursor não consegue resolver após 2-3 tentativas
+
+## Regras de Segurança
+
+1. **SEMPRE** valide inputs do usuário com Zod
+2. **SEMPRE** use `requireAuth` em rotas que acessam dados do usuário
+3. **SEMPRE** aplique rate limiting em endpoints de AI
+4. **NUNCA** exponha secrets em logs (logger já faz redaction automático)
+5. **NUNCA** permita identity spoofing (sempre pegue `authorName` do perfil autenticado)
+
+## Gamificação
+
+- Cada hábito completado = +10 XP
+- Level = `Math.floor(xp / 100) + 1`
+- Streaks são rastreados em `userStats.currentStreak`
+- Achievements desbloqueiam automaticamente (veja `server/routes.ts:345-371`)
+
+## Logging
+
+- Use `logger.info({ msg: "...", ...context })` para info
+- Use `logger.error({ msg: "...", err, ...context })` para erros
+- Use `logAICall()` e `logDbOperation()` para operações específicas
+- Logger redacta automaticamente passwords, tokens, API keys
+
+## Comandos Úteis
+
+```bash
+npm run dev          # Dev server (localhost:5000)
+npm run build        # Build produção
+npm run check        # Type check
+npm run db:push      # Push schema para DB
+```
+
+## Notas Importantes
+
+- Storage atual é in-memory (reseta no restart) - migração para Drizzle está planejada
+- Windows compatibility: server usa `localhost` ao invés de `0.0.0.0`
+- Q&A responses são cacheadas por 7 dias para reduzir custos de API
+- Session secret deve ter >= 32 chars em produção
+
+## Prioridades do Projeto
+
+1. Migrar storage in-memory para Drizzle ORM (PostgreSQL)
+2. Gerar migrations versionadas ao invés de `db:push`
+3. Adicionar testes (Vitest)
+4. Redis cache para Q&A e habit completions
+5. Monitoring (Prometheus + Grafana)
+

@@ -1,0 +1,106 @@
+{
+  "name": "Pre-deployment Security Check",
+  "description": "Comprehensive validation before deploying to production",
+  "trigger": "manual",
+  "enabled": true,
+  "checks": [
+    {
+      "name": "Environment Variables",
+      "validations": [
+        {
+          "var": "NODE_ENV",
+          "expected": "production",
+          "blocking": true,
+          "message": "❌ NODE_ENV must be 'production' for deployment"
+        },
+        {
+          "var": "SESSION_SECRET",
+          "minLength": 32,
+          "blocking": true,
+          "message": "❌ SESSION_SECRET must be at least 32 characters in production"
+        },
+        {
+          "var": "DATABASE_URL",
+          "required": true,
+          "blocking": true,
+          "message": "❌ DATABASE_URL must be configured for production database"
+        },
+        {
+          "var": "GEMINI_API_KEY",
+          "required": true,
+          "blocking": true,
+          "message": "❌ GEMINI_API_KEY is required for NathIA chat"
+        },
+        {
+          "var": "PERPLEXITY_API_KEY",
+          "required": true,
+          "blocking": true,
+          "message": "❌ PERPLEXITY_API_KEY is required for Mãe Valente search"
+        }
+      ]
+    },
+    {
+      "name": "Security Configuration",
+      "checks": [
+        {
+          "description": "Rate limiting enabled on AI endpoints",
+          "file": "server/rate-limit.ts",
+          "pattern": "aiChatLimiter|aiSearchLimiter",
+          "blocking": true,
+          "message": "❌ Rate limiting must be configured for AI endpoints"
+        },
+        {
+          "description": "Input validation on all routes",
+          "file": "server/validation.ts",
+          "pattern": "validateBody|validateQuery|validateParams",
+          "blocking": true,
+          "message": "❌ Input validation schemas must be defined"
+        },
+        {
+          "description": "Secure session configuration",
+          "file": "server/index.ts",
+          "pattern": "secure:\\s*true",
+          "blocking": true,
+          "message": "❌ Session cookies must be secure in production"
+        }
+      ]
+    },
+    {
+      "name": "Code Quality",
+      "command": "npm run check && npm run build",
+      "blocking": true,
+      "message": "❌ TypeScript check or build failed",
+      "timeout": 180000
+    },
+    {
+      "name": "Verify .env not committed",
+      "command": "git ls-files | grep -E '^\\.env$'",
+      "expectEmpty": true,
+      "blocking": true,
+      "message": "❌ CRITICAL: .env file is committed to git. Remove it immediately!"
+    },
+    {
+      "name": "Production Dependencies Audit",
+      "command": "npm audit --production --audit-level=critical",
+      "blocking": true,
+      "message": "❌ Critical vulnerabilities found in production dependencies"
+    },
+    {
+      "name": "Check Database Migrations",
+      "reminder": true,
+      "message": "⚠️ REMINDER: Have you run database migrations on production? (npm run db:push or Drizzle migrations)"
+    },
+    {
+      "name": "Check Platform Configuration",
+      "reminder": true,
+      "message": "⚠️ REMINDER: Have you verified environment variables are set on Vercel/Railway?"
+    },
+    {
+      "name": "Backup Verification",
+      "reminder": true,
+      "message": "⚠️ REMINDER: Are database backups configured and tested?"
+    }
+  ],
+  "successMessage": "✅ All pre-deployment checks passed! Ready to deploy to production.",
+  "failureMessage": "❌ Deployment blocked. Fix all critical issues before deploying."
+}

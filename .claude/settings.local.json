@@ -16,7 +16,10 @@
       "Bash(git push:*)",
       "Bash(git pull:*)",
       "Bash(xargs ls:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(VERCEL_ORG_ID=team_123 VERCEL_PROJECT_ID=prj_123 vercel:*)",
+      "Bash(npx vercel:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

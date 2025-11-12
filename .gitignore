@@ -45,3 +45,4 @@ coverage/
 attached_assets/
 attached_assets/
 attached_assets/*.zip
+.vercel

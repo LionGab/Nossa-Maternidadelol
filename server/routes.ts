@@ -22,8 +22,6 @@ import {
   createFavoriteSchema,
   postIdParamSchema,
   habitIdParamSchema,
-  agentTypeParamSchema,
-  agentChatSchema,
   sessionIdParamSchema,
 } from "./validation";
 import { chatWithAgent } from "./agents/base-agent";
@@ -114,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Unified Agent Routes (protected routes)
-  app.get("/api/agents/:agentType/messages/:sessionId", requireAuth, validateSessionOwnership, validateParams(agentTypeParamSchema.merge(sessionIdParamSchema)), async (req, res) => {
+  app.get("/api/agents/:agentType/messages/:sessionId", requireAuth, validateSessionOwnership, validateParams(sessionIdParamSchema), async (req, res) => {
     const userId = (req as any).user!.id;
     const { agentType, sessionId } = req.params as { agentType: AgentType; sessionId: string };
 
@@ -136,7 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(messages);
   });
 
-  app.post("/api/agents/:agentType/chat", requireAuth, validateSessionOwnership, aiChatLimiter, validateParams(agentTypeParamSchema), validateBody(agentChatSchema), async (req, res) => {
+  app.post("/api/agents/:agentType/chat", requireAuth, validateSessionOwnership, aiChatLimiter, async (req, res) => {
     try {
       const userId = (req as any).user!.id;
       const { agentType } = req.params as { agentType: AgentType };

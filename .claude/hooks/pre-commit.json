@@ -1,0 +1,44 @@
+{
+  "name": "Pre-commit Validation",
+  "description": "Validates code quality before allowing git commit",
+  "trigger": "pre-commit",
+  "enabled": true,
+  "checks": [
+    {
+      "name": "TypeScript Type Check",
+      "command": "npm run check",
+      "blocking": true,
+      "message": "❌ TypeScript errors found. Fix type errors before committing."
+    },
+    {
+      "name": "No Console Statements",
+      "pattern": "console\\.(log|error|warn|info|debug)",
+      "exclude": ["node_modules/**", "*.test.ts", "*.spec.ts"],
+      "blocking": false,
+      "message": "⚠️ Found console.* statements. Use logger from server/logger.ts instead."
+    },
+    {
+      "name": "No Secrets in Code",
+      "patterns": [
+        "DATABASE_URL\\s*=\\s*['\"]postgresql://",
+        "API_KEY\\s*=\\s*['\"][A-Za-z0-9]{20,}",
+        "SESSION_SECRET\\s*=\\s*['\"][^'\"]+",
+        "password\\s*=\\s*['\"][^'\"]+",
+        "token\\s*=\\s*['\"][A-Za-z0-9]{20,}"
+      ],
+      "exclude": [".env.example", "*.md"],
+      "blocking": true,
+      "message": "❌ Potential secrets found in code. Never commit API keys, passwords, or tokens."
+    },
+    {
+      "name": "Validate Imports",
+      "patterns": [
+        "from ['\"]\\.\\./.*/schema",
+        "from ['\"]@db",
+        "import \\* as.*from ['\"]shared"
+      ],
+      "blocking": false,
+      "message": "⚠️ Use @shared/* imports for schema types. Avoid relative paths outside module."
+    }
+  ]
+}

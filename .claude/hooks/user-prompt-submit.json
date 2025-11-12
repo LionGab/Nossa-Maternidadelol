@@ -1,0 +1,44 @@
+{
+  "name": "Prompt Validation",
+  "description": "Validates user prompts for better Claude Code interactions",
+  "trigger": "user-prompt-submit",
+  "enabled": false,
+  "checks": [
+    {
+      "name": "Vague Request Detection",
+      "patterns": [
+        "^(fix it|fix this|help|help me)$",
+        "^(do it|make it work|please fix)$"
+      ],
+      "blocking": false,
+      "suggestion": "💡 TIP: Be specific! Instead of 'fix it', try:\n- 'Fix the TypeScript error in server/routes.ts:225'\n- 'Optimize the habits endpoint N+1 query'\n- 'Add input validation to the login route'"
+    },
+    {
+      "name": "Security Request Detection",
+      "patterns": [
+        "security|vulnerability|exploit|SQL injection|XSS",
+        "rate limit|brute force|authentication bypass"
+      ],
+      "blocking": false,
+      "suggestion": "🔒 SECURITY: Consider running /review-security for comprehensive analysis"
+    },
+    {
+      "name": "Performance Request Detection",
+      "patterns": [
+        "slow|performance|optimize|speed up|N\\+1",
+        "query|database|latency"
+      ],
+      "blocking": false,
+      "suggestion": "⚡ PERFORMANCE: Consider running /optimize for performance analysis"
+    },
+    {
+      "name": "Deployment Request Detection",
+      "patterns": [
+        "deploy|deployment|production|vercel|railway",
+        "go live|publish|release"
+      ],
+      "blocking": false,
+      "suggestion": "🚀 DEPLOYMENT: Consider running /deploy-check before deploying"
+    }
+  ]
+}

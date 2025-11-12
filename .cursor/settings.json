@@ -1,0 +1,58 @@
+{
+  "terminal.integrated.shellIntegration.enabled": true,
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "icon": "terminal-powershell",
+      "args": [
+        "-NoExit",
+        "-Command",
+        "& { . '${workspaceFolder}\\.cursor\\terminal-init.ps1' }"
+      ]
+    },
+    "Command Prompt": {
+      "path": [
+        "${env:windir}\\Sysnative\\cmd.exe",
+        "${env:windir}\\System32\\cmd.exe"
+      ],
+      "args": [],
+      "icon": "terminal-cmd"
+    }
+  },
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "bash",
+      "args": [
+        "-c",
+        "source '${workspaceFolder}/.cursor/terminal-init.sh && exec bash"
+      ],
+      "icon": "terminal-bash"
+    }
+  },
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.profiles.osx": {
+    "zsh": {
+      "path": "zsh",
+      "args": [
+        "-c",
+        "source '${workspaceFolder}/.cursor/terminal-init.sh && exec zsh"
+      ],
+      "icon": "terminal"
+    },
+    "bash": {
+      "path": "bash",
+      "args": [
+        "-c",
+        "source '${workspaceFolder}/.cursor/terminal-init.sh && exec bash"
+      ],
+      "icon": "terminal-bash"
+    }
+  },
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "terminal.integrated.env.windows": {},
+  "terminal.integrated.env.linux": {},
+  "terminal.integrated.env.osx": {}
+}
+

@@ -1,0 +1,170 @@
+{
+  "Nova Rota API Protegida": {
+    "prefix": "route-protected",
+    "body": [
+      "app.${1:get|post|put|delete}(\"/api/${2:endpoint}\", requireAuth, ${3:validateBody|validateQuery|validateParams}(${4:schema}), async (req, res) => {",
+      "  try {",
+      "    const userId = req.user!.id;",
+      "    ${5:// Implementation}",
+      "    logger.info({ msg: \"${6:Operation}\", userId });",
+      "    res.json({ data: ${7:result} });",
+      "  } catch (error) {",
+      "    logger.error({ msg: \"${8:Error message}\", err: error });",
+      "    res.status(500).json({ error: \"${9:Error message}\" });",
+      "  }",
+      "});"
+    ],
+    "description": "Template para nova rota API protegida com validação"
+  },
+  "Nova Rota API Pública": {
+    "prefix": "route-public",
+    "body": [
+      "app.${1:get|post}(\"/api/${2:endpoint}\", ${3:validateQuery|validateBody}(paginationSchema), async (req, res) => {",
+      "  try {",
+      "    ${4:// Implementation}",
+      "    logger.info({ msg: \"${5:Operation}\" });",
+      "    res.json({ data: ${6:result} });",
+      "  } catch (error) {",
+      "    logger.error({ msg: \"${7:Error message}\", err: error });",
+      "    res.status(500).json({ error: \"${8:Error message}\" });",
+      "  }",
+      "});"
+    ],
+    "description": "Template para nova rota API pública"
+  },
+  "Novo Componente React": {
+    "prefix": "component-react",
+    "body": [
+      "import { ${1:useState} } from \"react\";",
+      "import { useQuery } from \"@tanstack/react-query\";",
+      "import { Card } from \"@/components/ui/card\";",
+      "import type { ${2:Type} } from \"@shared/schema\";",
+      "",
+      "export default function ${3:ComponentName}() {",
+      "  const { data: ${4:data} } = useQuery<${5:Type}[]>({",
+      "    queryKey: [\"${6:/api/endpoint}\"],",
+      "  });",
+      "",
+      "  return (",
+      "    <Card className=\"p-6\">",
+      "      ${7:// Content}",
+      "    </Card>",
+      "  );",
+      "}"
+    ],
+    "description": "Template para novo componente React com TanStack Query"
+  },
+  "Novo Schema Drizzle": {
+    "prefix": "schema-drizzle",
+    "body": [
+      "export const ${1:tableName} = pgTable(\"${2:table_name}\", {",
+      "  id: varchar(\"id\").primaryKey().default(sql`gen_random_uuid()`),",
+      "  ${3:field}: ${4:text}(\"${5:field_name}\").notNull(),",
+      "  createdAt: timestamp(\"created_at\").defaultNow().notNull(),",
+      "});",
+      "",
+      "export const insert${1/(.*)/${1:/capitalize}/}Schema = createInsertSchema(${1:tableName}).omit({",
+      "  id: true,",
+      "  createdAt: true,",
+      "});",
+      "",
+      "export type Insert${1/(.*)/${1:/capitalize}/} = z.infer<typeof insert${1/(.*)/${1:/capitalize}/}Schema>;",
+      "export type ${1/(.*)/${1:/capitalize}/} = typeof ${1:tableName}.$inferSelect;"
+    ],
+    "description": "Template para novo schema Drizzle com Zod"
+  },
+  "Schema de Validação Zod": {
+    "prefix": "validation-zod",
+    "body": [
+      "export const ${1:entityName}Schema = z.object({",
+      "  ${2:field}: z.string().min(1, \"${3:Error message}\"),",
+      "});",
+      "",
+      "export type ${1/(.*)/${1:/capitalize}/}Input = z.infer<typeof ${1:entityName}Schema>;"
+    ],
+    "description": "Template para schema de validação Zod"
+  },
+  "React Query Mutation": {
+    "prefix": "mutation-query",
+    "body": [
+      "const ${1:mutationName}Mutation = useMutation({",
+      "  mutationFn: async (${2:data}: ${3:Type}) => {",
+      "    return apiRequest(\"${4:POST|PUT|DELETE}\", \"${5:/api/endpoint}\", ${2:data});",
+      "  },",
+      "  onSuccess: () => {",
+      "    queryClient.invalidateQueries({ queryKey: [\"${6:/api/endpoint}\"] });",
+      "  },",
+      "});"
+    ],
+    "description": "Template para mutation com React Query"
+  },
+  "Logger Info": {
+    "prefix": "log-info",
+    "body": [
+      "logger.info({ msg: \"${1:Message}\", ${2:context} });"
+    ],
+    "description": "Template para log de informação"
+  },
+  "Logger Error": {
+    "prefix": "log-error",
+    "body": [
+      "logger.error({ msg: \"${1:Error message}\", err: ${2:error}, ${3:context} });"
+    ],
+    "description": "Template para log de erro"
+  },
+  "Require Auth Middleware": {
+    "prefix": "require-auth",
+    "body": [
+      "app.${1:get|post}(\"/api/${2:endpoint}\", requireAuth, async (req, res) => {",
+      "  const userId = req.user!.id;",
+      "  ${3:// Implementation}",
+      "});"
+    ],
+    "description": "Template rápido para rota protegida"
+  },
+  "Paginação de Array": {
+    "prefix": "paginate",
+    "body": [
+      "const ${1:items} = await storage.${2:getItems}();",
+      "const paginated = paginateArray(${1:items}, page, limit);",
+      "res.json(paginated);"
+    ],
+    "description": "Template para paginação de resultados"
+  },
+  "Rate Limited Route": {
+    "prefix": "rate-limit",
+    "body": [
+      "app.${1:post}(\"/api/${2:endpoint}\", requireAuth, ${3:aiChatLimiter|aiSearchLimiter}, validateBody(${4:schema}), async (req, res) => {",
+      "  ${5:// Implementation}",
+      "});"
+    ],
+    "description": "Template para rota com rate limiting"
+  },
+  "Batch Load Pattern": {
+    "prefix": "batch-load",
+    "body": [
+      "// Batch load para evitar N+1 queries",
+      "const ${1:items} = await storage.${2:getItems}();",
+      "const ${3:ids} = ${1:items}.map(item => item.${4:id});",
+      "const ${5:related} = await storage.${6:getRelatedByIds}(${3:ids});",
+      "const ${7:indexed} = new Map(${5:related}.map(item => [item.${8:id}, item]));",
+      "// Use indexed.get(id) para acessar relacionamentos"
+    ],
+    "description": "Template para batch loading e evitar N+1 queries"
+  },
+  "Error Response": {
+    "prefix": "error-response",
+    "body": [
+      "res.status(${1:400|404|500}).json({ error: \"${2:Error message}\" });"
+    ],
+    "description": "Template para resposta de erro"
+  },
+  "Success Response": {
+    "prefix": "success-response",
+    "body": [
+      "res.json({ data: ${1:result} });"
+    ],
+    "description": "Template para resposta de sucesso"
+  }
+}
+
