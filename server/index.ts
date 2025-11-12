@@ -29,7 +29,6 @@ import { registerAuthRoutes } from "./auth-routes";
 import { setupAuth } from "./auth";
 import { setupVite, serveStatic } from "./vite";
 import { logger, requestLogger, errorLogger, logStartup } from "./logger";
-import { autoDemoLogin } from "./demo-user";
 import { storage } from "./storage";
 import { metricsMiddleware, getMetricsHandler } from "./metrics";
 

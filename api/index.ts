@@ -7,7 +7,6 @@ import { registerRoutes } from "../server/routes";
 import { registerAuthRoutes } from "../server/auth-routes";
 import { setupAuth } from "../server/auth";
 import { logger, requestLogger, errorLogger } from "../server/logger";
-import { autoDemoLogin } from "../server/demo-user";
 import { storage } from "../server/storage";
 
 const app = express();
@@ -92,11 +91,9 @@ if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
   );
 }
 
+// DATABASE_URL is optional - will fall back to MemStorage if not provided
 if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL é obrigatório em produção. " +
-    "Configure em: Vercel Dashboard → Project Settings → Environment Variables"
-  );
+  logger.warn({ msg: "DATABASE_URL não configurada. Usando MemStorage (dados temporários)." });
 }
 
 // Session configuration for Vercel (using MemoryStore - not recommended for production multi-instance)

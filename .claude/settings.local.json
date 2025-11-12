@@ -19,7 +19,12 @@
       "Bash(dir:*)",
       "Bash(VERCEL_ORG_ID=team_123 VERCEL_PROJECT_ID=prj_123 vercel:*)",
       "Bash(npx vercel:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 60\")",
+      "Bash(gh pr list:*)",
+      "Bash(curl:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr checks:*)"
     ],
     "deny": [],
     "ask": []
