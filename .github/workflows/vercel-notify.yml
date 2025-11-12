@@ -1,0 +1,22 @@
+name: CI with Vercel Notify
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: npm install
+      - name: Run Linter
+        run: npm run check
+
+  notify-vercel:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: notify vercel
+        uses: vercel/repository-dispatch/actions/status@v1
+        with:
+          name: Vercel - nossa-maternidade: lint
