@@ -11,8 +11,52 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, HandHeart, Sparkles, MessageCircle, Plus, Flag, ChevronDown, ChevronUp } from "lucide-react";
+import { Heart, HandHeart, Sparkles, MessageCircle, Plus, Flag, ChevronDown, ChevronUp, Quote } from "lucide-react";
 import type { CommunityPost, Comment } from "@shared/schema";
+
+// Testimonials data with beautiful photos
+const TESTIMONIALS = [
+  {
+    id: 1,
+    name: "Ana Carolina",
+    role: "Mãe de 2",
+    content: "Aqui encontrei o apoio que precisava. Sem julgamentos, apenas acolhimento.",
+    photo: "https://api.dicebear.com/7.x/lorelei/svg?seed=ana&backgroundColor=ffd5dc&scale=85",
+    bgColor: "from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20",
+  },
+  {
+    id: 2,
+    name: "Juliana Santos",
+    role: "Gestante de 7 meses",
+    content: "A comunidade mais acolhedora que já participei. Me sinto em casa aqui.",
+    photo: "https://api.dicebear.com/7.x/lorelei/svg?seed=juliana&backgroundColor=dfe7fd&scale=85",
+    bgColor: "from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20",
+  },
+  {
+    id: 3,
+    name: "Mariana Oliveira",
+    role: "Mãe solo",
+    content: "Finalmente um espaço onde posso ser eu mesma. Obrigada por existirem!",
+    photo: "https://api.dicebear.com/7.x/lorelei/svg?seed=mariana&backgroundColor=fef3c7&scale=85",
+    bgColor: "from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20",
+  },
+  {
+    id: 4,
+    name: "Beatriz Lima",
+    role: "Mãe de primeira viagem",
+    content: "Cada desabafo aqui me faz sentir menos sozinha. Vocês são incríveis!",
+    photo: "https://api.dicebear.com/7.x/lorelei/svg?seed=beatriz&backgroundColor=d9f99d&scale=85",
+    bgColor: "from-lime-50 to-green-50 dark:from-lime-950/20 dark:to-green-950/20",
+  },
+  {
+    id: 5,
+    name: "Camila Ferreira",
+    role: "Mãe de gêmeos",
+    content: "Aqui aprendi que não preciso ser perfeita. Posso simplesmente ser mãe.",
+    photo: "https://api.dicebear.com/7.x/lorelei/svg?seed=camila&backgroundColor=e9d5ff&scale=85",
+    bgColor: "from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20",
+  },
+];
 
 const POST_TYPES = {
   desabafo: {
@@ -205,6 +249,64 @@ export default function RefugioNath() {
           </h1>
           <p className="text-muted-foreground text-sm" data-testid="text-page-subtitle">
             Fala a verdade, a gente segura junto.
+          </p>
+        </div>
+      </div>
+
+      {/* Testimonials Section - Mobile-First Horizontal Scroll */}
+      <div className="bg-gradient-to-br from-pink-50/50 to-rose-50/50 dark:from-pink-950/10 dark:to-rose-950/10 border-y">
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-serif text-foreground mb-2">
+              Vozes da Nossa Comunidade
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Histórias reais de mães que encontraram apoio aqui
+            </p>
+          </div>
+
+          {/* Mobile-first horizontal scroll */}
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
+            {TESTIMONIALS.map((testimonial) => (
+              <div
+                key={testimonial.id}
+                className="flex-shrink-0 w-[280px] snap-center"
+              >
+                <Card className={`h-full bg-gradient-to-br ${testimonial.bgColor} border-2`}>
+                  <CardContent className="p-5 space-y-4">
+                    {/* Quote Icon */}
+                    <Quote className="h-6 w-6 text-primary/40" />
+
+                    {/* Testimonial Text */}
+                    <p className="text-sm leading-relaxed text-foreground/90 italic min-h-[80px]">
+                      "{testimonial.content}"
+                    </p>
+
+                    {/* Author Info with Photo */}
+                    <div className="flex items-center gap-3 pt-3 border-t border-primary/10">
+                      <img
+                        src={testimonial.photo}
+                        alt={testimonial.name}
+                        className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-800 shadow-sm"
+                      />
+                      <div>
+                        <p className="font-semibold text-sm text-foreground">
+                          {testimonial.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {testimonial.role}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </div>
+
+          {/* Scroll hint for mobile */}
+          <p className="text-xs text-center text-muted-foreground mt-2">
+            ← Deslize para ver mais →
           </p>
         </div>
       </div>

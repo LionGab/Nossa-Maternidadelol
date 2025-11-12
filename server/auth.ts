@@ -57,7 +57,15 @@ export async function requireAuth(
     }
 
     // Get user from our database (to ensure they exist in our system)
-    const dbUser = await storage.getUser(user.id);
+    // Use try-catch to handle database errors gracefully
+    let dbUser;
+    try {
+      dbUser = await storage.getUser(user.id);
+    } catch (dbError) {
+      logger.error({ err: dbError, userId: user.id, msg: "Error fetching user from database" });
+      // If database error, return 500 instead of 401
+      return res.status(500).json({ error: "Erro interno do servidor. Tente novamente mais tarde." });
+    }
 
     if (!dbUser) {
       // User exists in Supabase Auth but not in our database
@@ -71,11 +79,24 @@ export async function requireAuth(
       ...dbUser,
     };
 
-    // Update last login
-    await storage.updateUserLastLogin(user.id);
+    // Update last login (don't block on error)
+    try {
+      await storage.updateUserLastLogin(user.id);
+    } catch (error) {
+      // Log but don't block request
+      logger.warn({ err: error, userId: user.id, msg: "Failed to update last login" });
+    }
 
     next();
-  } catch (error) {
+  } catch (error: any) {
+    // Check if it's a Supabase configuration error
+    if (error.message?.includes("SUPABASE_URL") && process.env.NODE_ENV !== "production") {
+      logger.error({ err: error, msg: "Supabase not configured - cannot authenticate" });
+      return res.status(500).json({ 
+        error: "Autenticação não configurada. Configure Supabase ou use modo de desenvolvimento sem autenticação." 
+      });
+    }
+    
     logger.error({ err: error, msg: "Auth middleware error" });
     return res.status(401).json({ error: "Erro ao verificar autenticação." });
   }

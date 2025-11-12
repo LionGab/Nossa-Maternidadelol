@@ -358,4 +358,14 @@
   .animate-fade-in-up {
     animation: fadeInUp 0.8s ease-out;
   }
+
+  /* Hide scrollbar for mobile-first horizontal scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari, Opera */
+  }
 }

@@ -76,22 +76,24 @@ PORT=3000
 
 # Supabase Auth (Backend)
 SUPABASE_URL=https://mnszbkeuerjcevjvdqme.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uc3pia2V1ZXJqY2V2anZkcW1lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTkxNjc4MSwiZXhwIjoyMDc3NDkyNzgxfQ.LXhcF_2J9bvqMVOqK3RWyZkHYp9vLbWxFu0VyI5zVbI
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uc3pia2V1ZXJqY2V2anZkcW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5MTY3ODEsImV4cCI6MjA3NzQ5Mjc4MX0.f2jPp6KLzzrJPTt63FKNyDanh_0uw9rJ1-gbSvQFueoe
+SUPABASE_SERVICE_ROLE_KEY=[SUA_SERVICE_ROLE_KEY_AQUI]
+SUPABASE_ANON_KEY=[SUA_ANON_KEY_AQUI]
 
 # Database
-DATABASE_URL=postgresql://postgres.mnszbkeuerjcevjvdqme:Primelion123%40@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+DATABASE_URL=postgresql://postgres.mnszbkeuerjcevjvdqme:[SENHA]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
 
 # AI APIs
-GEMINI_API_KEY=AIzaSyBKBrBAZDzsxErgpezItOayUzRGUAy4oNg
-PERPLEXITY_API_KEY=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
+GEMINI_API_KEY=[SUA_API_KEY_AQUI]
+PERPLEXITY_API_KEY=[SUA_API_KEY_AQUI]
+
+⚠️ **IMPORTANTE:** Credenciais foram removidas por segurança. Configure no Vercel Dashboard → Environment Variables ou no arquivo `.env` local (nunca commitar no Git).
 
 # Session Security (GERAR NOVO EM PRODUÇÃO!)
 SESSION_SECRET=TROCAR_POR_SECRET_SEGURO_EM_PRODUCAO_MIN_32_CHARS
 
 # Frontend (Vite - prefixo VITE_)
 VITE_SUPABASE_URL=https://mnszbkeuerjcevjvdqme.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uc3pia2V1ZXJqY2V2anZkcW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5MTY3ODEsImV4cCI6MjA3NzQ5Mjc4MX0.f2jPp6KLzzrJPTt63FKNyDanh_0uw9rJ1-gbSvQFueoe
+VITE_SUPABASE_ANON_KEY=[SUA_ANON_KEY_AQUI]
 ```
 
 ### ⚠️ IMPORTANTE - Gerar SESSION_SECRET seguro:

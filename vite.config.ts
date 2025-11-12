@@ -32,25 +32,57 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Separate vendor chunks for better caching
-          'react-vendor': ['react', 'react-dom'],
-          'router-vendor': ['wouter'],
-          'query-vendor': ['@tanstack/react-query'],
-          'ui-vendor': ['lucide-react', '@radix-ui/react-slot', '@radix-ui/react-toast'],
+        manualChunks: (id) => {
+          // Vendor chunks for better caching
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'query-vendor';
+            }
+            if (id.includes('lucide-react') || id.includes('@radix-ui')) {
+              return 'ui-vendor';
+            }
+            if (id.includes('wouter')) {
+              return 'router-vendor';
+            }
+            // Other node_modules go into vendor
+            return 'vendor';
+          }
+          // Split routes for lazy loading (mobile-first)
+          if (id.includes('/pages/')) {
+            const name = id.split('/pages/')[1].split('.')[0];
+            return `page-${name}`;
+          }
         },
+        // Mobile-first: smaller chunks with better compression
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
-    // Enable minification and compression
+    // Enable aggressive minification for mobile
     minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: true, // Remove console.log in production
         drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info'], // Remove specific console calls
+        passes: 2, // Multiple passes for better compression
+      },
+      mangle: {
+        safari10: true, // Better iOS compatibility
       },
     },
-    // Optimize chunk size
-    chunkSizeWarningLimit: 600, // Increase from default 500KB
+    // Mobile-optimized chunk sizes
+    chunkSizeWarningLimit: 400, // Smaller chunks for mobile networks
+    // Enable CSS code splitting for faster initial load
+    cssCodeSplit: true,
+    // Optimize assets
+    assetsInlineLimit: 4096, // Inline smaller assets (4KB)
+    // Enable source maps only for errors (smaller bundle)
+    sourcemap: false,
   },
   server: {
     fs: {

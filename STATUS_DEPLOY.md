@@ -33,8 +33,10 @@
 **Solução:**
 ```bash
 # Adicionar no Vercel Dashboard → Settings → Environment Variables:
-GEMINI_API_KEY=AIzaSyBKBrBAZDzsxErgpezItOayUzRGUAy4oNg
+GEMINI_API_KEY=[SUA_API_KEY_AQUI]
 ```
+
+⚠️ **IMPORTANTE:** Credenciais foram removidas por segurança. Configure no Vercel Dashboard → Environment Variables.
 
 ### **2. manifest.json (404)**
 **Status:** Arquivo existe em `client/public/manifest.json`
@@ -52,12 +54,14 @@ GEMINI_API_KEY=AIzaSyBKBrBAZDzsxErgpezItOayUzRGUAy4oNg
 ```bash
 NODE_ENV=production
 SESSION_SECRET=[GERAR: openssl rand -base64 32]
-DATABASE_URL=postgresql://postgres.mnszbkeuerjcevjvdqme:Primelion123%40@aws-0-us-east-1.pooler.supabase.com:6543/postgres
-GEMINI_API_KEY=AIzaSyBKBrBAZDzsxErgpezItOayUzRGUAy4oNg
-PERPLEXITY_API_KEY=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
+DATABASE_URL=postgresql://postgres.mnszbkeuerjcevjvdqme:[SENHA]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+GEMINI_API_KEY=[SUA_API_KEY_AQUI]
+PERPLEXITY_API_KEY=[SUA_API_KEY_AQUI]
 VITE_SUPABASE_URL=https://mnszbkeuerjcevjvdqme.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uc3pia2V1ZXJqY2V2anZkcW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5MTY3ODEsImV4cCI6MjA3NzQ5Mjc4MX0.f2jPp6KLzzrJPTt63FKNyDanh_0uw9rJ1-gbSvQFueoe
+VITE_SUPABASE_ANON_KEY=[SUA_ANON_KEY_AQUI]
 ```
+
+⚠️ **IMPORTANTE:** Credenciais foram removidas por segurança. Configure no Vercel Dashboard → Environment Variables.
 
 ---
 
@@ -110,19 +114,23 @@ Checklist:
 ### **Backend (Servidor):**
 ```bash
 NODE_ENV=production
-DATABASE_URL=postgresql://postgres.mnszbkeuerjcevjvdqme:Primelion123%40@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+DATABASE_URL=postgresql://postgres.mnszbkeuerjcevjvdqme:[SENHA]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
 SESSION_SECRET=GERAR_COM_OPENSSL_RAND_BASE64_32
 SUPABASE_URL=https://mnszbkeuerjcevjvdqme.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uc3pia2V1ZXJqY2V2anZkcW1lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTkxNjc4MSwiZXhwIjoyMDc3NDkyNzgxfQ.LXhcF_2J9bvqMVOqK3RWyZkHYp9vLbWxFu0VyI5zVbI
-GEMINI_API_KEY=AIzaSyBKBrBAZDzsxErgpezItOayUzRGUAy4oNg
-PERPLEXITY_API_KEY=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
+SUPABASE_SERVICE_ROLE_KEY=[SUA_SERVICE_ROLE_KEY_AQUI]
+GEMINI_API_KEY=[SUA_API_KEY_AQUI]
+PERPLEXITY_API_KEY=[SUA_API_KEY_AQUI]
 ```
+
+⚠️ **IMPORTANTE:** Credenciais foram removidas por segurança. Configure no Vercel Dashboard → Environment Variables ou no arquivo `.env` local (nunca commitar no Git).
 
 ### **Frontend (Vite):**
 ```bash
 VITE_SUPABASE_URL=https://mnszbkeuerjcevjvdqme.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uc3pia2V1ZXJqY2V2anZkcW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE5MTY3ODEsImV4cCI6MjA3NzQ5Mjc4MX0.f2jPp6KLzzrJPTt63FKNyDanh_0uw9rJ1-gbSvQFueoe
+VITE_SUPABASE_ANON_KEY=[SUA_ANON_KEY_AQUI]
 ```
+
+⚠️ **IMPORTANTE:** Credenciais foram removidas por segurança. Configure no Vercel Dashboard → Environment Variables ou no arquivo `.env` local (nunca commitar no Git).
 
 ### **⚠️ IMPORTANTE:**
 - ✅ JÁ TEM no Vercel: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `POSTGRES_*`

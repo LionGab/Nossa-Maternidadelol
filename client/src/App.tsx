@@ -36,19 +36,21 @@ function Router() {
 
   return (
     <>
-      <Suspense fallback={<LoadingFallback />}>
-        <Switch>
-          <Route path="/" component={Landing} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/demo" component={Demo} />
-          <Route path="/nathia" component={NathIA} />
-          <Route path="/mundo-nath" component={MundoNath} />
-          <Route path="/mae-valente" component={MaeValente} />
-          <Route path="/habitos" component={Habitos} />
-          <Route path="/refugio-nath" component={RefugioNath} />
-          <Route component={NotFound} />
-        </Switch>
-      </Suspense>
+      <main>
+        <Suspense fallback={<LoadingFallback />}>
+          <Switch>
+            <Route path="/" component={Landing} />
+            <Route path="/dashboard" component={Dashboard} />
+            <Route path="/demo" component={Demo} />
+            <Route path="/nathia" component={NathIA} />
+            <Route path="/mundo-nath" component={MundoNath} />
+            <Route path="/mae-valente" component={MaeValente} />
+            <Route path="/habitos" component={Habitos} />
+            <Route path="/refugio-nath" component={RefugioNath} />
+            <Route component={NotFound} />
+          </Switch>
+        </Suspense>
+      </main>
       {showTabBar && <BottomTabBar />}
       {/* Floating Theme Toggle */}
       {!isLanding && !isDemo && (

@@ -3,7 +3,7 @@ import session from "express-session";
 import helmet from "helmet";
 import cors from "cors";
 import compression from "compression";
-import { registerRoutes } from "../server/routes";
+import { registerRoutesSync } from "../server/routes";
 import { registerAuthRoutes } from "../server/auth-routes";
 import { setupAuth } from "../server/auth";
 import { logger, requestLogger, errorLogger } from "../server/logger";
@@ -136,15 +136,10 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 // Register application routes synchronously
-// This ensures all routes are registered before Vercel uses the handler
-try {
-  // registerRoutes is async, but we call it here and Vercel will wait
-  await registerRoutes(app);
-  logger.info({ msg: "Routes registered successfully for Vercel" });
-} catch (error) {
-  logger.error({ error, msg: "Failed to register routes" });
-  throw error;
-}
+// Vercel serverless functions don't need HTTP server creation
+// Routes are registered immediately (synchronously) before export
+registerRoutesSync(app);
+logger.info({ msg: "Routes registered successfully for Vercel" });
 
 // Export for Vercel serverless
 // Vercel will use this as the handler for /api/* routes

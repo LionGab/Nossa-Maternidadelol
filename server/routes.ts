@@ -33,57 +33,80 @@ import { generateAvatar } from "./avatar";
 import { cache, CacheKeys, CacheTTL } from "./cache";
 import { uploadFile, validateFileType, validateFileSize } from "./storage-upload";
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Daily Featured
+/**
+ * Register routes without creating HTTP server (for Vercel/serverless)
+ */
+export function registerRoutesSync(app: Express): void {
+  // Daily Featured (public route)
   app.get("/api/daily-featured", async (req, res) => {
-    const today = new Date().toISOString().split("T")[0];
-    const featured = await storage.getDailyFeatured(today);
-    
-    if (featured) {
-      let tip = undefined;
-      let post = undefined;
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const featured = await storage.getDailyFeatured(today);
       
-      if (featured.tipId) {
-        const tips = await storage.getTips();
-        tip = tips.find((t) => t.id === featured.tipId);
+      if (featured) {
+        let tip = undefined;
+        let post = undefined;
+        
+        if (featured.tipId) {
+          const tips = await storage.getTips();
+          tip = tips.find((t) => t.id === featured.tipId);
+        }
+        
+        if (featured.postId) {
+          post = await storage.getPost(featured.postId);
+        }
+        
+        res.json({ ...featured, tip, post });
+      } else {
+        res.json(null);
       }
-      
-      if (featured.postId) {
-        post = await storage.getPost(featured.postId);
-      }
-      
-      res.json({ ...featured, tip, post });
-    } else {
-      res.json(null);
+    } catch (error) {
+      logger.error({ err: error, msg: "Error fetching daily featured" });
+      res.status(500).json({ error: "Erro ao carregar conteúdo do dia." });
     }
   });
 
-  // Posts
+  // Posts (public routes)
   app.get("/api/posts/featured", async (req, res) => {
-    const posts = await storage.getPosts();
-    res.json(posts.slice(0, 3));
+    try {
+      const posts = await storage.getPosts();
+      res.json(posts.slice(0, 3));
+    } catch (error) {
+      logger.error({ err: error, msg: "Error fetching featured posts" });
+      res.status(500).json({ error: "Erro ao carregar posts em destaque." });
+    }
   });
 
   app.get("/api/posts", validateQuery(paginationSchema), async (req, res) => {
-    const category = req.query.category as string;
-    const { page, limit } = req.query as any;
+    try {
+      const category = req.query.category as string;
+      const { page, limit } = req.query as any;
 
-    const posts = await storage.getPosts(category);
-    const paginated = paginateArray(posts, page, limit);
+      const posts = await storage.getPosts(category);
+      const paginated = paginateArray(posts, page, limit);
 
-    res.json(paginated);
+      res.json(paginated);
+    } catch (error) {
+      logger.error({ err: error, msg: "Error fetching posts" });
+      res.status(500).json({ error: "Erro ao carregar posts." });
+    }
   });
 
-  // Viral Posts
+  // Viral Posts (public route)
   app.get("/api/viral-posts", validateQuery(paginationSchema), async (req, res) => {
-    const featured = req.query.featured === "true" ? true : undefined;
-    const category = req.query.category as string;
-    const { page, limit } = req.query as any;
+    try {
+      const featured = req.query.featured === "true" ? true : undefined;
+      const category = req.query.category as string;
+      const { page, limit } = req.query as any;
 
-    const viralPosts = await storage.getViralPosts(featured, category);
-    const paginated = paginateArray(viralPosts, page, limit);
+      const viralPosts = await storage.getViralPosts(featured, category);
+      const paginated = paginateArray(viralPosts, page, limit);
 
-    res.json(paginated);
+      res.json(paginated);
+    } catch (error) {
+      logger.error({ err: error, msg: "Error fetching viral posts" });
+      res.status(500).json({ error: "Erro ao carregar posts virais." });
+    }
   });
 
   // Favorites (protected routes)
@@ -674,24 +697,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(completions);
   });
 
-  // Community (RefúgioNath)
+  // Community (RefúgioNath) - public routes
   app.get("/api/community/question", async (req, res) => {
-    const today = new Date().toISOString().split("T")[0];
-    const question = await storage.getDailyQuestion(today);
-    res.json(question || null);
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const question = await storage.getDailyQuestion(today);
+      res.json(question || null);
+    } catch (error) {
+      logger.error({ err: error, msg: "Error fetching daily question" });
+      res.status(500).json({ error: "Erro ao carregar pergunta do dia." });
+    }
   });
 
   app.get("/api/community/posts", validateQuery(paginationSchema), async (req, res) => {
-    const type = req.query.type as string | undefined;
-    const tag = req.query.tag as string | undefined;
-    const featured = req.query.featured === "true" ? true : req.query.featured === "false" ? false : undefined;
-    const { page, limit } = req.query as any;
+    try {
+      const type = req.query.type as string | undefined;
+      const tag = req.query.tag as string | undefined;
+      const featured = req.query.featured === "true" ? true : req.query.featured === "false" ? false : undefined;
+      const { page, limit } = req.query as any;
 
-    // Storage.getCommunityPosts has its own limit param - we'll override with pagination
-    const posts = await storage.getCommunityPosts(type, undefined, tag, featured);
-    const paginated = paginateArray(posts, page, limit);
+      // Storage.getCommunityPosts has its own limit param - we'll override with pagination
+      const posts = await storage.getCommunityPosts(type, undefined, tag, featured);
+      const paginated = paginateArray(posts, page, limit);
 
-    res.json(paginated);
+      res.json(paginated);
+    } catch (error) {
+      logger.error({ err: error, msg: "Error fetching community posts" });
+      res.status(500).json({ error: "Erro ao carregar posts da comunidade." });
+    }
   });
 
   app.post("/api/community/posts", requireAuth, validateBody(createCommunityPostSchema), async (req, res) => {
@@ -722,11 +755,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Comments
+  // Comments (public route - GET, protected - POST)
   app.get("/api/community/posts/:postId/comments", async (req, res) => {
-    const { postId } = req.params;
-    const comments = await storage.getComments(postId);
-    res.json(comments);
+    try {
+      const { postId } = req.params;
+      const comments = await storage.getComments(postId);
+      res.json(comments);
+    } catch (error) {
+      logger.error({ err: error, msg: "Error fetching comments", postId: req.params.postId });
+      res.status(500).json({ error: "Erro ao carregar comentários." });
+    }
   });
 
   app.post("/api/community/posts/:postId/comments", requireAuth, validateBody(createCommentSchema), async (req, res) => {
@@ -888,8 +926,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Erro ao fazer upload do arquivo" });
     }
   });
+}
 
+/**
+ * Register routes and create HTTP server (for traditional Express server)
+ */
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Register all routes synchronously
+  registerRoutesSync(app);
+  
+  // Create HTTP server for traditional Express
   const httpServer = createServer(app);
-
+  
   return httpServer;
 }

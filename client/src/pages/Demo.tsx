@@ -34,13 +34,13 @@ export default function Demo() {
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto">
         <div className="max-w-2xl mx-auto px-4 py-6">
           {screen === 1 && <Screen1 />}
           {screen === 2 && <Screen2 />}
           {screen === 3 && <Screen3 />}
         </div>
-      </main>
+      </div>
 
       {/* Navigation */}
       <div className="border-t bg-card px-4 py-4">
