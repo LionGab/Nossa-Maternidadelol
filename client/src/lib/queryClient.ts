@@ -1,106 +1,58 @@
-import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { getAuthHeader } from "./auth";
+/**
+ * React Query configuration
+ * Otimizado para performance e UX mobile-first
+ */
 
-async function throwIfResNotOk(res: Response) {
-  if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
-  }
-}
+import { QueryClient } from "@tanstack/react-query";
 
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  // Get auth token and include in headers
-  const authHeaders = getAuthHeader();
-  const headers: Record<string, string> = {
-    ...authHeaders,
-    ...(data ? { "Content-Type": "application/json" } : {}),
-  };
+/**
+ * Configurações de query por tipo de dado
+ */
+export const QUERY_CONFIG = {
+  // Dados estáticos (mudam raramente)
+  static: {
+    staleTime: 60 * 60 * 1000, // 1 hora
+    gcTime: 24 * 60 * 60 * 1000, // 24 horas
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  },
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include", // Also send cookies for session-based auth
-  });
+  // Dados dinâmicos (mudam com frequência média)
+  dynamic: {
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+  },
 
-  await throwIfResNotOk(res);
-  return res;
-}
+  // Dados em tempo real (sempre fresh)
+  realtime: {
+    staleTime: 0,
+    gcTime: 1 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  },
 
-type UnauthorizedBehavior = "returnNull" | "throw";
-export const getQueryFn: <T>(options: {
-  on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
-    });
+  // Dados do usuário
+  user: {
+    staleTime: 2 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  },
+} as const;
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
-    }
-
-    await throwIfResNotOk(res);
-    return await res.json();
-  };
-
-// Enhanced query function that handles path params and query strings
-const enhancedQueryFn: QueryFunction = async ({ queryKey }) => {
-  let url = queryKey[0] as string;
-  
-  // Handle additional parameters in queryKey
-  if (queryKey.length > 1) {
-    const params = queryKey.slice(1);
-    
-    // Check if it's a query params object
-    if (params.length === 1 && typeof params[0] === 'object' && !Array.isArray(params[0])) {
-      const searchParams = new URLSearchParams();
-      Object.entries(params[0] as Record<string, any>).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== 'all') {
-          searchParams.append(key, String(value));
-        }
-      });
-      const queryString = searchParams.toString();
-      if (queryString) {
-        url = `${url}?${queryString}`;
-      }
-    } else {
-      // Path parameters - join them to the URL
-      url = queryKey.join('/');
-    }
-  }
-  
-  // Get auth token and include in headers
-  const authHeaders = getAuthHeader();
-  const res = await fetch(url, { 
-    headers: authHeaders,
-    credentials: "include", // Also send cookies for session-based auth
-  });
-  
-  if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
-  }
-  
-  return res.json();
-};
-
+/**
+ * Cliente React Query otimizado
+ */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: enhancedQueryFn,
-      refetchInterval: false,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
-    },
-    mutations: {
-      retry: false,
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
   },
 });
