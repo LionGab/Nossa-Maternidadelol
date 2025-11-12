@@ -1,5 +1,26 @@
+// Load environment variables from .env file
+import { readFileSync } from "fs";
+import { join } from "path";
+try {
+  const envPath = join(process.cwd(), ".env");
+  const envFile = readFileSync(envPath, "utf-8");
+  envFile.split("\n").forEach((line) => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith("#")) {
+      const [key, ...valueParts] = trimmed.split("=");
+      if (key && valueParts.length > 0) {
+        const value = valueParts.join("=").trim();
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    }
+  });
+} catch (error) {
+  // .env file not found or can't be read - that's okay, use system env vars
+}
+
 import express, { type Request, Response, NextFunction } from "express";
-import session from "express-session";
 import helmet from "helmet";
 import cors from "cors";
 import compression from "compression";
@@ -10,6 +31,7 @@ import { setupVite, serveStatic } from "./vite";
 import { logger, requestLogger, errorLogger, logStartup } from "./logger";
 import { autoDemoLogin } from "./demo-user";
 import { storage } from "./storage";
+import { metricsMiddleware, getMetricsHandler } from "./metrics";
 
 const app = express();
 
@@ -85,45 +107,63 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
-// Validate critical environment variables in production
-if (process.env.NODE_ENV === "production") {
-  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
-    throw new Error(
-      "SESSION_SECRET é obrigatório em produção e deve ter no mínimo 32 caracteres. " +
-      "Gere um com: openssl rand -base64 32"
-    );
+// Validate critical environment variables
+const isProduction = process.env.NODE_ENV === "production";
+
+// GEMINI_API_KEY is required in all environments (agents won't work without it)
+if (!process.env.GEMINI_API_KEY) {
+  const error = new Error("GEMINI_API_KEY é obrigatório. Configure a variável de ambiente no arquivo .env");
+  if (isProduction) {
+    throw error;
+  } else {
+    logger.warn({ 
+      msg: "GEMINI_API_KEY não configurada. Agentes não funcionarão até que seja configurada.",
+      hint: "Obtenha uma API key em: https://aistudio.google.com/app/apikey"
+    });
+  }
+} else {
+  logger.info({ 
+    msg: "Google Gemini API configurada",
+    apiKey: process.env.GEMINI_API_KEY.substring(0, 10) + "...",
+    note: "Usando API direta do Google Gemini (não Replit)"
+  });
+}
+
+// Production-only validations
+if (isProduction) {
+  if (!process.env.SUPABASE_URL) {
+    throw new Error("SUPABASE_URL é obrigatório em produção");
+  }
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY é obrigatório em produção");
   }
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL é obrigatório em produção");
   }
+} else {
+  // Development mode - using MemStorage (in-memory database)
+  logger.info({
+    msg: "Modo desenvolvimento - usando MemStorage (dados em memória)",
+    note: "Dados serão perdidos ao reiniciar o servidor. Para persistência, configure DATABASE_URL"
+  });
 }
 
-// Session configuration
-const sessionSecret = process.env.SESSION_SECRET || "nossa-maternidade-dev-secret-change-in-production";
-app.use(
-  session({
-    secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production", // HTTPS only in production
-      httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      sameSite: "lax",
-    },
-  })
-);
-
-// Initialize Passport
+// Initialize Supabase Auth (no-op, kept for compatibility)
 setupAuth(app);
 
-// Auto-login demo user if not authenticated (enables site to work without login page)
-app.use(autoDemoLogin(storage));
+// Demo user disabled - use proper authentication
+// app.use(autoDemoLogin(storage));
+
+// Metrics middleware (before request logger)
+app.use(metricsMiddleware);
 
 // Request logging middleware
 app.use(requestLogger);
 
 (async () => {
+  // Metrics endpoint (before auth for monitoring)
+  app.get("/metrics", getMetricsHandler);
+
   // Register authentication routes
   registerAuthRoutes(app);
 
@@ -137,6 +177,17 @@ app.use(requestLogger);
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+
+    // Log error
+    if (status >= 500) {
+      logger.error({
+        err,
+        path: _req.path,
+        method: _req.method,
+        status,
+        msg: "Server error",
+      });
+    }
 
     res.status(status).json({ message });
   });

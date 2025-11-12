@@ -33,6 +33,7 @@ export const profiles = pgTable("profiles", {
   name: text("name").notNull(),
   stage: text("stage").notNull(), // "pregnant", "postpartum", "planning"
   goals: text("goals").array().default(sql`ARRAY[]::text[]`),
+  avatarUrl: text("avatar_url"), // Optional: URL to avatar in Supabase Storage
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -142,17 +143,30 @@ export const insertDailyFeaturedSchema = createInsertSchema(dailyFeatured).omit(
 export type InsertDailyFeatured = z.infer<typeof insertDailyFeaturedSchema>;
 export type DailyFeatured = typeof dailyFeatured.$inferSelect;
 
+// Agent Types
+export const AgentType = {
+  GENERAL: "general",
+  HABITS: "habits",
+  CONTENT: "content",
+  COMMUNITY: "community",
+} as const;
+
+export type AgentType = typeof AgentType[keyof typeof AgentType];
+
 // AI Chat Sessions (NathIA)
 export const aiSessions = pgTable("ai_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
+  agentType: text("agent_type").default("general").notNull(),
   startedAt: timestamp("started_at").defaultNow().notNull(),
 });
 
 export const insertAiSessionSchema = createInsertSchema(aiSessions).pick({
   userId: true,
+  agentType: true,
 }).extend({
   id: z.string().optional(),
+  agentType: z.enum(["general", "habits", "content", "community"]).optional(),
 });
 
 export type InsertAiSession = z.infer<typeof insertAiSessionSchema>;

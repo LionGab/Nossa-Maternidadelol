@@ -1,4 +1,13 @@
 import rateLimit from "express-rate-limit";
+import type { Request } from "express";
+import type { User } from "@shared/schema";
+
+// Extend Express Request to include user property
+declare module "express-serve-static-core" {
+  interface Request {
+    user?: User;
+  }
+}
 
 /**
  * Rate limiter for AI chat endpoints (NathIA)
