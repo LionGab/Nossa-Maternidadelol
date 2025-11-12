@@ -1,0 +1,44 @@
+name: Pre-Deploy Checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    name: Pre-Deploy Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: TypeScript check
+        run: npm run check
+      
+      - name: Build test
+        run: npm run build
+        env:
+          NODE_ENV: production
+      
+      - name: Check Summary
+        if: success()
+        run: |
+          echo "## ✅ Pre-Deploy Checks Passed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ TypeScript validation passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build test passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Ready for deployment!**" >> $GITHUB_STEP_SUMMARY
+
