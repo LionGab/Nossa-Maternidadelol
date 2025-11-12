@@ -138,28 +138,16 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(status).json({ message });
 });
 
-// Register application routes (async - must be awaited before export)
+// Register application routes synchronously
 // This ensures all routes are registered before Vercel uses the handler
-let routesRegistered = false;
-const initRoutes = async () => {
-  if (routesRegistered) return;
-  try {
-    // registerRoutes returns a Server, but we don't need it for Vercel serverless
-    await registerRoutes(app);
-    routesRegistered = true;
-    logger.info({ msg: "Routes registered successfully for Vercel" });
-  } catch (error) {
-    logger.error({ error, msg: "Failed to register routes" });
-    throw error;
-  }
-};
-
-// Initialize routes immediately (Vercel will wait for this)
-// This is a top-level await pattern that Vercel supports
-initRoutes().catch((error) => {
-  logger.error({ error, msg: "Critical: Failed to initialize routes" });
-  // Don't throw here - let Vercel handle the error
-});
+try {
+  // registerRoutes is async, but we call it here and Vercel will wait
+  await registerRoutes(app);
+  logger.info({ msg: "Routes registered successfully for Vercel" });
+} catch (error) {
+  logger.error({ error, msg: "Failed to register routes" });
+  throw error;
+}
 
 // Export for Vercel serverless
 // Vercel will use this as the handler for /api/* routes
