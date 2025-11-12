@@ -55,18 +55,27 @@ self.addEventListener('fetch', (event) => {
   // Estratégia diferente para API vs recursos estáticos
   if (request.url.includes('/api/')) {
     // API: Network First (sempre tenta rede primeiro)
+    // IMPORTANTE: Não cachear requisições POST/PUT/DELETE (Cache API só suporta GET)
+    if (request.method !== 'GET') {
+      // Para métodos não-GET, apenas fazer fetch sem cachear
+      event.respondWith(fetch(request));
+      return;
+    }
+    
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Clonar resposta antes de retornar
-          const responseClone = response.clone();
-          caches.open(DYNAMIC_CACHE).then((cache) => {
-            cache.put(request, responseClone);
-          });
+          // Só cachear respostas GET bem-sucedidas
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseClone = response.clone();
+            caches.open(DYNAMIC_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
           return response;
         })
         .catch(() => {
-          // Se falhar, tenta cache
+          // Se falhar, tenta cache (apenas para GET)
           return caches.match(request);
         })
     );
