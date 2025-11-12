@@ -16,7 +16,8 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index.ts"
+      "dest": "/api/index.ts",
+      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
     },
     {
       "handle": "filesystem"
@@ -26,11 +27,13 @@
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
       },
+      "methods": ["GET", "HEAD"],
       "continue": true
     },
     {
       "src": "/((?!api|.*\\.[a-z0-9]+$).*)",
-      "dest": "/index.html"
+      "dest": "/index.html",
+      "methods": ["GET", "HEAD"]
     }
   ],
   "headers": [
