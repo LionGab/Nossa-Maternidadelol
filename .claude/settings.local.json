@@ -26,7 +26,8 @@
       "Bash(gh pr view:*)",
       "Bash(gh pr checks:*)",
       "Bash(git rm:*)",
-      "Bash(.gitignore)"
+      "Bash(.gitignore)",
+      "Bash(npm run test:*)"
     ],
     "deny": [],
     "ask": []

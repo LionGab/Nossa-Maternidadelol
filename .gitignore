@@ -48,3 +48,6 @@ attached_assets/*.zip
 .vercel
 .cursor/
 Nossa-Maternidadelol/
+
+# Documentation backups
+docs_backup_*/
