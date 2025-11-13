@@ -35,8 +35,14 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
+  // Serve HTML for all non-asset routes in dev mode
   app.use("/:path*", async (req, res, next) => {
     const url = req.originalUrl;
+
+    // Skip if it's an asset request (let Vite middleware handle it)
+    if (url.match(/\.(png|jpg|jpeg|gif|svg|ico|json|css|js|woff|woff2|ttf|eot)$/)) {
+      return next();
+    }
 
     try {
       const clientTemplate = path.resolve(
@@ -72,8 +78,12 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("/:path*", (_req, res) => {
+  // Serve index.html for all non-asset routes (SPA fallback)
+  app.use("/:path*", (req, res, next) => {
+    // Skip if it's an asset request (already served by express.static)
+    if (req.url.match(/\.(png|jpg|jpeg|gif|svg|ico|json|css|js|woff|woff2|ttf|eot)$/)) {
+      return next();
+    }
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
