@@ -1,14 +1,18 @@
-// Using Replit AI Integrations for Gemini (no personal API key needed)
+// Using Google Gemini API directly
 import { GoogleGenAI } from "@google/genai";
 import { logger, logAICall } from "./logger";
 
-// This uses Replit's AI Integrations service - charges are billed to your Replit credits
+// Initialize Gemini AI with direct API key
+// Requires GEMINI_API_KEY environment variable
+if (!process.env.GEMINI_API_KEY) {
+  logger.warn({
+    msg: "GEMINI_API_KEY não configurada. NathIA não funcionará.",
+    hint: "Obtenha uma API key em: https://aistudio.google.com/app/apikey"
+  });
+}
+
 const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-  },
+  apiKey: process.env.GEMINI_API_KEY || "dummy-key-for-tests",
 });
 
 export interface ChatContext {

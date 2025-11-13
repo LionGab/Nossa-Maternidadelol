@@ -3,6 +3,7 @@
  * Extrai complexidade das rotas para facilitar testes e reutilização
  */
 
+import { subDays } from "date-fns";
 import { storage } from "../storage";
 import { GAMIFICATION, ACHIEVEMENTS, TIME } from "../constants";
 import type { Habit, HabitCompletion, UserStats, UserAchievement } from "@shared/schema";
@@ -26,7 +27,7 @@ export class HabitsService {
       const dateStr = checkDate.toISOString().split("T")[0];
       if (!completionDates.has(dateStr)) break;
       streak++;
-      checkDate.setDate(checkDate.getDate() - 1);
+      checkDate = subDays(checkDate, 1); // ✅ Immutable date manipulation
     }
 
     return streak;
@@ -41,8 +42,7 @@ export class HabitsService {
     if (habits.length === 0) return [];
 
     const today = new Date().toISOString().split("T")[0];
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - GAMIFICATION.MAX_STREAK_DAYS);
+    const startDate = subDays(new Date(), GAMIFICATION.MAX_STREAK_DAYS);
     const startDateStr = startDate.toISOString().split("T")[0];
 
     const habitIds = habits.map(h => h.id);
@@ -148,8 +148,7 @@ export class HabitsService {
     const today = new Date();
 
     for (let i = 0; i < TIME.COMPLETION_RATE_DAYS; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
+      const date = subDays(today, i); // ✅ Immutable date manipulation
       last7Days.add(date.toISOString().split("T")[0]);
     }
 
