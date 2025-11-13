@@ -1,3 +1,4 @@
+import { subDays } from "date-fns";
 import { storage } from "../storage";
 import type { ChatContext } from "../gemini";
 import type { HabitsContext } from "./prompts/habits-prompt";
@@ -36,8 +37,7 @@ export async function buildHabitsContext(userId: string): Promise<HabitsContext>
     .filter(Boolean) as string[];
   
   // Calcular taxa de conclusão (últimos N dias)
-  const daysAgo = new Date();
-  daysAgo.setDate(daysAgo.getDate() - TIME.COMPLETION_RATE_DAYS);
+  const daysAgo = subDays(new Date(), TIME.COMPLETION_RATE_DAYS);
   const startDate = daysAgo.toISOString().split("T")[0];
   const recentCompletions = await storage.getHabitCompletions(userId, startDate, today);
   const totalPossible = habits.length * TIME.COMPLETION_RATE_DAYS;

@@ -2,6 +2,7 @@
  * Habits Routes - Habit management and gamification
  */
 
+import { subDays } from "date-fns";
 import type { Express } from "express";
 import { requireAuth } from "../auth";
 import { validateBody, validateParams, createHabitSchema, habitIdParamSchema } from "../validation";
@@ -158,15 +159,14 @@ export function registerHabitsRoutes(app: Express): void {
         const stats = await storage.getUserStats(userId);
         if (stats) {
           let newStreak = 0;
-          let checkDate = new Date(today);
-          checkDate.setDate(checkDate.getDate() - 1); // Start from yesterday
+          let checkDate = subDays(new Date(today), 1); // Start from yesterday
 
           while (newStreak < GAMIFICATION.MAX_STREAK_DAYS) {
             const dateStr = checkDate.toISOString().split("T")[0];
             const dayCompletions = await storage.getHabitCompletions(userId, dateStr, dateStr);
             if (dayCompletions.length === 0) break;
             newStreak++;
-            checkDate.setDate(checkDate.getDate() - 1);
+            checkDate = subDays(checkDate, 1); // ✅ Immutable date manipulation
           }
 
           // Update streak using storage method

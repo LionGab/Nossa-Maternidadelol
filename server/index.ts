@@ -160,6 +160,15 @@ app.use(metricsMiddleware);
 app.use(requestLogger);
 
 (async () => {
+  // Import health check handlers
+  const { livenessHandler, readinessHandler, integrationsHandler } = await import("./health");
+
+  // Health check endpoints (before auth for monitoring)
+  app.get("/health", livenessHandler); // Liveness probe (is app running?)
+  app.get("/health/live", livenessHandler); // Kubernetes liveness probe
+  app.get("/health/ready", readinessHandler); // Readiness probe (can serve traffic?)
+  app.get("/health/integrations", integrationsHandler); // Detailed integration status
+
   // Metrics endpoint (before auth for monitoring)
   app.get("/metrics", getMetricsHandler);
 

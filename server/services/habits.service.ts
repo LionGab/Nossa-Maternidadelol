@@ -2,6 +2,7 @@
  * Habits Service - Business logic for habit management and gamification
  */
 
+import { subDays } from "date-fns";
 import { storage } from "../storage";
 import { cache, CacheKeys, CacheTTL } from "../cache";
 import { GAMIFICATION, TIME } from "../constants";
@@ -23,14 +24,14 @@ export class HabitsService {
   calculateStreak(habitDates: Set<string>, today: string): number {
     let streak = 0;
     let checkDate = new Date(today);
-    
+
     while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
       const dateStr = checkDate.toISOString().split("T")[0];
       if (!habitDates.has(dateStr)) break;
       streak++;
-      checkDate.setDate(checkDate.getDate() - 1);
+      checkDate = subDays(checkDate, 1); // ✅ Immutable date manipulation
     }
-    
+
     return streak;
   }
 
@@ -45,8 +46,7 @@ export class HabitsService {
     const habitIds = habits.map((h) => h.id);
 
     // Optimize: fetch all completions in one query (last year)
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - TIME.DAYS_PER_YEAR);
+    const startDate = subDays(new Date(), TIME.DAYS_PER_YEAR);
     const startDateStr = startDate.toISOString().split("T")[0];
 
     // Check cache first
@@ -114,8 +114,7 @@ export class HabitsService {
     }
 
     const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - TIME.HABIT_HISTORY_DAYS_OFFSET);
+    const startDate = subDays(today, TIME.HABIT_HISTORY_DAYS_OFFSET);
 
     const startDateStr = startDate.toISOString().split("T")[0];
     const endDateStr = today.toISOString().split("T")[0];
@@ -163,8 +162,7 @@ export class HabitsService {
    * Invalidate habit-related caches
    */
   async invalidateHabitCaches(userId: string, today: string): Promise<void> {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - TIME.DAYS_PER_YEAR);
+    const startDate = subDays(new Date(), TIME.DAYS_PER_YEAR);
     const startDateStr = startDate.toISOString().split("T")[0];
     
     const cacheKey = CacheKeys.habitCompletions(userId, startDateStr, today);

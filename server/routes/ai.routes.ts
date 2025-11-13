@@ -2,6 +2,7 @@
  * AI Routes - NathIA, MãeValente, and unified agent system
  */
 
+import { addDays } from "date-fns";
 import type { Express } from "express";
 import { requireAuth, validateSessionOwnership } from "../auth";
 import {
@@ -236,8 +237,7 @@ export function registerAIRoutes(app: Express): void {
         const result = await searchWithPerplexity(question);
 
         // Cache the result (TTL: 7 days)
-        const ttlExpiresAt = new Date();
-        ttlExpiresAt.setDate(ttlExpiresAt.getDate() + 7);
+        const ttlExpiresAt = addDays(new Date(), 7);
 
         await storage.createQaCache({
           hash,
