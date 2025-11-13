@@ -1,114 +1,134 @@
-name: Deploy - Continuous Deployment
+name: Deploy Automático
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch: # Allow manual deployment
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Permite deploy manual
+
+permissions:
+  contents: write
+  deployments: write
 
 jobs:
-  deploy:
-    name: Deploy to Production
+  # Deploy para Vercel (Frontend/Next.js)
+  deploy-vercel:
     runs-on: ubuntu-latest
-    environment: production
+    if: contains(github.event.head_commit.message, 'vercel') || github.event_name == 'workflow_dispatch'
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
-        run: npm run build
-        env:
-          NODE_ENV: production
-
-      # Option 1: Deploy to Vercel (Recommended)
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
-        if: github.ref == 'refs/heads/main'
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
 
-      # Option 2: Deploy to Render (Alternative)
-      # Uncomment if using Render instead of Vercel
-      # - name: Deploy to Render
-      #   uses: johnbeynon/render-deploy-action@v0.0.8
-      #   with:
-      #     service-id: ${{ secrets.RENDER_SERVICE_ID }}
-      #     api-key: ${{ secrets.RENDER_API_KEY }}
-
-      - name: Deployment Summary
-        run: |
-          echo "## 🚀 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Deploy Time:** $(date)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🌐 **Live URL:** https://www.nossamaternidade.com.br" >> $GITHUB_STEP_SUMMARY
-
-  # Database Migration Job (runs after successful deployment)
-  migrate:
-    name: Run Database Migrations
+  # Deploy para servidor VPS via SSH
+  deploy-vps:
     runs-on: ubuntu-latest
-    needs: deploy
-    environment: production
+    if: contains(github.event.head_commit.message, 'vps') || github.event_name == 'workflow_dispatch'
 
     steps:
-      - name: Checkout code
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            cd ${{ secrets.VPS_PROJECT_PATH }}
+            git pull origin main
+            npm ci
+            npm run build
+            pm2 restart all || npm start
+
+  # Deploy para Netlify
+  deploy-netlify:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, 'netlify') || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run database migrations
-        run: npm run db:push
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: './dist'
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from GitHub Actions"
+          enable-pull-request-comment: true
+          enable-commit-comment: true
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
-      - name: Migration Summary
-        run: |
-          echo "✅ Database migrations completed successfully" >> $GITHUB_STEP_SUMMARY
-
-  # Health Check Job (verify deployment is working)
-  health-check:
-    name: Post-Deploy Health Check
+  # Deploy para Docker Hub + Deploy em servidor
+  deploy-docker:
     runs-on: ubuntu-latest
-    needs: [deploy, migrate]
+    if: contains(github.event.head_commit.message, 'docker') || github.event_name == 'workflow_dispatch'
 
     steps:
-      - name: Wait for deployment to be ready
-        run: sleep 30
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Check application health
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://www.nossamaternidade.com.br)
-          if [ $response -eq 200 ]; then
-            echo "✅ Application is healthy (HTTP $response)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ Application returned HTTP $response" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Notify on failure
-        if: failure()
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:buildcache,mode=max
+
+      - name: Deploy container on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:latest
+            docker stop ${{ github.event.repository.name }} || true
+            docker rm ${{ github.event.repository.name }} || true
+            docker run -d --name ${{ github.event.repository.name }} -p 3000:3000 ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:latest
+
+  # Notificação de sucesso
+  notify-success:
+    runs-on: ubuntu-latest
+    needs: [deploy-vercel, deploy-vps, deploy-netlify, deploy-docker]
+    if: success()
+
+    steps:
+      - name: Notify success
         run: |
-          echo "❌ Deployment health check failed!" >> $GITHUB_STEP_SUMMARY
-          echo "Please check the application logs." >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deploy completed successfully!"
+          echo "Deployment URL: ${{ steps.deploy.outputs.url }}"

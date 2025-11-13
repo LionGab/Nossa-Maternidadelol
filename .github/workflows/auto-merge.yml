@@ -1,0 +1,144 @@
+name: Auto Merge PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  check_suite:
+    types: [completed]
+  workflow_run:
+    workflows: ["CI - Tests & Build"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  statuses: read
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      (github.event_name == 'check_suite' && github.event.check_suite.conclusion == 'success')
+
+    steps:
+      - name: Get PR number
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let prNumber;
+
+            if (context.eventName === 'pull_request') {
+              prNumber = context.payload.pull_request.number;
+            } else if (context.eventName === 'workflow_run') {
+              const pulls = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: context.payload.workflow_run.head_sha
+              });
+              prNumber = pulls.data[0]?.number;
+            } else if (context.eventName === 'check_suite') {
+              const pulls = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: context.payload.check_suite.head_sha
+              });
+              prNumber = pulls.data[0]?.number;
+            }
+
+            core.setOutput('number', prNumber);
+            return prNumber;
+
+      - name: Auto-approve PR (se for dependabot ou auto-gerado)
+        if: steps.pr.outputs.number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_request_number: ${{ steps.pr.outputs.number }}
+            });
+
+            // Auto-aprova se for do dependabot ou tiver label específico
+            const autoBots = ['dependabot[bot]', 'github-actions[bot]'];
+            const shouldAutoApprove = autoBots.includes(pr.data.user.login) ||
+                                      pr.data.labels.some(l => l.name === 'auto-merge');
+
+            if (shouldAutoApprove) {
+              try {
+                await github.rest.pulls.createReview({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_request_number: ${{ steps.pr.outputs.number }},
+                  event: 'APPROVE',
+                  body: 'Auto-approved by GitHub Actions ✅'
+                });
+                console.log('PR auto-approved');
+              } catch (error) {
+                console.log('Could not approve (may already be approved):', error.message);
+              }
+            }
+
+      - name: Enable auto-merge
+        if: steps.pr.outputs.number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const pr = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_request_number: ${{ steps.pr.outputs.number }}
+              });
+
+              // Verifica se CI passou
+              const checks = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: pr.data.head.sha
+              });
+
+              const allPassed = checks.data.check_runs.every(
+                check => check.conclusion === 'success' || check.conclusion === null
+              );
+
+              if (allPassed || pr.data.labels.some(l => l.name === 'ready-to-merge')) {
+                // Habilita auto-merge
+                await github.rest.pulls.merge({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_request_number: ${{ steps.pr.outputs.number }},
+                  merge_method: 'squash', // ou 'merge' ou 'rebase'
+                  commit_title: pr.data.title,
+                  commit_message: `${pr.data.body || ''}\n\nAuto-merged by GitHub Actions 🤖`
+                });
+
+                console.log('✅ PR merged automatically!');
+              } else {
+                console.log('⏳ Waiting for checks to pass...');
+              }
+            } catch (error) {
+              if (error.status === 405) {
+                console.log('❌ Cannot merge: PR is not in a mergeable state');
+              } else if (error.status === 409) {
+                console.log('❌ Cannot merge: Conflict or check required');
+              } else {
+                console.log('Error:', error.message);
+              }
+            }
+
+      - name: Comment on PR
+        if: failure() && steps.pr.outputs.number
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.pr.outputs.number }},
+              body: '❌ Auto-merge failed. Please check the workflow logs for details.'
+            });
