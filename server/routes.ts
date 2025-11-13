@@ -416,13 +416,15 @@ export function registerRoutesSync(app: Express): void {
       const completedToday = habitDates.has(today);
 
       // Calculate streak by checking consecutive days backwards from today
+      // Using immutable approach to avoid Date mutation
       let streak = 0;
       let checkDate = new Date(today);
       while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
         const dateStr = checkDate.toISOString().split("T")[0];
         if (!habitDates.has(dateStr)) break;
         streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
+        // Create new Date instance instead of mutating (24h in milliseconds)
+        checkDate = new Date(checkDate.getTime() - 24 * 60 * 60 * 1000);
       }
 
       return {
