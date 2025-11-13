@@ -19,9 +19,13 @@ export class ContentService {
    * Get daily featured content with tip and post
    */
   async getDailyFeatured(date: string): Promise<{
+    id: string;
+    date: string;
+    tipId: string | null;
+    postId: string | null;
+    quote: string | null;
     tip?: Tip;
     post?: Post;
-    quote?: string;
   } | null> {
     const featured = await storage.getDailyFeatured(date);
     if (!featured) return null;

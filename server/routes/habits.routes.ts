@@ -190,7 +190,7 @@ export function registerHabitsRoutes(app: Express): void {
       
       // Check cache first
       const cacheKey = CacheKeys.userStats(userId);
-      let stats: UserStats | null = await cache.get<UserStats>(cacheKey);
+      let stats: UserStats | null | undefined = await cache.get<UserStats>(cacheKey);
 
       if (!stats) {
         stats = await storage.getUserStats(userId);

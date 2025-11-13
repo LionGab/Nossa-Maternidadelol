@@ -63,7 +63,9 @@ export async function getUserFromToken(token: string) {
     return user;
   } catch (error: unknown) {
     // In development, if Supabase is not configured, return null gracefully
-    if (error.message?.includes("SUPABASE_URL") && process.env.NODE_ENV !== "production") {
+    if (error && typeof error === 'object' && 'message' in error &&
+        typeof error.message === 'string' && error.message.includes("SUPABASE_URL") &&
+        process.env.NODE_ENV !== "production") {
       logger.warn({ msg: "Supabase not configured, returning null for getUserFromToken" });
       return null;
     }
@@ -80,7 +82,9 @@ export async function verifyToken(token: string) {
     return { user, error };
   } catch (error: unknown) {
     // In development, if Supabase is not configured, return error gracefully
-    if (error.message?.includes("SUPABASE_URL") && process.env.NODE_ENV !== "production") {
+    if (error && typeof error === 'object' && 'message' in error &&
+        typeof error.message === 'string' && error.message.includes("SUPABASE_URL") &&
+        process.env.NODE_ENV !== "production") {
       return { user: null, error: new Error("Supabase not configured") };
     }
     return { user: null, error };

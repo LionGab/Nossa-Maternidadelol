@@ -30,7 +30,6 @@ import {
   dailyQuestions, comments, reactions, reports,
 } from "@shared/schema";
 import { eq, and, desc, asc, inArray, gte, lte, sql } from "drizzle-orm";
-import { tips } from "@shared/schema";
 import type { IStorage } from "./types";
 import { GAMIFICATION } from "../constants";
 

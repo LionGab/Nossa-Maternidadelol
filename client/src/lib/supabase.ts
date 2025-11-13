@@ -67,7 +67,9 @@ export async function getCurrentUser() {
     return { user, error };
   } catch (error: unknown) {
     // In development, if Supabase is not configured, return null gracefully
-    if (error?.message?.includes("Supabase") && !import.meta.env.PROD) {
+    if (error && typeof error === 'object' && 'message' in error &&
+        typeof error.message === 'string' && error.message.includes("Supabase") &&
+        !import.meta.env.PROD) {
       console.warn("Supabase not configured, returning null user");
       return { user: null, error: null };
     }
@@ -83,7 +85,9 @@ export async function getCurrentSession() {
     return { session, error };
   } catch (error: unknown) {
     // In development, if Supabase is not configured, return null gracefully
-    if (error?.message?.includes("Supabase") && !import.meta.env.PROD) {
+    if (error && typeof error === 'object' && 'message' in error &&
+        typeof error.message === 'string' && error.message.includes("Supabase") &&
+        !import.meta.env.PROD) {
       console.warn("Supabase not configured, returning null session");
       return { session: null, error: null };
     }
@@ -99,7 +103,9 @@ export async function signOut() {
     return { error };
   } catch (error: unknown) {
     // In development, if Supabase is not configured, return no error
-    if (error?.message?.includes("Supabase") && !import.meta.env.PROD) {
+    if (error && typeof error === 'object' && 'message' in error &&
+        typeof error.message === 'string' && error.message.includes("Supabase") &&
+        !import.meta.env.PROD) {
       return { error: null };
     }
     return { error };
