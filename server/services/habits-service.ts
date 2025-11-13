@@ -128,11 +128,10 @@ export class HabitsService {
       }
 
       if (shouldUnlock) {
-        const userAchievement = await storage.createUserAchievement({
-          userId,
-          achievementId: achievement.id,
-        });
-        unlockedAchievements.push(userAchievement);
+        const userAchievement = await storage.unlockAchievement(userId, achievement.id);
+        if (userAchievement) {
+          unlockedAchievements.push(userAchievement);
+        }
       }
     }
 
