@@ -9,8 +9,8 @@ const registerSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres"),
-  stage: z.enum(["pregnant", "postpartum", "planning"], {
-    errorMap: () => ({ message: "Estágio deve ser: pregnant, postpartum ou planning" }),
+  stage: z.enum(["pregnant", "postpartum", "planning"] as const, {
+    message: "Estágio deve ser: pregnant, postpartum ou planning",
   }),
   goals: z.array(z.string()).optional(),
 });
@@ -32,7 +32,7 @@ export function registerAuthRoutes(app: Express) {
       if (!validation.success) {
         return res.status(400).json({
           error: "Dados inválidos",
-          details: validation.error.errors.map((e) => ({
+          details: validation.error.issues.map((e) => ({
             field: e.path.join("."),
             message: e.message,
           })),
@@ -131,7 +131,7 @@ export function registerAuthRoutes(app: Express) {
       if (!validation.success) {
         return res.status(400).json({
           error: "Dados inválidos",
-          details: validation.error.errors.map((e) => ({
+          details: validation.error.issues.map((e) => ({
             field: e.path.join("."),
             message: e.message,
           })),

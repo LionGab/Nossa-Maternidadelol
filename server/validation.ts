@@ -51,8 +51,8 @@ export const createHabitSchema = z.object({
 // Create Community Post
 // Note: authorName and avatarUrl are populated from authenticated user profile
 export const createCommunityPostSchema = z.object({
-  type: z.enum(["desabafo", "vitoria", "apoio", "reflexao"], {
-    errorMap: () => ({ message: "Tipo de post inválido" }),
+  type: z.enum(["desabafo", "vitoria", "apoio", "reflexao"] as const, {
+    message: "Tipo de post inválido",
   }),
   content: z
     .string()
@@ -74,8 +74,8 @@ export const createCommentSchema = z.object({
 
 // Create Reaction
 export const createReactionSchema = z.object({
-  type: z.enum(["heart", "hands", "sparkles"], {
-    errorMap: () => ({ message: "Tipo de reação inválido" }),
+  type: z.enum(["heart", "hands", "sparkles"] as const, {
+    message: "Tipo de reação inválido",
   }),
 });
 
@@ -135,7 +135,7 @@ export function validateQuery<T extends z.ZodTypeAny>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const validated = schema.parse(req.query);
-      req.query = validated as z.infer<T>;
+      req.query = validated as any;
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -157,7 +157,7 @@ export function validateParams<T extends z.ZodTypeAny>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const validated = schema.parse(req.params);
-      req.params = validated as z.infer<T>;
+      req.params = validated as any;
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
