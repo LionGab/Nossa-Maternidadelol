@@ -1,6 +1,7 @@
 // Using Google Gemini API directly
 import { GoogleGenAI } from "@google/genai";
 import { logger, logAICall } from "./logger";
+import { getCircuitBreaker } from "./utils/circuit-breaker";
 
 // Initialize Gemini AI with direct API key
 // Requires GEMINI_API_KEY environment variable
@@ -15,9 +16,34 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || "dummy-key-for-tests",
 });
 
+// Circuit breaker for Gemini API
+const geminiCircuit = getCircuitBreaker("gemini_ai", {
+  failureThreshold: 5,
+  resetTimeout: 60000, // 1 min
+  isFailure: (error) => {
+    // Don't count safety blocks as failures
+    if (error instanceof Error && error.message.includes("safety")) {
+      return false;
+    }
+    return true;
+  },
+});
+
 export interface ChatContext {
   userStage?: string;
   userGoals?: string[];
+}
+
+/**
+ * Timeout wrapper for promises
+ */
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_resolve, reject) =>
+      setTimeout(() => reject(new Error("Request timeout")), timeoutMs)
+    ),
+  ]);
 }
 
 export async function chatWithNathIA(
@@ -74,14 +100,20 @@ ESTILO DE CONVERSA:
       userStage: context?.userStage,
     });
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      config: {
-        systemInstruction: systemPrompt,
-        temperature: 0.8,
-        maxOutputTokens: 250,
-      },
-      contents,
+    // Execute with circuit breaker and 15s timeout
+    const response = await geminiCircuit.execute(async () => {
+      return withTimeout(
+        ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          config: {
+            systemInstruction: systemPrompt,
+            temperature: 0.8,
+            maxOutputTokens: 250,
+          },
+          contents,
+        }),
+        15000 // 15s timeout
+      );
     });
 
     const duration = Date.now() - startTime;
@@ -155,14 +187,25 @@ ESTILO DE CONVERSA:
       service: "gemini",
       err: error,
       duration,
+      circuitState: geminiCircuit.getState(),
       msg: "Gemini API Error",
     });
-    
+
+    // Check if circuit breaker is open
+    if (error instanceof Error && error.name === "CircuitBreakerError") {
+      return "A NathIA está temporariamente indisponível. Tente novamente em alguns instantes.";
+    }
+
+    // Check if timeout
+    if (error instanceof Error && error.message === "Request timeout") {
+      return "Desculpe, a resposta está demorando muito. Tente uma pergunta mais simples?";
+    }
+
     // Better error messages based on error type
     if (error instanceof Error && 'status' in error && (error as { status: number }).status === 429) {
       return "O serviço está com muitas requisições no momento. Por favor, aguarde alguns segundos e tente novamente.";
     }
-    
+
     return "Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.";
   }
 }
