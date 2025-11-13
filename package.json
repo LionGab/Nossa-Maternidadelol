@@ -24,7 +24,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "clean": "rm -rf dist node_modules/.vite *.tsbuildinfo",
+    "clean:all": "npm run clean && rm -rf node_modules/.cache .turbo",
+    "setup": "node scripts/setup.js",
+    "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

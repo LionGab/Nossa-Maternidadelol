@@ -61,7 +61,7 @@ export async function getUserFromToken(token: string) {
     }
     
     return user;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // In development, if Supabase is not configured, return null gracefully
     if (error.message?.includes("SUPABASE_URL") && process.env.NODE_ENV !== "production") {
       logger.warn({ msg: "Supabase not configured, returning null for getUserFromToken" });
@@ -78,7 +78,7 @@ export async function verifyToken(token: string) {
     const client = getSupabase();
     const { data: { user }, error } = await client.auth.getUser(token);
     return { user, error };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // In development, if Supabase is not configured, return error gracefully
     if (error.message?.includes("SUPABASE_URL") && process.env.NODE_ENV !== "production") {
       return { user: null, error: new Error("Supabase not configured") };

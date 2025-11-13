@@ -35,7 +35,9 @@ export function setAuth(session: AuthSession, user: AuthUser): void {
       localStorage.setItem(`${TOKEN_KEY}_expires_at`, session.expires_at.toString());
     }
   } catch (error) {
-    console.error("Failed to store auth:", error);
+    import("./logger").then(({ logError }) => {
+      logError("Failed to store auth", error);
+    });
   }
 }
 
@@ -60,7 +62,9 @@ export function getAuthToken(): string | null {
     
     return token;
   } catch (error) {
-    console.error("Failed to get auth token:", error);
+    import("./logger").then(({ logError }) => {
+      logError("Failed to get auth token", error);
+    });
     return null;
   }
 }
@@ -74,7 +78,9 @@ export function getAuthUser(): AuthUser | null {
     if (!userJson) return null;
     return JSON.parse(userJson) as AuthUser;
   } catch (error) {
-    console.error("Failed to get auth user:", error);
+    import("./logger").then(({ logError }) => {
+      logError("Failed to get auth user", error);
+    });
     return null;
   }
 }
@@ -96,7 +102,9 @@ export function clearAuth(): void {
     localStorage.removeItem(`${TOKEN_KEY}_expires_at`);
     localStorage.removeItem(USER_KEY);
   } catch (error) {
-    console.error("Failed to clear auth:", error);
+    import("./logger").then(({ logError }) => {
+      logError("Failed to clear auth", error);
+    });
   }
 }
 

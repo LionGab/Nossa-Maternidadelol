@@ -60,7 +60,7 @@ const enhancedQueryFn: QueryFunction = async ({ queryKey }) => {
     // Check if it's a query params object
     if (params.length === 1 && typeof params[0] === 'object' && !Array.isArray(params[0])) {
       const searchParams = new URLSearchParams();
-      Object.entries(params[0] as Record<string, any>).forEach(([key, value]) => {
+      Object.entries(params[0] as Record<string, unknown>).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== 'all') {
           searchParams.append(key, String(value));
         }
@@ -94,13 +94,43 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: enhancedQueryFn,
-      refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      staleTime: 5 * 60 * 1000, // 5 minutos padrão
+      gcTime: 10 * 60 * 1000, // 10 minutos (antes era cacheTime)
+      retry: (failureCount, error: unknown) => {
+        // Não retry em erros 4xx (client errors)
+        if (error instanceof Error && error.message.startsWith('4')) {
+          return false;
+        }
+        return failureCount < 2; // Retry até 2 vezes
+      },
     },
     mutations: {
       retry: false,
     },
   },
 });
+
+/**
+ * Query configurations by data type
+ */
+export const queryConfigs = {
+  // Dados que mudam raramente (posts, conteúdo)
+  static: {
+    staleTime: 30 * 60 * 1000, // 30 minutos
+    gcTime: 60 * 60 * 1000, // 1 hora
+  },
+  
+  // Dados que mudam frequentemente (habits, stats)
+  dynamic: {
+    staleTime: 1 * 60 * 1000, // 1 minuto
+    gcTime: 5 * 60 * 1000, // 5 minutos
+  },
+  
+  // Dados em tempo real (mensagens AI)
+  realtime: {
+    staleTime: 0,
+    refetchInterval: 2000, // 2 segundos
+    gcTime: 2 * 60 * 1000, // 2 minutos
+  },
+} as const;

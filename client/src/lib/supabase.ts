@@ -65,7 +65,7 @@ export async function getCurrentUser() {
     const client = getSupabase();
     const { data: { user }, error } = await client.auth.getUser();
     return { user, error };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // In development, if Supabase is not configured, return null gracefully
     if (error?.message?.includes("Supabase") && !import.meta.env.PROD) {
       console.warn("Supabase not configured, returning null user");
@@ -81,7 +81,7 @@ export async function getCurrentSession() {
     const client = getSupabase();
     const { data: { session }, error } = await client.auth.getSession();
     return { session, error };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // In development, if Supabase is not configured, return null gracefully
     if (error?.message?.includes("Supabase") && !import.meta.env.PROD) {
       console.warn("Supabase not configured, returning null session");
@@ -97,7 +97,7 @@ export async function signOut() {
     const client = getSupabase();
     const { error } = await client.auth.signOut();
     return { error };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // In development, if Supabase is not configured, return no error
     if (error?.message?.includes("Supabase") && !import.meta.env.PROD) {
       return { error: null };
