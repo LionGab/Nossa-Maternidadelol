@@ -1,15 +1,40 @@
+<div align="center">
+
 # 🌸 Nossa Maternidade
 
-Uma plataforma digital de acolhimento e bem-estar para mães e gestantes, criada pela influenciadora Nathália Valente.
+### Plataforma Digital de Bem-Estar Materno
+
+*Um refúgio sem julgamentos para mães e gestantes*
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://reactjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-339933.svg)](https://nodejs.org/)
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-100%20passing-success.svg)](tests/)
+
+[Demo](https://nossa-maternidade.vercel.app) · [Documentação](docs/) · [Report Bug](https://github.com/LionGab/Nossa-Maternidadelol/issues)
+
+</div>
+
+---
 
 ## 📱 Sobre o Projeto
 
-**Nossa Maternidade** é um aplicativo que oferece um espaço seguro, sem julgamentos, para mães e gestantes encontrarem:
+**Nossa Maternidade** é uma plataforma digital inovadora criada pela influenciadora **Nathália Valente** (@nathaliavalente), oferecendo um espaço seguro, acolhedor e livre de julgamentos para mães e gestantes em todas as fases da maternidade.
 
-- 💬 **NathIA**: Assistente virtual de IA especializada em saúde mental materna
-- 🌟 **Mãe Valente**: Busca inteligente sobre bem-estar materno com fontes confiáveis
-- ✅ **Hábitos**: Sistema de acompanhamento de hábitos saudáveis
-- 📚 **Mundo Nath**: Conteúdos, dicas e comunidade
+### 🎯 Missão
+
+Proporcionar suporte emocional, informação confiável e ferramentas práticas para o bem-estar materno, combinando tecnologia de IA com empatia humana.
+
+### ✨ Funcionalidades Principais
+
+| Funcionalidade | Descrição |
+|---------------|-----------|
+| 💬 **NathIA** | Assistente de IA empática especializada em saúde mental materna, powered by Google Gemini 2.5 Flash |
+| 🌟 **Mãe Valente** | Busca inteligente com respostas baseadas em fontes confiáveis, powered by Perplexity AI |
+| ✅ **Hábitos** | Sistema gamificado de tracking de hábitos com streaks, XP, níveis e achievements |
+| 🏡 **Refúgio Nath** | Comunidade segura para desabafos, perguntas e apoio mútuo entre mães |
+| 📚 **Mundo Nath** | Conteúdos educativos, dicas práticas e posts virais do Instagram/TikTok |
 
 ## 🎯 Funcionalidades Principais
 
