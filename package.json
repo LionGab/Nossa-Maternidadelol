@@ -21,6 +21,7 @@
     "db:studio": "drizzle-kit studio",
     "vercel-build": "npm run build",
     "generate:session-secret": "node scripts/generate-session-secret.js",
+    "pre-deploy": "node scripts/pre-deploy-check.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
