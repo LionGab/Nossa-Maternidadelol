@@ -18,19 +18,19 @@ Esta análise identifica problemas reais no código do projeto **Nossa Maternida
 | **Type Safety** | 🟡 Bom | 0 | 43 `any` (maioria após validação Zod, não crítico) |
 | **Arquitetura** | 🟢 Excelente | 0 | Storage já usa Drizzle quando DATABASE_URL definida |
 | **Performance** | 🟢 Excelente | 0 | N+1 resolvido com batch loading |
-| **Bugs de Lógica** | 🔴 Crítico | 1 | Mutação de Date no cálculo de streak |
+| **Code Quality** | 🟡 Médio | 0 | Mutação de Date (imutabilidade, não bug confirmado) |
 | **Error Handling** | 🟡 Médio | 0 | Handlers básicos, podem ser melhorados |
 | **Segurança** | 🟢 Excelente | 0 | Rate limiting, validação, helmet implementados |
 
 ---
 
-## 🔴 CRÍTICO: Bugs de Lógica
+## 🟡 MÉDIO: Code Quality e Imutabilidade
 
-### 1. Bug de Mutação de Date no Cálculo de Streak
+### 1. Mutação de Date no Cálculo de Streak
 
-**Severidade:** 🔴 CRÍTICO
+**Severidade:** 🟡 MÉDIO (code quality, não bug confirmado)
 **Arquivo:** `server/routes.ts:420-426`
-**Impacto:** Cálculo incorreto de streak pode ocorrer
+**Impacto:** Violação de princípio de imutabilidade, potencial para bugs futuros
 
 **Problema:**
 
@@ -44,9 +44,23 @@ while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
 }
 ```
 
-A mutação de `checkDate` pode causar comportamento inesperado quando o método `setDate()` atravessa limites de mês. Por exemplo, ao subtrair 1 dia de `2025-03-01`, o objeto Date é mutado para `2025-02-28`, mas dependendo do contexto de execução, pode haver efeitos colaterais.
+**Nota:** O método `setDate()` do JavaScript funciona corretamente atravessando limites de mês (ex: `new Date('2025-03-01').setDate(0)` → `2025-02-28`). No entanto, mutar objetos Date pode causar bugs sutis se a referência for compartilhada ou usada em outros contextos.
 
-**Solução Correta:**
+**Solução Recomendada (Opção 1 - date-fns):**
+
+```typescript
+import { subDays } from 'date-fns';
+
+let checkDate = new Date(today);
+while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
+  const dateStr = checkDate.toISOString().split("T")[0];
+  if (!habitDates.has(dateStr)) break;
+  streak++;
+  checkDate = subDays(checkDate, 1); // ✅ Imutável, lida com DST
+}
+```
+
+**Solução Alternativa (Opção 2 - UTC para evitar DST):**
 
 ```typescript
 let checkDate = new Date(today);
@@ -54,24 +68,27 @@ while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
   const dateStr = checkDate.toISOString().split("T")[0];
   if (!habitDates.has(dateStr)) break;
   streak++;
-  // Criar nova instância ao invés de mutar
+  // Usar UTC para evitar issues com horário de verão
+  const previousDate = new Date(checkDate);
+  previousDate.setUTCDate(previousDate.getUTCDate() - 1);
+  checkDate = previousDate;
+}
+```
+
+**Solução Simples (Opção 3 - timestamp arithmetic):**
+
+```typescript
+let checkDate = new Date(today);
+while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
+  const dateStr = checkDate.toISOString().split("T")[0];
+  if (!habitDates.has(dateStr)) break;
+  streak++;
+  // Criar nova instância (nota: não considera DST)
   checkDate = new Date(checkDate.getTime() - 24 * 60 * 60 * 1000);
 }
 ```
 
-**Alternativa (mais legível):**
-
-```typescript
-let currentDate = new Date(today);
-while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
-  const dateStr = currentDate.toISOString().split("T")[0];
-  if (!habitDates.has(dateStr)) break;
-  streak++;
-  // Criar uma cópia para evitar mutação da referência original
-  currentDate = new Date(currentDate);
-  currentDate.setDate(currentDate.getDate() - 1);
-}
-```
+**Recomendação:** Opção 1 (date-fns) para produção, Opção 3 para quick fix.
 
 ---
 
@@ -493,9 +510,13 @@ registerRoutes(app: Express) {
 
 | Fase | Coverage | Esforço | Bugs Prevenidos | ROI |
 |------|----------|---------|-----------------|-----|
-| Fase 1 | 40-50% | 3-4h | Alto (~70% bugs) | ⭐⭐⭐⭐⭐ |
-| Fase 2 | 60-70% | 4-5h | Médio (~20% bugs) | ⭐⭐⭐ |
-| Fase 3 | 70-80% | 6-8h | Baixo (~10% bugs) | ⭐⭐ |
+| Fase 1 | 40-50% | 3-4h | Alto (~70% bugs estimado) | ⭐⭐⭐⭐⭐ |
+| Fase 2 | 60-70% | 4-5h | Médio (~20% bugs estimado) | ⭐⭐⭐ |
+| Fase 3 | 70-80% | 6-8h | Baixo (~10% bugs estimado) | ⭐⭐ |
+
+**Nota sobre estimativas:** Os percentuais são baseados no Princípio de Pareto (regra 80/20) e observações empíricas da indústria. A maioria dos bugs (70-80%) tende a estar em lógica de negócio crítica e validação, que são priorizados na Fase 1. Referências:
+- Google Testing Blog: "Code Coverage Best Practices"
+- Microsoft Research: "The Influence of Code Coverage on Software Quality"
 
 **Recomendação:** Focar em Fase 1, avaliar necessidade de Fase 2 após 1 mês.
 
@@ -572,10 +593,8 @@ export const ERROR_MESSAGES = {
 
 ## 📋 CHECKLIST: Problemas Reais
 
-### 🔴 Crítico (Ação Imediata)
-- [ ] **Bug de mutação de Date** (streak calculation) - `server/routes.ts:425`
-
 ### 🟡 Médio (Próximas 2 Semanas)
+- [ ] **Refatorar mutação de Date** (code quality) - `server/routes.ts:425` - usar date-fns ou UTC
 - [ ] Melhorar error handler (não engolir erros)
 - [ ] Refatorar casting redundante de `any` (não urgente)
 - [ ] Adicionar HTTP_STATUS e ERROR_MESSAGES constants

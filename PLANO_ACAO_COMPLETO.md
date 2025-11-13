@@ -8,13 +8,13 @@
 
 ## 📊 Visão Geral
 
-Este plano corrige **1 bug crítico** e implementa **melhorias incrementais** priorizadas por ROI. Não há problemas arquiteturais críticos - o projeto já está bem estruturado.
+Este plano implementa **melhorias incrementais de code quality** priorizadas por ROI. Não há bugs críticos ou problemas arquiteturais - o projeto já está bem estruturado. A única questão identificada é uma violação de imutabilidade (MÉDIO) que será tratada na Fase 0.
 
 ### Esforço Total Estimado
 
 | Fase | Prioridade | Esforço | Timeline | Resultado |
 |------|------------|---------|----------|-----------|
-| **Fase 0: Hotfix** | 🔴 CRÍTICA | 30 min | Hoje | Bug de streak corrigido |
+| **Fase 0: Code Quality** | 🟡 MÉDIA | 30 min | Esta semana | Imutabilidade de Date melhorada |
 | **Fase 1: Foundation** | 🟡 ALTA | 8-10h | 1-2 semanas | Testes básicos + error handling |
 | **Fase 2: Quality** | 🟢 MÉDIA | 6-8h | 2-3 semanas | Constants + type safety |
 | **Fase 3: Scale** | ⚪ BAIXA | 10-12h | 1-2 meses | Modularização (se necessário) |
@@ -23,14 +23,16 @@ Este plano corrige **1 bug crítico** e implementa **melhorias incrementais** pr
 
 ---
 
-## 🚨 FASE 0: Hotfix Crítico
+## 🟡 FASE 0: Code Quality - Imutabilidade
 
-**Prazo:** Hoje (30 minutos)
+**Prazo:** Esta semana (30 minutos)
 **Responsável:** Dev lead
 
-### 0.1 Corrigir Bug de Mutação de Date
+### 0.1 Refatorar Mutação de Date (Code Quality)
 
-**Problema:** `server/routes.ts:425` - mutação de Date no cálculo de streak
+**Problema:** `server/routes.ts:425` - mutação de Date no cálculo de streak (violação de princípio de imutabilidade)
+
+**Nota:** O código atual funciona corretamente, mas violar imutabilidade pode causar bugs futuros se a referência for compartilhada.
 
 **Passos:**
 
@@ -53,14 +55,40 @@ while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
 }
 ```
 
-**Código Corrigido:**
+**Opção 1 - date-fns (RECOMENDADO para produção):**
+```typescript
+import { subDays } from 'date-fns';
+
+let checkDate = new Date(today);
+while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
+  const dateStr = checkDate.toISOString().split("T")[0];
+  if (!habitDates.has(dateStr)) break;
+  streak++;
+  checkDate = subDays(checkDate, 1); // ✅ Imutável, lida com DST
+}
+```
+
+**Opção 2 - UTC (sem dependências, lida com DST):**
 ```typescript
 let checkDate = new Date(today);
 while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
   const dateStr = checkDate.toISOString().split("T")[0];
   if (!habitDates.has(dateStr)) break;
   streak++;
-  // Criar nova instância ao invés de mutar
+  // Usar UTC para evitar issues com horário de verão
+  const previousDate = new Date(checkDate);
+  previousDate.setUTCDate(previousDate.getUTCDate() - 1);
+  checkDate = previousDate;
+}
+```
+
+**Opção 3 - Timestamp arithmetic (QUICK FIX, não considera DST):**
+```typescript
+let checkDate = new Date(today);
+while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
+  const dateStr = checkDate.toISOString().split("T")[0];
+  if (!habitDates.has(dateStr)) break;
+  streak++;
   checkDate = new Date(checkDate.getTime() - 24 * 60 * 60 * 1000);
 }
 ```
@@ -89,17 +117,19 @@ git checkout main server/routes.ts
 **Commit:**
 ```bash
 git add server/routes.ts
-git commit -m "fix: corrigir mutação de Date no cálculo de streak
+git commit -m "refactor: melhorar imutabilidade no cálculo de streak
 
-- Substituir setDate() por criação de nova instância
-- Previne comportamento inesperado em limites de mês
+- Substituir setDate() por abordagem imutável
+- Opções: date-fns (recomendado), UTC, ou timestamp arithmetic
+- Melhora code quality e previne bugs futuros
 - Refs: ANALISE_PROFUNDA_LINHA_POR_LINHA.md #1"
 
-git push -u origin hotfix/streak-date-mutation
+git push -u origin refactor/streak-date-immutability
 ```
 
 **Critérios de Sucesso:**
 - [ ] Streak calcula corretamente através de mudanças de mês
+- [ ] Código segue princípios de imutabilidade
 - [ ] `npm run check` passa sem erros
 - [ ] `npm run build` completa com sucesso
 - [ ] Testes manuais confirmam streak correto
@@ -851,3 +881,38 @@ gh pr create --title "Fix: Streak date mutation bug" --body "Refs: ANALISE_PROFU
 ```
 
 **Próximo passo:** Ver Fase 1 após merge do hotfix.
+
+---
+
+## 📅 Review Triggers - Quando Revisar Este Plano
+
+Esta análise foi baseada no estado do código em 2025-01-13. Revise e atualize este documento quando ocorrer um dos seguintes eventos:
+
+### Triggers de Modularização (Fase 3)
+- [ ] **`server/routes.ts` excede 1500 linhas** - Considerar modularização
+- [ ] **Time cresce para 2+ desenvolvedores ativos** - Benefício de separação aumenta
+- [ ] **Conflitos de merge semanais em `routes.ts`** - Sinal de gargalo
+- [ ] **Onboarding de novo dev leva >4 horas** - Estrutura precisa ser mais clara
+
+### Triggers de Performance
+- [ ] **Latência de API >500ms no P95** - Revisar queries e caching
+- [ ] **Coverage de testes <30%** - Implementar Fase 1 de testes
+- [ ] **>10 bugs em produção/mês** - Aumentar coverage (Fase 2)
+
+### Triggers de Segurança
+- [ ] **Aumento de tráfego >10x** - Implementar per-user rate limiting
+- [ ] **Primeira tentativa de abuse/bot** - Reforçar rate limits
+- [ ] **Adicionar dados sensíveis** - Revisar logs e validação
+
+### Triggers de Tecnologia
+- [ ] **Migração para microservices** - Modularização torna-se crítica
+- [ ] **Adicionar GraphQL ou tRPC** - Revisar estrutura de rotas
+- [ ] **Mudança de framework** - Atualizar todo o plano
+
+### Review Periódico
+- [ ] **A cada 2 meses** - Verificar se suposições ainda são válidas
+- [ ] **Após cada milestone** - Ajustar prioridades conforme aprendizado
+- [ ] **Feedback do time** - Incorporar sugestões de desenvolvimento
+
+**Última Revisão:** 2025-01-13
+**Próxima Revisão Agendada:** 2025-03-13
