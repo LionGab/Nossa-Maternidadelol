@@ -1,8 +1,21 @@
 {
-  "name": "rest-express",
+  "name": "nossa-maternidade",
   "version": "1.0.0",
+  "description": "Plataforma Digital de Bem-Estar Materno - Um refúgio sem julgamentos para mães e gestantes",
+  "homepage": "https://www.nossamaternidade.com.br/",
   "type": "module",
   "license": "MIT",
+  "author": {
+    "name": "Nathália Valente",
+    "url": "https://www.nossamaternidade.com.br/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LionGab/Nossa-Maternidadelol.git"
+  },
+  "bugs": {
+    "url": "https://github.com/LionGab/Nossa-Maternidadelol/issues"
+  },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"

@@ -41,18 +41,32 @@
 
 ## 🚀 Próximos Passos:
 
-1. **Deploy no Vercel:**
+1. **Gerar SESSION_SECRET:**
+   
+   **No Terminal Linux/Mac:**
+   ```bash
+   openssl rand -base64 32
+   ```
+   
+   **No Windows PowerShell:**
+   ```powershell
+   [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }))
+   ```
+   
+   📖 **Guia completo:** `COMO_GERAR_SESSION_SECRET.md`
+
+2. **Deploy no Vercel:**
    ```bash
    vercel --prod
    ```
 
-2. **Configurar Variáveis:**
-   - GEMINI_API_KEY
-   - PERPLEXITY_API_KEY
-   - DATABASE_URL
-   - SESSION_SECRET
+3. **Configurar Variáveis de Ambiente:**
+   - `GEMINI_API_KEY` - https://aistudio.google.com/app/apikey
+   - `PERPLEXITY_API_KEY` - https://www.perplexity.ai/settings/api
+   - `DATABASE_URL` - Neon PostgreSQL
+   - `SESSION_SECRET` - Usar a secret gerada acima
 
-3. **Verificar Deploy:**
+4. **Verificar Deploy:**
    - Testar todas as páginas
    - Verificar APIs funcionando
    - Confirmar integrações de IA
@@ -68,4 +82,10 @@
 
 ---
 
-**Desenvolvido com ❤️ pela equipe Nathália Valente**
+<div align="center">
+
+**🌸 Nossa Maternidade** - [www.nossamaternidade.com.br](https://www.nossamaternidade.com.br/)
+
+*Desenvolvido com ❤️ pela equipe Nathália Valente*
+
+</div>

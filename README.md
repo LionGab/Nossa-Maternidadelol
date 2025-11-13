@@ -12,7 +12,7 @@
 [![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-100%20passing-success.svg)](tests/)
 
-[Demo](https://nossa-maternidade.vercel.app) · [Documentação](docs/) · [Report Bug](https://github.com/LionGab/Nossa-Maternidadelol/issues)
+[🌐 Site Oficial](https://www.nossamaternidade.com.br/) · [Documentação](docs/) · [Report Bug](https://github.com/LionGab/Nossa-Maternidadelol/issues)
 
 </div>
 
@@ -235,4 +235,10 @@ Criado com carinho para mães e gestantes que merecem apoio, acolhimento e compr
 
 ---
 
-**Desenvolvido com** ❤️ **pela equipe Nathália Valente**
+<div align="center">
+
+**🌸 Nossa Maternidade** - [www.nossamaternidade.com.br](https://www.nossamaternidade.com.br/)
+
+*Desenvolvido com ❤️ pela equipe Nathália Valente*
+
+</div>
