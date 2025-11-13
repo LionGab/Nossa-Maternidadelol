@@ -5,8 +5,14 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["**/*.{test,spec}.{js,ts}"],
-    exclude: ["node_modules", "dist", ".git"],
+    include: ["tests/**/*.{test,spec}.{js,ts}"],
+    exclude: [
+      "node_modules/**",
+      "dist/**",
+      ".git/**",
+      "Nossa-Maternidadelol2/**",
+      "**/node_modules/**",
+    ],
     setupFiles: ["./tests/setup.ts"],
     coverage: {
       provider: "v8",
