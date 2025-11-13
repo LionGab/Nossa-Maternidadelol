@@ -35,12 +35,23 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
-  // Serve HTML for all non-asset routes in dev mode
-  app.use("/:path*", async (req, res, next) => {
+
+  // Serve HTML for all routes that are not assets or API calls (SPA fallback)
+  app.use(async (req, res, next) => {
+    // Only handle GET requests
+    if (req.method !== 'GET') {
+      return next();
+    }
+
     const url = req.originalUrl;
 
     // Skip if it's an asset request (let Vite middleware handle it)
-    if (url.match(/\.(png|jpg|jpeg|gif|svg|ico|json|css|js|woff|woff2|ttf|eot)$/)) {
+    if (url.match(/\.(png|jpg|jpeg|gif|svg|ico|json|css|js|woff|woff2|ttf|eot|map)$/)) {
+      return next();
+    }
+
+    // Skip API routes
+    if (url.startsWith("/api/") || url.startsWith("/health")) {
       return next();
     }
 
@@ -78,12 +89,23 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
-  // Serve index.html for all non-asset routes (SPA fallback)
-  app.use("/:path*", (req, res, next) => {
-    // Skip if it's an asset request (already served by express.static)
-    if (req.url.match(/\.(png|jpg|jpeg|gif|svg|ico|json|css|js|woff|woff2|ttf|eot)$/)) {
+  // Serve index.html for all routes that are not assets or API calls (SPA fallback)
+  app.use((req, res, next) => {
+    // Only handle GET requests
+    if (req.method !== 'GET') {
       return next();
     }
+
+    // Skip if it's an asset request (already served by express.static)
+    if (req.url.match(/\.(png|jpg|jpeg|gif|svg|ico|json|css|js|woff|woff2|ttf|eot|map)$/)) {
+      return next();
+    }
+
+    // Skip API routes
+    if (req.url.startsWith("/api/") || req.url.startsWith("/health")) {
+      return next();
+    }
+
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
