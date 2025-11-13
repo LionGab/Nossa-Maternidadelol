@@ -27,7 +27,11 @@
       "Bash(gh pr checks:*)",
       "Bash(git rm:*)",
       "Bash(.gitignore)",
-      "Bash(npm run test:*)"
+      "Bash(npm run test:*)",
+      "WebSearch",
+      "WebFetch(domain:code.claude.com)",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp list)"
     ],
     "deny": [],
     "ask": []
