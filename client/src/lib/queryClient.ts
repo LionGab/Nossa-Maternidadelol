@@ -56,3 +56,35 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+/**
+ * Helper para fazer chamadas à API com tratamento de erros
+ */
+export async function apiRequest(
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
+  url: string,
+  data?: any
+): Promise<any> {
+  const options: RequestInit = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include", // Include cookies for session auth
+  };
+
+  if (data && method !== "GET") {
+    options.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(url, options);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: `Request failed with status ${response.status}`,
+    }));
+    throw new Error(error.error || error.message || "Request failed");
+  }
+
+  return response.json();
+}
