@@ -1,0 +1,202 @@
+name: Notificações
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    types: [opened, closed, reopened]
+  workflow_run:
+    workflows: ["CI - Tests & Build", "Deploy Automático"]
+    types: [completed]
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  # Notificação para Discord
+  notify-discord:
+    runs-on: ubuntu-latest
+    if: vars.DISCORD_WEBHOOK_URL != ''
+
+    steps:
+      - name: Discord notification - Push
+        if: github.event_name == 'push'
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: ${{ job.status }}
+          title: "Novo push em ${{ github.ref_name }}"
+          description: |
+            **Commit:** ${{ github.event.head_commit.message }}
+            **Autor:** ${{ github.event.head_commit.author.name }}
+            **Branch:** ${{ github.ref_name }}
+          color: 0x00ff00
+          url: ${{ github.event.head_commit.url }}
+          username: GitHub Actions
+          avatar_url: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
+
+      - name: Discord notification - PR
+        if: github.event_name == 'pull_request'
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: ${{ job.status }}
+          title: "Pull Request ${{ github.event.action }}"
+          description: |
+            **PR:** ${{ github.event.pull_request.title }}
+            **Autor:** ${{ github.event.pull_request.user.login }}
+            **Status:** ${{ github.event.action }}
+          color: ${{ github.event.action == 'closed' && github.event.pull_request.merged && '0x6f42c1' || '0x0366d6' }}
+          url: ${{ github.event.pull_request.html_url }}
+          username: GitHub Actions
+
+      - name: Discord notification - Workflow
+        if: github.event_name == 'workflow_run'
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: ${{ github.event.workflow_run.conclusion }}
+          title: "${{ github.event.workflow_run.name }} - ${{ github.event.workflow_run.conclusion }}"
+          description: |
+            **Workflow:** ${{ github.event.workflow_run.name }}
+            **Status:** ${{ github.event.workflow_run.conclusion }}
+            **Branch:** ${{ github.event.workflow_run.head_branch }}
+          color: ${{ github.event.workflow_run.conclusion == 'success' && '0x28a745' || '0xdc3545' }}
+          url: ${{ github.event.workflow_run.html_url }}
+          username: GitHub Actions
+
+  # Notificação para Slack
+  notify-slack:
+    runs-on: ubuntu-latest
+    if: vars.SLACK_WEBHOOK_URL != ''
+
+    steps:
+      - name: Slack notification - Push
+        if: github.event_name == 'push'
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "Novo push em *${{ github.ref_name }}*",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Novo commit em ${{ github.repository }}*\n*Branch:* ${{ github.ref_name }}\n*Autor:* ${{ github.event.head_commit.author.name }}\n*Mensagem:* ${{ github.event.head_commit.message }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "Ver commit"
+                      },
+                      "url": "${{ github.event.head_commit.url }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Slack notification - PR
+        if: github.event_name == 'pull_request'
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "Pull Request ${{ github.event.action }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Pull Request ${{ github.event.action }}* em ${{ github.repository }}\n*Título:* ${{ github.event.pull_request.title }}\n*Autor:* ${{ github.event.pull_request.user.login }}\n*Status:* ${{ github.event.action }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "Ver PR"
+                      },
+                      "url": "${{ github.event.pull_request.html_url }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Slack notification - Workflow
+        if: github.event_name == 'workflow_run'
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "Workflow ${{ github.event.workflow_run.conclusion }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Workflow:* ${{ github.event.workflow_run.name }}\n*Status:* ${{ github.event.workflow_run.conclusion }}\n*Branch:* ${{ github.event.workflow_run.head_branch }}\n*Repositório:* ${{ github.repository }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "Ver workflow"
+                      },
+                      "url": "${{ github.event.workflow_run.html_url }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  # Notificação por Email (usando GitHub native)
+  notify-email:
+    runs-on: ubuntu-latest
+    if: failure()
+
+    steps:
+      - name: Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "GitHub Actions - Workflow Failed"
+          to: ${{ secrets.EMAIL_TO }}
+          from: GitHub Actions
+          body: |
+            Workflow failed in repository ${{ github.repository }}
+
+            Workflow: ${{ github.workflow }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+
+            View details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
