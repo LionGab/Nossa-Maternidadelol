@@ -110,3 +110,76 @@ export const CONTENT = {
   FEATURED_POSTS_COUNT: 3,
 } as const;
 
+// HTTP Status Codes
+export const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  NO_CONTENT: 204,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  TOO_MANY_REQUESTS: 429,
+  INTERNAL_SERVER_ERROR: 500,
+} as const;
+
+// Error messages (Portuguese)
+export const ERROR_MESSAGES = {
+  // Auth
+  INVALID_CREDENTIALS: "Email ou senha incorretos.",
+  EMAIL_ALREADY_EXISTS: "Este email já está cadastrado.",
+  UNAUTHORIZED: "Você precisa estar logado para acessar este recurso.",
+  INVALID_TOKEN: "Token inválido ou expirado.",
+
+  // Rate limiting
+  TOO_MANY_REQUESTS_AI: "Muitas mensagens enviadas. Aguarde um minuto e tente novamente.",
+  TOO_MANY_REQUESTS_AUTH: "Muitas tentativas de login. Tente novamente em 15 minutos.",
+  TOO_MANY_REQUESTS_GENERAL: "Muitas requisições. Por favor, aguarde.",
+
+  // Validation
+  INVALID_INPUT: "Dados inválidos. Verifique os campos e tente novamente.",
+  INVALID_EMAIL: "Email inválido.",
+  PASSWORD_TOO_SHORT: "Senha deve ter no mínimo 8 caracteres.",
+  REQUIRED_FIELD: "Este campo é obrigatório.",
+
+  // Resources
+  NOT_FOUND: "Recurso não encontrado.",
+  HABIT_NOT_FOUND: "Hábito não encontrado.",
+  POST_NOT_FOUND: "Post não encontrado.",
+  PROFILE_NOT_FOUND: "Perfil não encontrado.",
+
+  // Generic
+  INTERNAL_ERROR: "Erro interno do servidor. Tente novamente mais tarde.",
+  DATABASE_ERROR: "Erro ao acessar o banco de dados.",
+  EXTERNAL_API_ERROR: "Erro ao comunicar com serviço externo.",
+} as const;
+
+// Success messages
+export const SUCCESS_MESSAGES = {
+  // Auth
+  LOGIN_SUCCESS: "Login realizado com sucesso!",
+  REGISTER_SUCCESS: "Conta criada com sucesso!",
+  LOGOUT_SUCCESS: "Logout realizado com sucesso!",
+
+  // Habits
+  HABIT_CREATED: "Hábito criado com sucesso!",
+  HABIT_COMPLETED: "Hábito concluído! Continue assim! 🎉",
+  HABIT_DELETED: "Hábito removido.",
+  HABIT_UPDATED: "Hábito atualizado.",
+
+  // Community
+  POST_CREATED: "Post publicado com sucesso!",
+  COMMENT_CREATED: "Comentário adicionado!",
+  REACTION_ADDED: "Reação adicionada!",
+  REPORT_SUBMITTED: "Denúncia enviada. Obrigada por ajudar a comunidade!",
+
+  // Content
+  FAVORITE_ADDED: "Adicionado aos favoritos!",
+  FAVORITE_REMOVED: "Removido dos favoritos.",
+
+  // Profile
+  PROFILE_UPDATED: "Perfil atualizado com sucesso!",
+  AVATAR_UPDATED: "Avatar atualizado!",
+} as const;
+
