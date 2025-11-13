@@ -67,7 +67,7 @@ while (streak < GAMIFICATION.MAX_STREAK_DAYS) {
   const dateStr = currentDate.toISOString().split("T")[0];
   if (!habitDates.has(dateStr)) break;
   streak++;
-  // Usar operação imutável
+  // Criar uma cópia para evitar mutação da referência original
   currentDate = new Date(currentDate);
   currentDate.setDate(currentDate.getDate() - 1);
 }
