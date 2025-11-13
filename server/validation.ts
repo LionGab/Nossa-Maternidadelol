@@ -44,7 +44,7 @@ export const createHabitSchema = z.object({
     .min(1, "Título não pode estar vazio")
     .max(50, "Título muito longo (máximo 50 caracteres)")
     .trim(),
-  emoji: z.string().min(1, "Emoji não pode estar vazio").emoji("Emoji inválido").or(z.string().min(1).max(2)),
+  emoji: z.string().min(1, "Emoji não pode estar vazio").emoji("Emoji inválido"),
   color: z.string().regex(/^from-\w+-\d+\s+to-\w+-\d+$/, "Formato de cor inválido"),
 });
 

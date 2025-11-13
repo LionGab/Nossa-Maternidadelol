@@ -7,23 +7,23 @@ As seguintes chaves foram compartilhadas em comentário público do GitHub e pre
 ### Chaves Comprometidas:
 
 1. **Gemini API Key**
-   - Chave exposta: `AIzaSyC9YVWRmnGyGu4c9y7g-mNkkipDqb5JBZg`
+   - Chave exposta: `AIzaSyC9YVW...JBZg` (redacted)
    - Ação: Revogar em https://aistudio.google.com/app/apikey
 
 2. **Claude API Key**
-   - Chave exposta: `sk-ant-api03-dNzIj...`
+   - Chave exposta: `sk-ant-api03-dNzIj...` (redacted)
    - Ação: Revogar em https://console.anthropic.com/settings/keys
 
 3. **OpenAI API Key**
-   - Chave exposta: `sk-proj-BKCgHp...`
+   - Chave exposta: `sk-proj-BKCgHp...` (redacted)
    - Ação: Revogar em https://platform.openai.com/api-keys
 
 4. **Perplexity API Key**
-   - Chave exposta: `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`
+   - Chave exposta: `pplx-3wb2...` (redacted)
    - Ação: Revogar em https://www.perplexity.ai/settings/api
 
 5. **Supabase Anon Key**
-   - Chave exposta no comentário
+   - Chave exposta no comentário (redacted)
    - Ação: Verificar se precisa rotacionar
 
 ---
@@ -34,25 +34,25 @@ As seguintes chaves foram compartilhadas em comentário público do GitHub e pre
 
 #### Gemini (Google)
 1. Acesse: https://aistudio.google.com/app/apikey
-2. Encontre a chave: `AIzaSyC9YVWRmnGyGu4c9y7g-mNkkipDqb5JBZg`
+2. Encontre a chave comprometida
 3. Clique em "Delete" ou "Revoke"
 4. Crie uma nova chave
 
 #### Claude (Anthropic)
 1. Acesse: https://console.anthropic.com/settings/keys
-2. Encontre a chave que começa com `sk-ant-api03-`
+2. Encontre a chave comprometida
 3. Clique em "Revoke"
 4. Crie uma nova chave
 
 #### OpenAI
 1. Acesse: https://platform.openai.com/api-keys
-2. Encontre a chave que começa com `sk-proj-BKCgHp`
+2. Encontre a chave comprometida
 3. Clique em "Revoke"
 4. Crie uma nova chave
 
 #### Perplexity
 1. Acesse: https://www.perplexity.ai/settings/api
-2. Encontre a chave: `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`
+2. Encontre a chave comprometida
 3. Revogue a chave
 4. Crie uma nova chave
 
