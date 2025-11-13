@@ -1,113 +1,82 @@
-name: CI - Tests & Build
+name: CI
 
 on:
   push:
-    branches: ['**']
+    branches: [main, develop]
   pull_request:
-    branches: ['**']
-
-# Permissões máximas - sem necessidade de aprovação
-permissions:
-  contents: write
-  pull-requests: write
-  checks: write
-  statuses: write
+    branches: [main, develop]
 
 jobs:
-  ci:
+  lint-and-typecheck:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
+      - uses: actions/checkout@v4
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
-      # Detecta automaticamente o gerenciador de pacotes
+      
       - name: Install dependencies
-        run: |
-          if [ -f "pnpm-lock.yaml" ]; then
-            npm install -g pnpm
-            pnpm install --frozen-lockfile
-          elif [ -f "yarn.lock" ]; then
-            yarn install --frozen-lockfile
-          else
-            npm ci
-          fi
-
-      # Lint (se existir script)
+        run: npm ci
+      
       - name: Run linter
-        run: |
-          if npm run --list | grep -q "lint"; then
-            npm run lint
-          else
-            echo "No lint script found, skipping..."
-          fi
-        continue-on-error: false
-
-      # Type check (TypeScript)
+        run: npm run lint
+      
       - name: Type check
-        run: |
-          if [ -f "tsconfig.json" ]; then
-            if npm run --list | grep -q "type-check"; then
-              npm run type-check
-            elif npm run --list | grep -q "typecheck"; then
-              npm run typecheck
-            else
-              npx tsc --noEmit
-            fi
-          else
-            echo "No TypeScript config found, skipping..."
-          fi
-        continue-on-error: false
+        run: npm run check
 
-      # Tests
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
       - name: Run tests
-        run: |
-          if npm run --list | grep -q "test"; then
-            npm test
-          else
-            echo "No test script found, skipping..."
-          fi
-        continue-on-error: false
+        run: npm run test:coverage
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/coverage-final.json
+          flags: unittests
+          name: codecov-umbrella
 
-      # Build
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
       - name: Build
-        run: |
-          if npm run --list | grep -q "build"; then
-            npm run build
-          else
-            echo "No build script found, skipping..."
-          fi
-        continue-on-error: false
-
-      # Auto-label PR baseado no resultado
-      - name: Label PR on success
-        if: success() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        run: npm run build
+        env:
+          NODE_ENV: production
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            github.rest.issues.addLabels({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: ['ci-passed', 'ready-to-merge']
-            })
-
-      - name: Label PR on failure
-        if: failure() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.addLabels({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: ['ci-failed']
-            })
+          name: dist
+          path: dist/
+          retention-days: 1

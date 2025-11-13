@@ -24,7 +24,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import cors from "cors";
 import compression from "compression";
-import { registerRoutes } from "./routes";
+import { registerRoutes } from "./routes/index";
 import { registerAuthRoutes } from "./auth-routes";
 import { setupAuth } from "./auth";
 import { setupVite, serveStatic } from "./vite";
@@ -169,27 +169,10 @@ app.use(requestLogger);
   // Register application routes
   const server = await registerRoutes(app);
 
-  // Error logging middleware
+  // Error logging middleware (before error handler)
   app.use(errorLogger);
-
-  // Error handling middleware
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    // Log error
-    if (status >= 500) {
-      logger.error({
-        err,
-        path: _req.path,
-        method: _req.method,
-        status,
-        msg: "Server error",
-      });
-    }
-
-    res.status(status).json({ message });
-  });
+  
+  // Error handler is registered in routes/index.ts via registerRoutesSync
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
@@ -208,7 +191,7 @@ app.use(requestLogger);
 
   // Use localhost on Windows to avoid ENOTSUP errors
   const isWindows = process.platform === 'win32';
-  const listenOptions: any = {
+  const listenOptions: { port: number; host: string; reusePort?: boolean } = {
     port,
     host: isWindows ? 'localhost' : '0.0.0.0',
   };

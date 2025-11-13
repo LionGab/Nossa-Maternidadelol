@@ -54,6 +54,7 @@ export interface IStorage {
 
   // Tips
   getTips(): Promise<Tip[]>;
+  getTip(id: string): Promise<Tip | undefined>;
   createTip(tip: InsertTip): Promise<Tip>;
 
   // Daily Featured

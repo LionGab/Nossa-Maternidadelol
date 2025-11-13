@@ -135,7 +135,7 @@ export function validateQuery<T extends z.ZodTypeAny>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const validated = schema.parse(req.query);
-      req.query = validated as any;
+      req.query = validated as z.infer<T>;
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -157,7 +157,7 @@ export function validateParams<T extends z.ZodTypeAny>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const validated = schema.parse(req.params);
-      req.params = validated as any;
+      req.params = validated as z.infer<T>;
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {

@@ -5,7 +5,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
  * Subscribe to community posts updates
  */
 export function subscribeToCommunityPosts(
-  callback: (payload: any) => void
+  callback: (payload: unknown) => void
 ): RealtimeChannel {
   const channel = supabase
     .channel("community-posts")
@@ -37,7 +37,7 @@ export function subscribeToCommunityPosts(
  */
 export function subscribeToComments(
   postId: string,
-  callback: (payload: any) => void
+  callback: (payload: unknown) => void
 ): RealtimeChannel {
   const channel = supabase
     .channel(`comments:${postId}`)
@@ -71,7 +71,7 @@ export function subscribeToComments(
  */
 export function subscribeToReactions(
   postId: string,
-  callback: (payload: any) => void
+  callback: (payload: unknown) => void
 ): RealtimeChannel {
   const channel = supabase
     .channel(`reactions:${postId}`)

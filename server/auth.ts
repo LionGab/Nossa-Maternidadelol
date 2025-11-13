@@ -93,9 +93,9 @@ export async function requireAuth(
     }
 
     next();
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Check if it's a Supabase configuration error
-    if (error.message?.includes("SUPABASE_URL") && process.env.NODE_ENV !== "production") {
+    if (error instanceof Error && error.message?.includes("SUPABASE_URL") && process.env.NODE_ENV !== "production") {
       logger.error({ err: error, msg: "Supabase not configured - cannot authenticate" });
       res.status(500).json({ 
         error: "Autenticação não configurada. Configure Supabase ou use modo de desenvolvimento sem autenticação." 
@@ -248,6 +248,7 @@ export async function validateSessionOwnership(
  * Setup function for compatibility (no longer needed with Supabase Auth)
  * Kept for backwards compatibility but does nothing
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function setupAuth(_app: any) {
   // No-op: Supabase Auth doesn't need setup like Passport.js
   logger.info({ msg: "Supabase Auth initialized (no setup required)" });

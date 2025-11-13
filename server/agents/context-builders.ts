@@ -4,6 +4,7 @@ import type { HabitsContext } from "./prompts/habits-prompt";
 import type { ContentContext } from "./prompts/content-prompt";
 import type { CommunityContext } from "./prompts/community-prompt";
 import type { AgentType } from "@shared/schema";
+import type { Post } from "@shared/schema";
 import { GAMIFICATION, AI, TIME } from "../constants";
 
 export async function buildGeneralContext(userId: string): Promise<ChatContext> {
@@ -67,7 +68,7 @@ export async function buildContentContext(userId: string): Promise<ContentContex
   const posts = await Promise.all(
     postIds.slice(-AI.FAVORITE_POSTS_FETCH_COUNT).map(id => storage.getPost(id))
   );
-  const validPosts = posts.filter(Boolean) as any[];
+  const validPosts = posts.filter((p): p is Post => p !== null && p !== undefined);
   
   const favoriteCategories = Array.from(
     new Set(validPosts.map(p => p.category).filter(Boolean))

@@ -143,9 +143,12 @@ export async function chatWithAgent(
       return "Desculpe, não consegui processar sua mensagem. Pode tentar novamente com outras palavras?";
     }
 
+    // Type-safe extraction of text parts
     const textParts = candidate.content.parts
-      .filter((part: any) => part.text)
-      .map((part: any) => part.text);
+      .filter((part): part is { text: string } => 
+        typeof part === 'object' && part !== null && 'text' in part && typeof part.text === 'string'
+      )
+      .map(part => part.text);
 
     const responseText = textParts.join("\n\n");
 
@@ -168,7 +171,7 @@ export async function chatWithAgent(
     });
 
     return responseText;
-  } catch (error: any) {
+  } catch (error: unknown) {
     const duration = Date.now() - startTime;
 
     logger.error({
@@ -180,7 +183,7 @@ export async function chatWithAgent(
     });
     
     // Better error messages based on error type
-    if (error.status === 429) {
+    if (error instanceof Error && 'status' in error && (error as { status: number }).status === 429) {
       return "O serviço está com muitas requisições no momento. Por favor, aguarde alguns segundos e tente novamente.";
     }
     
