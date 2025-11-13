@@ -6,12 +6,16 @@ export async function registerServiceWorker() {
         scope: '/',
       });
       
-      console.log('[PWA] Service Worker registrado com sucesso:', registration.scope);
+      if (import.meta.env.DEV) {
+        console.log('[PWA] Service Worker registrado com sucesso:', registration.scope);
+      }
       
       // Check for updates
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
-        console.log('[PWA] Nova versão encontrada, atualizando...');
+        if (import.meta.env.DEV) {
+          console.log('[PWA] Nova versão encontrada, atualizando...');
+        }
         
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
@@ -30,12 +34,15 @@ export async function registerServiceWorker() {
       console.error('[PWA] Erro ao registrar Service Worker:', error);
     }
   } else {
-    console.log('[PWA] Service Workers não são suportados neste navegador');
+    if (import.meta.env.DEV) {
+      console.log('[PWA] Service Workers não são suportados neste navegador');
+    }
   }
 }
 
 // Install prompt
-let deferredPrompt: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let deferredPrompt: any; // BeforeInstallPromptEvent type is not widely supported
 
 export function setupInstallPrompt() {
   window.addEventListener('beforeinstallprompt', (e) => {
@@ -43,21 +50,27 @@ export function setupInstallPrompt() {
     e.preventDefault();
     // Stash the event so it can be triggered later
     deferredPrompt = e;
-    console.log('[PWA] Prompt de instalação disponível');
+    if (import.meta.env.DEV) {
+      console.log('[PWA] Prompt de instalação disponível');
+    }
     
     // Show custom install button or UI
     showInstallPromotion();
   });
   
   window.addEventListener('appinstalled', () => {
-    console.log('[PWA] App instalado com sucesso!');
+    if (import.meta.env.DEV) {
+      console.log('[PWA] App instalado com sucesso!');
+    }
     deferredPrompt = null;
   });
 }
 
 export async function promptInstall() {
   if (!deferredPrompt) {
-    console.log('[PWA] Prompt de instalação não disponível');
+    if (import.meta.env.DEV) {
+      console.log('[PWA] Prompt de instalação não disponível');
+    }
     return false;
   }
   
@@ -66,7 +79,9 @@ export async function promptInstall() {
   
   // Wait for the user to respond
   const { outcome } = await deferredPrompt.userChoice;
-  console.log(`[PWA] Resposta do usuário: ${outcome}`);
+  if (import.meta.env.DEV) {
+    console.log(`[PWA] Resposta do usuário: ${outcome}`);
+  }
   
   // Clear the prompt
   deferredPrompt = null;
@@ -77,5 +92,7 @@ export async function promptInstall() {
 function showInstallPromotion() {
   // You can show a custom install button here
   // For example, show a banner or button that calls promptInstall()
-  console.log('[PWA] Mostrando promoção de instalação...');
+  if (import.meta.env.DEV) {
+    console.log('[PWA] Mostrando promoção de instalação...');
+  }
 }

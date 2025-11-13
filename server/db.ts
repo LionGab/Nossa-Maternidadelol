@@ -39,6 +39,7 @@ function createDb(): NeonHttpDatabase<typeof schema> {
 export const db = new Proxy({} as NeonHttpDatabase<typeof schema>, {
   get(_target, prop) {
     const db = createDb();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const value = (db as any)[prop];
     return typeof value === "function" ? value.bind(db) : value;
   },

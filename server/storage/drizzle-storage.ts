@@ -50,7 +50,7 @@ export class DrizzleStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser & { id?: string }): Promise<User> {
-    const values: any = { ...insertUser };
+    const values: InsertUser & { id?: string } = { ...insertUser };
     if (insertUser.id) {
       values.id = insertUser.id;
     }
@@ -139,6 +139,11 @@ export class DrizzleStorage implements IStorage {
     return await db.select().from(tips);
   }
 
+  async getTip(id: string): Promise<Tip | undefined> {
+    const result = await db.select().from(tips).where(eq(tips.id, id)).limit(1);
+    return result[0];
+  }
+
   async createTip(insertTip: InsertTip): Promise<Tip> {
     const result = await db.insert(tips).values(insertTip).returning();
     return result[0];
@@ -163,13 +168,11 @@ export class DrizzleStorage implements IStorage {
   }
 
   async createAiSession(insertSession: InsertAiSession): Promise<AiSession> {
-    const values: any = {
+    const values: InsertAiSession = {
       userId: insertSession.userId,
       agentType: insertSession.agentType || "general",
+      ...(insertSession.id && { id: insertSession.id }),
     };
-    if (insertSession.id) {
-      values.id = insertSession.id;
-    }
     const result = await db.insert(aiSessions).values(values).returning();
     return result[0];
   }

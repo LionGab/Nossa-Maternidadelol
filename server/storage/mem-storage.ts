@@ -985,6 +985,10 @@ export class MemStorage implements IStorage {
     return Array.from(this.tips.values());
   }
 
+  async getTip(id: string): Promise<Tip | undefined> {
+    return this.tips.get(id);
+  }
+
   async createTip(insertTip: InsertTip): Promise<Tip> {
     const id = randomUUID();
     const tip: Tip = { ...insertTip, id };

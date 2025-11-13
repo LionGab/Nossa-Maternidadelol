@@ -6,6 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Nossa Maternidade** is a digital wellness platform for mothers and pregnant women created by influencer Nathália Valente. The app provides a judgment-free space for maternal support through AI assistants, habit tracking, community features, and educational content.
 
+## Technical Analysis & Roadmap (2025-01-13)
+
+Comprehensive technical analysis and improvement plan for the project:
+
+- **📊 Technical Analysis:** [`ANALISE_PROFUNDA_LINHA_POR_LINHA.md`](./ANALISE_PROFUNDA_LINHA_POR_LINHA.md) - Line-by-line code audit with verified issues, false positives corrected, and severity assessments based on actual impact
+- **🎯 Action Plan:** [`PLANO_ACAO_COMPLETO.md`](./PLANO_ACAO_COMPLETO.md) - Phased implementation roadmap with executable commands, rollback plans, and ROI-focused prioritization
+- **📝 Documentation Changelog:** [`CHANGELOG_DOCS.md`](./CHANGELOG_DOCS.md) - Complete log of corrections made from v1.0 to v2.0
+
+**Key Findings:**
+- ✅ No critical bugs - architecture is solid
+- 🟡 1 code quality issue: Date immutability in streak calculation (Fase 0)
+- ✅ Previous false positives corrected (MemStorage, N+1 queries already optimized)
+- 📈 Realistic test coverage target: 40-50% (Fase 1) vs unrealistic 80%
+
+**Next Steps:** Follow phased approach in PLANO_ACAO_COMPLETO.md starting with Fase 0 (30 min code quality improvement).
+
 ## Commands
 
 ### Development

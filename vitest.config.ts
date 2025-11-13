@@ -20,18 +20,24 @@ export default defineConfig({
       exclude: [
         "node_modules/",
         "dist/",
-        "**/*.config.{js,ts}",
-        "**/*.d.ts",
-        "**/index.ts", // Entry points
+        "**/*.config.*",
+        "**/index.ts",
+        "**/types.ts",
+        "tests/",
       ],
+      thresholds: {
+        statements: 95,
+        branches: 90,
+        functions: 95,
+        lines: 95,
+      },
     },
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "client/src"),
-      "@shared": path.resolve(__dirname, "shared"),
-      "@assets": path.resolve(__dirname, "attached_assets"),
+      "@": path.resolve(__dirname, "./client/src"),
+      "@shared": path.resolve(__dirname, "./shared"),
+      "@assets": path.resolve(__dirname, "./attached_assets"),
     },
   },
 });
-

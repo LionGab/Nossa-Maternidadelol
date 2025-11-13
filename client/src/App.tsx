@@ -7,7 +7,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BottomTabBar } from "@/components/BottomTabBar";
-import { Loader2 } from "lucide-react";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
+import { Loader2, Menu } from "lucide-react";
 
 // Lazy load all pages for code splitting
 const Landing = lazy(() => import("@/pages/Landing"));
@@ -32,33 +34,58 @@ function LoadingFallback() {
 function Router() {
   const [isLanding] = useRoute("/");
   const [isDemo] = useRoute("/demo");
+  const showSidebar = !isLanding && !isDemo;
   const showTabBar = !isLanding && !isDemo;
 
+  if (!showSidebar) {
+    return (
+      <>
+        <main>
+          <Suspense fallback={<LoadingFallback />}>
+            <Switch>
+              <Route path="/" component={Landing} />
+              <Route path="/demo" component={Demo} />
+              <Route component={NotFound} />
+            </Switch>
+          </Suspense>
+        </main>
+      </>
+    );
+  }
+
   return (
-    <>
-      <main>
-        <Suspense fallback={<LoadingFallback />}>
-          <Switch>
-            <Route path="/" component={Landing} />
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/demo" component={Demo} />
-            <Route path="/nathia" component={NathIA} />
-            <Route path="/mundo-nath" component={MundoNath} />
-            <Route path="/mae-valente" component={MaeValente} />
-            <Route path="/habitos" component={Habitos} />
-            <Route path="/refugio-nath" component={RefugioNath} />
-            <Route component={NotFound} />
-          </Switch>
-        </Suspense>
-      </main>
-      {showTabBar && <BottomTabBar />}
-      {/* Floating Theme Toggle */}
-      {!isLanding && !isDemo && (
-        <div className="fixed top-4 right-4 z-50">
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        {/* Header com botão de menu */}
+        <header className="sticky top-0 z-40 flex items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 h-14">
+          <SidebarTrigger className="md:hidden">
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle Menu</span>
+          </SidebarTrigger>
+          <div className="flex-1" />
           <ThemeToggle />
-        </div>
-      )}
-    </>
+        </header>
+
+        {/* Conteúdo principal */}
+        <main className="flex-1">
+          <Suspense fallback={<LoadingFallback />}>
+            <Switch>
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/nathia" component={NathIA} />
+              <Route path="/mundo-nath" component={MundoNath} />
+              <Route path="/mae-valente" component={MaeValente} />
+              <Route path="/habitos" component={Habitos} />
+              <Route path="/refugio-nath" component={RefugioNath} />
+              <Route component={NotFound} />
+            </Switch>
+          </Suspense>
+        </main>
+
+        {/* Bottom tab bar mobile */}
+        {showTabBar && <BottomTabBar />}
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 

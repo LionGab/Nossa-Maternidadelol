@@ -1,19 +1,49 @@
-// Using Replit AI Integrations for Gemini (no personal API key needed)
+// Using Google Gemini API directly
 import { GoogleGenAI } from "@google/genai";
 import { logger, logAICall } from "./logger";
+import { getCircuitBreaker } from "./utils/circuit-breaker";
 
-// This uses Replit's AI Integrations service - charges are billed to your Replit credits
+// Initialize Gemini AI with direct API key
+// Requires GEMINI_API_KEY environment variable
+if (!process.env.GEMINI_API_KEY) {
+  logger.warn({
+    msg: "GEMINI_API_KEY não configurada. NathIA não funcionará.",
+    hint: "Obtenha uma API key em: https://aistudio.google.com/app/apikey"
+  });
+}
+
 const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+  apiKey: process.env.GEMINI_API_KEY || "dummy-key-for-tests",
+});
+
+// Circuit breaker for Gemini API
+const geminiCircuit = getCircuitBreaker("gemini_ai", {
+  failureThreshold: 5,
+  resetTimeout: 60000, // 1 min
+  isFailure: (error) => {
+    // Don't count safety blocks as failures
+    if (error instanceof Error && error.message.includes("safety")) {
+      return false;
+    }
+    return true;
   },
 });
 
 export interface ChatContext {
   userStage?: string;
   userGoals?: string[];
+}
+
+/**
+ * Timeout wrapper for promises
+ */
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_resolve, reject) =>
+      setTimeout(() => reject(new Error("Request timeout")), timeoutMs)
+    ),
+  ]);
 }
 
 export async function chatWithNathIA(
@@ -70,14 +100,20 @@ ESTILO DE CONVERSA:
       userStage: context?.userStage,
     });
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      config: {
-        systemInstruction: systemPrompt,
-        temperature: 0.8,
-        maxOutputTokens: 250,
-      },
-      contents,
+    // Execute with circuit breaker and 15s timeout
+    const response = await geminiCircuit.execute(async () => {
+      return withTimeout(
+        ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          config: {
+            systemInstruction: systemPrompt,
+            temperature: 0.8,
+            maxOutputTokens: 250,
+          },
+          contents,
+        }),
+        15000 // 15s timeout
+      );
     });
 
     const duration = Date.now() - startTime;
@@ -118,9 +154,12 @@ ESTILO DE CONVERSA:
       return "Desculpe, não consegui processar sua mensagem. Pode tentar novamente com outras palavras?";
     }
 
+    // Type-safe extraction of text parts
     const textParts = candidate.content.parts
-      .filter((part: any) => part.text)
-      .map((part: any) => part.text);
+      .filter((part): part is { text: string } => 
+        typeof part === 'object' && part !== null && 'text' in part && typeof part.text === 'string'
+      )
+      .map(part => part.text);
 
     const responseText = textParts.join("\n\n");
 
@@ -141,21 +180,32 @@ ESTILO DE CONVERSA:
     });
 
     return responseText;
-  } catch (error: any) {
+  } catch (error: unknown) {
     const duration = Date.now() - startTime;
 
     logger.error({
       service: "gemini",
       err: error,
       duration,
+      circuitState: geminiCircuit.getState(),
       msg: "Gemini API Error",
     });
-    
+
+    // Check if circuit breaker is open
+    if (error instanceof Error && error.name === "CircuitBreakerError") {
+      return "A NathIA está temporariamente indisponível. Tente novamente em alguns instantes.";
+    }
+
+    // Check if timeout
+    if (error instanceof Error && error.message === "Request timeout") {
+      return "Desculpe, a resposta está demorando muito. Tente uma pergunta mais simples?";
+    }
+
     // Better error messages based on error type
-    if (error.status === 429) {
+    if (error instanceof Error && 'status' in error && (error as { status: number }).status === 429) {
       return "O serviço está com muitas requisições no momento. Por favor, aguarde alguns segundos e tente novamente.";
     }
-    
+
     return "Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.";
   }
 }

@@ -13,7 +13,8 @@
 import { logger } from "./logger";
 
 let metricsEnabled = false;
-let promClient: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let promClient: any = null; // prom-client types are dynamic
 
 // Initialize Prometheus client if available
 async function initializeMetrics() {
@@ -60,13 +61,15 @@ async function initializeMetrics() {
 }
 
 // Get metrics instance
-let metricsInstance: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let metricsInstance: any = null; // prom-client metrics types are dynamic
 
 initializeMetrics().then((instance) => {
   metricsInstance = instance;
 });
 
 // Middleware to track HTTP metrics
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function metricsMiddleware(req: any, res: any, next: any) {
   if (!metricsEnabled || !metricsInstance) {
     return next();
@@ -77,6 +80,7 @@ export function metricsMiddleware(req: any, res: any, next: any) {
   
   // Override res.end to capture status
   const originalEnd = res.end;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   res.end = function (...args: any[]) {
     const duration = (Date.now() - startTime) / 1000;
     const status = res.statusCode;
@@ -109,6 +113,7 @@ export function metricsMiddleware(req: any, res: any, next: any) {
 }
 
 // Get metrics endpoint handler
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getMetricsHandler(_req: any, res: any) {
   if (!metricsEnabled || !promClient) {
     return res.status(503).json({ error: "Metrics not available" });

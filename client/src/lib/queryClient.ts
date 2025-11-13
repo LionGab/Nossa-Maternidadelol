@@ -1,9 +1,4 @@
-/**
- * React Query configuration
- * Otimizado para performance e UX mobile-first
- */
-
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { getAuthHeader } from "./auth";
 
 async function throwIfResNotOk(res: Response) {
@@ -36,54 +31,106 @@ export async function apiRequest(
   return res;
 }
 
-/**
- * Configurações de query por tipo de dado
- */
-export const QUERY_CONFIG = {
-  // Dados estáticos (mudam raramente)
-  static: {
-    staleTime: 60 * 60 * 1000, // 1 hora
-    gcTime: 24 * 60 * 60 * 1000, // 24 horas
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  },
+type UnauthorizedBehavior = "returnNull" | "throw";
+export const getQueryFn: <T>(options: {
+  on401: UnauthorizedBehavior;
+}) => QueryFunction<T> =
+  ({ on401: unauthorizedBehavior }) =>
+  async ({ queryKey }) => {
+    const res = await fetch(queryKey.join("/") as string, {
+      credentials: "include",
+    });
 
-  // Dados dinâmicos (mudam com frequência média)
-  dynamic: {
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-  },
+    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      return null;
+    }
 
-  // Dados em tempo real (sempre fresh)
-  realtime: {
-    staleTime: 0,
-    gcTime: 1 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-  },
+    await throwIfResNotOk(res);
+    return await res.json();
+  };
 
-  // Dados do usuário
-  user: {
-    staleTime: 2 * 60 * 1000,
-    gcTime: 15 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-  },
-} as const;
+// Enhanced query function that handles path params and query strings
+const enhancedQueryFn: QueryFunction = async ({ queryKey }) => {
+  let url = queryKey[0] as string;
+  
+  // Handle additional parameters in queryKey
+  if (queryKey.length > 1) {
+    const params = queryKey.slice(1);
+    
+    // Check if it's a query params object
+    if (params.length === 1 && typeof params[0] === 'object' && !Array.isArray(params[0])) {
+      const searchParams = new URLSearchParams();
+      Object.entries(params[0] as Record<string, unknown>).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== 'all') {
+          searchParams.append(key, String(value));
+        }
+      });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        url = `${url}?${queryString}`;
+      }
+    } else {
+      // Path parameters - join them to the URL
+      url = queryKey.join('/');
+    }
+  }
+  
+  // Get auth token and include in headers
+  const authHeaders = getAuthHeader();
+  const res = await fetch(url, { 
+    headers: authHeaders,
+    credentials: "include", // Also send cookies for session-based auth
+  });
+  
+  if (!res.ok) {
+    const text = (await res.text()) || res.statusText;
+    throw new Error(`${res.status}: ${text}`);
+  }
+  
+  return res.json();
+};
 
-/**
- * Cliente React Query otimizado
- */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
+      queryFn: enhancedQueryFn,
       refetchOnWindowFocus: false,
-      retry: 3,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 5 * 60 * 1000, // 5 minutos padrão
+      gcTime: 10 * 60 * 1000, // 10 minutos (antes era cacheTime)
+      retry: (failureCount, error: unknown) => {
+        // Não retry em erros 4xx (client errors)
+        if (error instanceof Error && error.message.startsWith('4')) {
+          return false;
+        }
+        return failureCount < 2; // Retry até 2 vezes
+      },
+    },
+    mutations: {
+      retry: false,
     },
   },
 });
+
+/**
+ * Query configurations by data type
+ */
+export const queryConfigs = {
+  // Dados que mudam raramente (posts, conteúdo)
+  static: {
+    staleTime: 30 * 60 * 1000, // 30 minutos
+    gcTime: 60 * 60 * 1000, // 1 hora
+  },
+  
+  // Dados que mudam frequentemente (habits, stats)
+  dynamic: {
+    staleTime: 1 * 60 * 1000, // 1 minuto
+    gcTime: 5 * 60 * 1000, // 5 minutos
+  },
+  
+  // Dados em tempo real (mensagens AI)
+  realtime: {
+    staleTime: 0,
+    refetchInterval: 2000, // 2 segundos
+    gcTime: 2 * 60 * 1000, // 2 minutos
+  },
+} as const;

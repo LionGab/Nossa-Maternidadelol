@@ -1,0 +1,139 @@
+name: Setup - Configurar Permissões Automáticas
+
+# Este workflow configura as permissões do repositório para permitir automações completas
+# Execute manualmente UMA VEZ após adicionar os workflows
+
+on:
+  workflow_dispatch: # Manual apenas
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  checks: write
+  statuses: write
+  deployments: write
+
+jobs:
+  configure-repo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure repository settings
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            try {
+              // Habilita auto-merge
+              await github.rest.repos.update({
+                owner,
+                repo,
+                allow_auto_merge: true,
+                allow_squash_merge: true,
+                allow_merge_commit: true,
+                allow_rebase_merge: true,
+                delete_branch_on_merge: true
+              });
+
+              console.log('✅ Repository settings updated');
+
+              // Configura branch protection (se não existir)
+              try {
+                await github.rest.repos.updateBranchProtection({
+                  owner,
+                  repo,
+                  branch: 'main',
+                  required_status_checks: {
+                    strict: false,
+                    contexts: ['ci']
+                  },
+                  enforce_admins: false,
+                  required_pull_request_reviews: null,
+                  restrictions: null,
+                  allow_force_pushes: false,
+                  allow_deletions: false
+                });
+
+                console.log('✅ Branch protection configured');
+              } catch (error) {
+                if (error.status === 404) {
+                  console.log('ℹ️ Branch protection not available (may need paid plan)');
+                } else {
+                  console.log('⚠️ Could not configure branch protection:', error.message);
+                }
+              }
+
+              // Habilita workflows do GitHub Actions
+              await github.rest.actions.setGithubActionsPermissionsRepository({
+                owner,
+                repo,
+                enabled: true,
+                allowed_actions: 'all'
+              });
+
+              // Configura permissões padrão do GITHUB_TOKEN
+              await github.rest.actions.setGithubActionsDefaultWorkflowPermissionsRepository({
+                owner,
+                repo,
+                default_workflow_permissions: 'write',
+                can_approve_pull_request_reviews: true
+              });
+
+              console.log('✅ GitHub Actions permissions configured');
+
+              // Cria labels se não existirem
+              const labels = [
+                { name: 'auto-merge', color: '0e8a16', description: 'Fazer merge automaticamente quando CI passar' },
+                { name: 'ci-passed', color: '0e8a16', description: 'CI passou com sucesso' },
+                { name: 'ci-failed', color: 'd73a4a', description: 'CI falhou' },
+                { name: 'dependencies', color: '0366d6', description: 'Atualização de dependências' },
+                { name: 'ready-to-merge', color: '0e8a16', description: 'Pronto para merge' }
+              ];
+
+              for (const label of labels) {
+                try {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    ...label
+                  });
+                  console.log(`✅ Label created: ${label.name}`);
+                } catch (error) {
+                  if (error.status === 422) {
+                    console.log(`ℹ️ Label already exists: ${label.name}`);
+                  } else {
+                    console.log(`⚠️ Could not create label ${label.name}:`, error.message);
+                  }
+                }
+              }
+
+              console.log('\n✅ Repository configured successfully!');
+              console.log('\nNext steps:');
+              console.log('1. Add repository secrets (DISCORD_WEBHOOK_URL, VERCEL_TOKEN, etc.)');
+              console.log('2. Push code to trigger CI workflow');
+              console.log('3. Create a PR to test auto-merge');
+
+            } catch (error) {
+              core.setFailed(`Failed to configure repository: ${error.message}`);
+            }
+
+      - name: Create configuration summary
+        run: |
+          echo "# Repository Configuration Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Configured Settings" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Auto-merge enabled" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Delete branch on merge enabled" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ GitHub Actions permissions set to write" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Labels created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Required Secrets (add these in repository settings)" >> $GITHUB_STEP_SUMMARY
+          echo "- DISCORD_WEBHOOK_URL (optional)" >> $GITHUB_STEP_SUMMARY
+          echo "- SLACK_WEBHOOK_URL (optional)" >> $GITHUB_STEP_SUMMARY
+          echo "- VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (for Vercel deploy)" >> $GITHUB_STEP_SUMMARY
+          echo "- VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_PROJECT_PATH (for VPS deploy)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All automations are now ready to use! 🚀" >> $GITHUB_STEP_SUMMARY

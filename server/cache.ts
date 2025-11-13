@@ -11,7 +11,7 @@ import { logger } from "./logger";
 
 // In-memory cache fallback (for development without Redis)
 class MemoryCache {
-  private cache: Map<string, { value: any; expiresAt: number }> = new Map();
+  private cache: Map<string, { value: unknown; expiresAt: number }> = new Map();
 
   async get<T>(key: string): Promise<T | null> {
     const item = this.cache.get(key);
@@ -46,7 +46,8 @@ class MemoryCache {
 }
 
 // Redis client (will be initialized if REDIS_URL is set)
-let redisClient: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let redisClient: any = null; // Redis client type is dynamic
 let memoryCache: MemoryCache | null = null;
 
 // Initialize cache based on environment
@@ -82,7 +83,7 @@ async function initializeCache() {
 // Cache interface
 export interface ICache {
   get<T>(key: string): Promise<T | null>;
-  set(key: string, value: any, ttlSeconds: number): Promise<void>;
+  set(key: string, value: unknown, ttlSeconds: number): Promise<void>;
   del(key: string): Promise<void>;
   exists(key: string): Promise<boolean>;
 }
@@ -95,7 +96,7 @@ function getCache(): ICache {
         const value = await redisClient.get(key);
         return value ? JSON.parse(value) : null;
       },
-      async set(key: string, value: any, ttlSeconds: number): Promise<void> {
+      async set(key: string, value: unknown, ttlSeconds: number): Promise<void> {
         await redisClient.setEx(key, ttlSeconds, JSON.stringify(value));
       },
       async del(key: string): Promise<void> {
@@ -135,7 +136,7 @@ initializeCache().catch((err) => {
 
 export const cache = {
   get: <T>(key: string) => getCache().get<T>(key),
-  set: (key: string, value: any, ttlSeconds: number) => getCache().set(key, value, ttlSeconds),
+  set: (key: string, value: unknown, ttlSeconds: number) => getCache().set(key, value, ttlSeconds),
   del: (key: string) => getCache().del(key),
   exists: (key: string) => getCache().exists(key),
 };
